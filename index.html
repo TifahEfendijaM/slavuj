@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slavuj</title>
+<style>
+  :root { --paper: #f5efdf; --ink: #3b352f; --yellow: #ffc61a; --blue: #2466e8; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--paper); color: var(--ink);
+    font-family: 'Patrick Hand', 'Comic Sans MS', cursive; user-select: none; }
+  canvas { display: block; position: fixed; inset: 0; }
+  .wobbly { border: 2.5px solid var(--ink); border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px; }
+
+  #start { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(245, 239, 223, .78); cursor: pointer; z-index: 5; }
+  #start .card { background: var(--paper); padding: 28px 46px 30px; text-align: center; box-shadow: 5px 6px 0 rgba(59, 53, 47, .18); }
+  #start h1 { font-family: 'Caveat', cursive; font-size: 68px; margin: 0; line-height: 1; }
+  #start h1 span { color: var(--blue); }
+  #start p { font-size: 21px; margin: 10px 0 14px; }
+  #start table { margin: 0 auto 16px; font-size: 19px; border-spacing: 14px 3px; text-align: left; }
+  #start td:first-child { text-align: right; }
+  kbd { font-family: inherit; border: 2px solid var(--ink); border-radius: 7px; padding: 0 8px; background: #fffaf0; box-shadow: 1px 2px 0 var(--ink); }
+  #start .go { font-size: 26px; font-family: 'Caveat', cursive; font-weight: 700; }
+
+  #hint { position: fixed; left: 50%; bottom: 44px; transform: translateX(-50%); background: var(--paper); padding: 7px 22px;
+    font-size: 23px; white-space: nowrap; transition: opacity .25s; z-index: 3; box-shadow: 3px 4px 0 rgba(59, 53, 47, .18); }
+  #hint.off { opacity: 0; }
+  #legend { position: fixed; left: 16px; bottom: 12px; font-size: 16px; opacity: .7; z-index: 3; }
+
+  #words { position: fixed; right: 7vw; top: 50%; transform: translateY(-50%) rotate(-1.2deg); background: var(--paper); padding: 20px 30px 24px;
+    min-width: 250px; text-align: center; z-index: 4; box-shadow: 6px 7px 0 rgba(59, 53, 47, .2); transition: opacity .25s, transform .25s; }
+  #words.off { opacity: 0; pointer-events: none; transform: translateY(-46%) rotate(-1.2deg); }
+  #words h2 { font-size: 22px; font-weight: 400; margin: 0 0 8px; }
+  #words button { display: block; width: 100%; margin: 8px 0; padding: 2px 14px 6px; background: none; border: 0; border-bottom: 2px dashed rgba(59, 53, 47, .35);
+    font-family: 'Caveat', cursive; font-weight: 700; font-size: 50px; line-height: 1.1; color: var(--ink); cursor: pointer; position: relative; }
+  #words button small { font-family: 'Patrick Hand', cursive; font-size: 15px; font-weight: 400; position: absolute; left: 2px; top: 50%; transform: translateY(-50%); opacity: .5; }
+  #words button:hover:not(:disabled) { color: var(--blue); }
+  #words.busy button { pointer-events: none; }
+  #words button.speaking { color: var(--blue); animation: sing .21s ease-in-out infinite alternate; }
+  #words button.wrong { text-decoration: line-through; text-decoration-thickness: 3px; opacity: .38; cursor: default; }
+  #words button.right { color: #c8891a; text-shadow: 0 0 18px var(--yellow); }
+  #words .esc { font-size: 15px; opacity: .55; margin-top: 10px; }
+  @keyframes sing { from { transform: scale(1) rotate(-1deg); } to { transform: scale(1.07) rotate(1.5deg); } }
+
+  .bar { position: fixed; left: 0; right: 0; height: 11vh; background: var(--paper); z-index: 2; transition: transform .7s ease; }
+  #barTop { top: 0; border-bottom: 2.5px solid var(--ink); transform: translateY(-105%); }
+  #barBot { bottom: 0; border-top: 2.5px solid var(--ink); transform: translateY(105%); }
+  body.cine #barTop, body.cine #barBot { transform: none; }
+  body.cine #legend, body.cine #hint { opacity: 0; }
+  #fade { position: fixed; inset: 0; background: var(--paper); opacity: 0; pointer-events: none; transition: opacity .22s; z-index: 6; }
+  #fade.on { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="barTop" class="bar"></div><div id="barBot" class="bar"></div>
+<div id="hint" class="wobbly off"></div>
+<div id="legend">Mouse steer · <kbd>Space</kbd> flap · <kbd>Shift</kbd> dive</div>
+<div id="words" class="wobbly off">
+  <h2>Which word is it?</h2>
+  <div id="wordList"></div>
+  <div class="esc"><kbd>Esc</kbd> close</div>
+</div>
+<div id="start">
+  <div class="card wobbly">
+    <h1><span>Slavuj</span></h1>
+    <p>Colour Mostar in, one word at a time.</p>
+    <table>
+      <tr><td>Mouse</td><td>steer</td></tr>
+      <tr><td><kbd>Space</kbd></td><td>take off · flap to climb · release to glide</td></tr>
+      <tr><td><kbd>Shift</kbd></td><td>tuck the wings and dive</td></tr>
+      <tr><td><kbd>E</kbd></td><td>open the word list when perched at an orb</td></tr>
+    </table>
+    <div class="go" id="startGo">Click to fly</div>
+  </div>
+</div>
+<div id="fade"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
