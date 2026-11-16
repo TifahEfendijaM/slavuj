@@ -70,7 +70,8 @@ export function createBird() {
   });
 
   let prevBeat = 0, phase = 0, cyc = 0, open = 0, amp = 0, t = 0, sing = 0, fl = 0, slow = 0, landT = 9, wasPerched = true, bob = 0;
-  const q = new THREE.Quaternion(), qi = new THREE.Quaternion(), n = new THREE.Vector3(), CYC = 1.45;
+  const q = new THREE.Quaternion(), qb = new THREE.Quaternion(), n = new THREE.Vector3(), v = new THREE.Vector3(), fw = new THREE.Vector3(), sx = new THREE.Vector3(), CYC = 1.45;
+  const DOWNV = new THREE.Vector3(0, -1, 0), basis = new THREE.Matrix4();
 
   return {
     root, downstroke: 0,
@@ -90,7 +91,8 @@ export function createBird() {
       const steady = st.power || fl > 0.25 || slow > 0.3 || st.speed < 9;
       cyc += dt; if (cyc > CYC) cyc = 0;
       const bound = !perched && !steady && !st.diving && cyc > CYC * 0.64;
-      const wantOpen = perched ? (settling ? 0.6 : 0) : st.diving ? 0.08 : bound ? 0.05 : 1;
+      const pad = swim ? (st.paddle || 0) : 0;
+      const wantOpen = swim ? 0.34 * pad : perched ? (settling ? 0.6 : 0) : st.diving ? 0.08 : bound ? 0.05 : 1;
       open += (wantOpen - open) * k(perched ? 10 : 11, dt);
       const freq = st.power ? 6.4 : fl > 0.25 ? 7.4 : 4.8;
       const wantAmp = perched ? (settling ? 0.5 : 0) : st.diving ? 0 : st.power ? 1.05 : fl > 0.25 ? 0.6 : 0.78;
@@ -110,6 +112,7 @@ export function createBird() {
         w.inner.scale.set(lerp(1, 0.82, F), 1, lerp(1, 0.9, F)); w.inner.rotation.x = -1.15 * F;
         w.outer.scale.set(lerp(1, 0.62, F), 1, lerp(1, 0.8, F));
         w.sh.position.x = w.s * lerp(0.17, 0.14, F);
+        if (pad > 0.01) { const ph = t * 6.5 + (w.s > 0 ? 0 : Math.PI); w.sh.rotation.y += w.s * Math.sin(ph) * 0.34 * pad; w.sh.rotation.z += w.s * (-0.28 + Math.cos(ph) * 0.2) * pad; }   // the wings row a little while it paddles
       }
 
       // the whole body rides up on the burst and dips while the wings are closed
@@ -134,19 +137,28 @@ export function createBird() {
       head.rotation.y = perched && !st.sing ? Math.sin(t * 0.6) * 0.3 : -st.turn * 0.25;
       body.position.y = sing * sb * 0.02;
 
-      // feet
+      // feet: when standing, each leg reaches from its hip to the spot on the ground under it and the
+      // toes lie flat on that surface, whatever its slope
+      const stand = perched && st.feet;
+      if (stand) { root.updateMatrixWorld(true); body.getWorldQuaternion(qb); }
       legs.forEach((l, i) => {
-        let len, fx = 0, fz = 0;
-        if (perched && st.feet) {
-          len = clamp(st.feet[i].drop / SC - 0.17, 0.03, 0.3);
-          n.copy(st.feet[i].n).applyQuaternion(qi.copy(root.quaternion).invert()); q.setFromUnitVectors(UP, n);
-          l.foot.quaternion.slerp(q, k(18, dt)); l.hip.rotation.x = 0;
+        let len;
+        if (stand) {
+          const ft = st.feet[i];
+          v.copy(ft.p).addScaledVector(ft.n, 0.013 * SC); body.worldToLocal(v).sub(l.hip.position);
+          len = clamp(v.length(), 0.03, 0.36);
+          l.hip.quaternion.setFromUnitVectors(DOWNV, v.normalize());
+          n.copy(ft.n); fw.set(Math.sin(st.yaw), 0, Math.cos(st.yaw)).addScaledVector(n, -Math.sin(st.yaw) * n.x - Math.cos(st.yaw) * n.z).normalize();
+          sx.crossVectors(n, fw); basis.makeBasis(sx, n, fw);
+          l.foot.quaternion.copy(q.copy(qb).multiply(l.hip.quaternion).invert()).multiply(q.setFromRotationMatrix(basis));
+          l.len = len;
         } else {
-          len = swim ? 0.04 : lerp(0.05, 0.2, fl); l.hip.rotation.x = swim ? 1.2 + Math.sin(t * 7 + i * 3.1) * 0.5 * (st.paddle || 0) : lerp(1.2, -0.5, fl);       // tucked back, reaching forward to land
+          len = swim ? 0.04 : lerp(0.05, 0.2, fl);
+          l.hip.rotation.set(swim ? 1.2 + Math.sin(t * 7 + i * 3.1) * 0.5 * (st.paddle || 0) : lerp(1.2, -0.5, fl), 0, 0);       // tucked back, reaching forward to land
           l.foot.quaternion.slerp(q.identity(), k(10, dt));
+          l.len += (len - l.len) * k(12, dt);
         }
-        l.len += (len - l.len) * k(perched ? 30 : 12, dt);
-        l.shin.scale.y = l.len; l.foot.position.set(fx, -l.len, fz);
+        l.shin.scale.y = l.len; l.foot.position.set(0, -l.len, 0);
       });
     },
   };

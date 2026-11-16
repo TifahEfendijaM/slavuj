@@ -31,6 +31,11 @@
     font-size: 23px; white-space: nowrap; transition: opacity .25s; z-index: 3; box-shadow: 3px 4px 0 rgba(59, 53, 47, .18); }
   #legend, #reticle { display: none; }
   #pause table { margin: 10px auto 0; font-size: 18px; border-spacing: 14px 4px; text-align: left; } #pause td:first-child { text-align: right; white-space: nowrap; }
+  #pause .menu { display: flex; gap: 14px; justify-content: center; margin-top: 16px; }
+  #pause .menu button { font-size: 20px; padding: 5px 18px 7px; background: #fffaf0; cursor: pointer; box-shadow: 2px 3px 0 rgba(59, 53, 47, .18); }
+  #pause .menu button:hover, #pause .menu button.armed { background: #fff2c4; }
+  #pause .note { font-size: 15px; opacity: .6; margin-top: 8px; max-width: 430px; }
+  #skip { position: fixed; right: 18px; bottom: 2.6vh; z-index: 6; background: var(--paper); font-size: 18px; padding: 3px 14px 5px; cursor: pointer; transition: opacity .3s; }
   #hud { position: fixed; right: 16px; top: 14px; z-index: 3; background: var(--paper); padding: 4px 16px 6px 12px; font-size: 21px; cursor: pointer;
     display: flex; align-items: center; gap: 8px; box-shadow: 3px 4px 0 rgba(59, 53, 47, .18); transition: opacity .3s, transform .2s; }
   #hud:hover { transform: rotate(-1.5deg) scale(1.04); }
@@ -96,10 +101,10 @@
   .page { padding: 22px 34px 18px; overflow: auto; position: relative; }
   .page h2 { font-family: 'Caveat', cursive; font-size: 44px; margin: 0; line-height: 1; }
   .page .small { font-size: 16px; opacity: .65; margin: 2px 0 10px; }
-  #jwords { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 22px; grid-auto-flow: column; grid-template-rows: repeat(17, auto); }
-  .jw { display: flex; align-items: baseline; gap: 7px; padding: 0; border-bottom: 1.5px dashed rgba(59, 53, 47, .2); min-height: 29px; }
-  .jw b { font-family: 'Caveat', cursive; font-size: 26px; line-height: 1; white-space: nowrap; } .jw i { font-style: normal; font-size: 15.5px; opacity: .7; flex: 1; }
-  .jw .say { width: 24px; height: 24px; padding: 3px; align-self: center; }
+  #jwords { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; grid-auto-flow: column; }
+  .jw { display: flex; align-items: baseline; gap: 7px; padding: 0; border-bottom: 1.5px dashed rgba(59, 53, 47, .2); min-height: 25px; }
+  .jw b { font-family: 'Caveat', cursive; font-size: 23px; line-height: 1; white-space: nowrap; } .jw i { font-style: normal; font-size: 15.5px; opacity: .7; flex: 1; }
+  .jw .say { width: 21px; height: 21px; padding: 3px; align-self: center; }
   .jw.unknown { opacity: .3; letter-spacing: 4px; } .jw.new b { color: var(--gold); animation: shimmer 1s ease 2; }
   #culture h2 { color: var(--red); font-size: 56px; }
   #culture .art { width: 100%; height: auto; display: block; margin: 4px 0 8px; border: 2px solid var(--ink); border-radius: 6px 9px 7px 10px; }
@@ -153,7 +158,11 @@
       <tr><td><kbd>W</kbd></td><td>paddle, when on the water</td></tr>
       <tr><td><kbd>E</kbd></td><td>open the word list at an orb</td></tr>
       <tr><td><kbd>J</kbd> · <kbd>F</kbd> · <kbd>Esc</kbd></td><td>journal · sing · pause</td></tr>
-    </table></div></div>
+      <tr><td><kbd>Enter</kbd></td><td>skip a colouring scene</td></tr>
+    </table>
+    <div class="menu"><button id="restart" class="wobbly">Restart level</button><button id="toFinale" class="wobbly">Skip to the finale</button></div>
+    <div class="note">Restart clears this level's colours and words. Skip to the finale colours everything and collects every word (for testing).</div>
+    </div></div>
 <div id="start" class="overlay">
   <div class="card wobbly">
     <h1>Slavuj</h1>
@@ -169,6 +178,7 @@
     <div class="foot"><a href="https://easybosnian.com" target="_blank" rel="noopener" id="brand">easybosnian.com</a><span id="resetWrap" style="display:none"> · <button id="reset">start over</button></span></div>
   </div>
 </div>
+<button id="skip" class="wobbly off"><kbd>Enter</kbd> skip</button>
 <div id="fade"></div>
 <script type="module" src="/src/main.js"></script>
 </body>

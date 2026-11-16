@@ -86,6 +86,7 @@ function refreshOrbs(announce) {
   return n;
 }
 const allDone = () => orbs.every((o) => o.done);
+function showFleur() { if (allDone() && !save.finale && !fleur.visible) { fleur.visible = true; fleurGrow = 0; audio.orbsAppear(); say('Something golden is shining high above the bridge. Fly through it.', 9); } }
 
 // the golden fleur-de-lis that starts the finale
 const fleur = new THREE.Group();
@@ -105,7 +106,7 @@ const fleur = new THREE.Group();
 // ---------- state ----------
 let state = 'play';           // play | words | cutscene | journal | finale
 let started = false, locked = false, noLock = false, paused = false, singing = false, time = 0, cut = null, fin = null, current = null;
-let toast = '', toastT = 0, freeSingT = 0;
+let toast = '', toastT = 0, freeSingT = 0, fleurGrow = 1, singTok = 0;
 const inp = { dx: 0, dy: 0, turn: 0, tilt: 0, flap: false, dive: false, takeoff: false, pointer: null };
 const keys = new Set(), mouse = { x: innerWidth / 2, y: innerHeight / 2 };
 const fx = [];
@@ -114,11 +115,11 @@ flight.placeAt(world.start.x, world.start.z, Math.atan2(byId.kuca.def.focus.x - 
 
 // which orb the bird has landed at: the object it stands on, or the nearest one it stands beside
 function orbHere() {
-  if (flight.mode !== 'perched') return null;
-  const direct = [].concat(flight.landedOn?.userData.orb || []).map((id) => byId[id]).find((o) => o?.alive);
-  if (direct) return direct;
+  if (flight.mode !== 'perched' && flight.mode !== 'swim') return null;
+  // something small it stands beside comes first, then the thing it stands on
   let best = null, bd = 1e9;
   for (const o of orbs) if (o.alive && o.def.near) { const d = flight.pos.distanceTo(V(...o.def.near.p)); if (d < o.def.near.r && d < bd) { best = o; bd = d; } }
+  if (!best && flight.mode === 'perched') best = [].concat(flight.landedOn?.userData.orb || []).map((id) => byId[id]).find((o) => o?.alive) || null;
   return best;
 }
 
@@ -131,10 +132,23 @@ function lock() {
 function resume() { paused = false; if (!noLock) { lock(); setTimeout(() => { if (!locked && !noLock && state === 'play') paused = true; }, 250); } }
 $('start').addEventListener('click', (e) => {
   if (e.target.closest('a,button')) return;
-  started = true; $('start').classList.add('off'); $('hud').classList.remove('off'); lock(); refreshOrbs(false); updateLegend();
+  started = true; $('start').classList.add('off'); $('hud').classList.remove('off'); lock(); refreshOrbs(false); updateLegend(); showFleur();
   if (save.finale) audio.setLife({ wind: 1, water: 1, birds: true, city: true });
 });
-$('reset').addEventListener('click', () => { try { localStorage.removeItem(KEY); } catch (e) { /* */ } location.reload(); });
+function reload() { if (!fresh) return location.reload(); params.delete('fresh'); const q = params.toString(); location.href = location.pathname + (q ? '?' + q : ''); }
+function restartLevel() { try { localStorage.removeItem(KEY); } catch (e) { /* */ } reload(); }
+// for testing: everything coloured and every word collected, only the fleur-de-lis and the finale left
+function skipToFinale() { save = { done: orbs.map((o) => o.id), finale: false }; store(); reload(); }
+$('reset').addEventListener('click', restartLevel);
+for (const [id, fn] of [['restart', restartLevel], ['toFinale', skipToFinale]]) {
+  const b = $(id), label = b.textContent; let armed = 0;
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (armed) return fn();
+    armed = 1; b.textContent = 'Sure? Click again'; b.classList.add('armed');
+    setTimeout(() => { armed = 0; b.textContent = label; b.classList.remove('armed'); }, 3500);
+  });
+}
 if (save.done.length) $('resetWrap').style.display = '';
 canvas.addEventListener('click', () => { if (started && state === 'play') resume(); });
 $('pause').addEventListener('click', resume);
@@ -167,7 +181,7 @@ addEventListener('keydown', (e) => {
     if (n >= 0) pick(n);
   } else if (state === 'journal') {
     if (['Escape', 'KeyJ', 'Tab', 'Enter'].includes(e.code)) closeJournal();
-  }
+  } else if (e.code === 'Enter') skipScene();
 });
 addEventListener('keyup', (e) => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
@@ -298,14 +312,25 @@ function checkShots() {
 // ---------- colouring cutscene ----------
 const look = new THREE.Vector3();
 async function fadeCut(fn) { $('fade').classList.add('on'); await sleep(230); fn(); $('fade').classList.remove('on'); }
+// Enter ends a colouring scene or the finale at once; everything it would have done is simply done
+function skipScene() {
+  if (state === 'cutscene' && cut && !cut.ending) {
+    cut.started = true; for (const t of cut.o.def.tags) paint(t, true);
+    cut.o.vis.visible = false; cut.t = cut.dur; audio.stopSong(); singTok++; singing = false;
+  } else if (state === 'finale' && fin && !fin.ending && fin.t < 25.5) {
+    for (const n of ['sing', 'sky', 'birds', 'city', 'murmur', 'jump']) fin.ev.add(n);
+    fin.t = 26; audio.stopSong(); singing = false; audio.swell(true, 2); audio.setLife({ wind: 1, water: 1, birds: true, city: true, murmur: 0.5 }); applyAlive();
+  }
+}
+$('skip').addEventListener('click', skipScene);
 function startCutscene(o) {
   state = 'cutscene'; hideLearn();
   fadeCut(() => {
     document.body.classList.add('cine');
     const shots = shotsFor(o, flight.pos.clone()), dur = shots.reduce((s, x) => s + x.dur, 0);
     cut = { o, t: 0, dur, shots, started: false, home: o.def.at.clone() };
-    singing = true; audio.orbRelease();
-    audio.song(o.id, dur - 0.9).then(() => { singing = false; });
+    singing = true; audio.orbRelease(); const tk = ++singTok;
+    audio.song(o.id, dur - 0.9).then(() => { if (tk === singTok) singing = false; });
   });
 }
 function updateCutscene(dt) {
@@ -343,7 +368,7 @@ function finishOrb(o) {
   if (o.id === 'kuca' && n) say('New orbs have appeared all over Mostar. Find them in any order.', 7);
   else if (n && byId.most.alive && !byId.most.done && orbs.filter((x) => x.alive).length === 1) say('Only Stari Most is left. Its orb is waiting on the bridge.', 7);
   else if (n) say('A new orb has appeared nearby.', 5);
-  if (allDone() && !save.finale) { fleur.visible = true; fleurGrow = 0; audio.orbsAppear(); say('Something golden is shining high above the bridge. Fly through it.', 9); }
+  showFleur();
   if (!noLock && !locked) setTimeout(() => { if (!locked && state === 'play') paused = true; }, 300);
 }
 let learnTimer = 0;
@@ -356,7 +381,7 @@ function renderJournal(newId) {
   const known = ORDER.filter((id) => (id === 'sunce' ? save.finale : byId[id]?.done));
   $('count').textContent = `${known.length}/${ORDER.length}`;
   $('jcount').textContent = `${known.length} of ${ORDER.length} words from Mostar`;
-  const list = $('jwords'); list.innerHTML = '';
+  const list = $('jwords'); list.innerHTML = ''; list.style.gridTemplateRows = `repeat(${Math.ceil(ORDER.length / 2)}, auto)`;
   for (const id of ORDER) {
     const row = document.createElement('div'), w = WORDS[id];
     if (known.includes(id)) { row.className = 'jw' + (id === newId ? ' new' : ''); row.innerHTML = `<b>${w.word}</b><i>${w.en}</i>`; row.append(sayButton(w.word)); }
@@ -377,8 +402,14 @@ renderJournal();
 
 // ---------- the finale ----------
 const dropBlock = (test) => { const i = world.colliders.findIndex(test); if (i >= 0) world.colliders.splice(i, 1); };
-function wake() { dropBlock((c) => c.userData.diver); dropBlock((c) => c.userData.orb === 'macka' && c.userData.wall); }
-function applyAlive() { paint('sky', true); paint('sun', true); shared.uSun.value = 1; shared.uLife.value = 1; audio.setMusic(0.9, true); diver.swimAt(V(0, 0, 10.2)); wake(); }
+function wake() { dropBlock((c) => c.userData.diver); dropBlock((c) => c.userData.asleep); }
+let swimBlock = null;
+function diverInWater() {   // the bird cannot swim or fly through him
+  const p = diver.splashPos;
+  if (!swimBlock) { swimBlock = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1)); swimBlock.matrixAutoUpdate = false; swimBlock.userData = { wall: true, swimmer: true }; world.colliders.push(swimBlock); }
+  swimBlock.matrix.compose(V(p.x, 0.2, p.z + 1.2), new THREE.Quaternion(), V(1.1, 2, 1.1)); swimBlock.matrixWorld.copy(swimBlock.matrix);
+}
+function applyAlive() { paint('sky', true); paint('sun', true); shared.uSun.value = 1; shared.uLife.value = 1; audio.setMusic(0.9, true); diver.swimAt(V(0, 0, 10.2)); wake(); diverInWater(); }
 if (save.finale) applyAlive();
 const FIN_SHOTS = [
   { t0: 0, t1: 7.5, from: V(30, 30, 50), to: V(24, 35, 44), lookFrom: V(-60, 62, -80), lookTo: V(-75, 60, -92) },
@@ -393,7 +424,7 @@ function startFinale() {
   fin = { t: 0, P, curve: new THREE.CatmullRomCurve3(P.map((p) => V(p[1], p[2], p[3]))), ev: new Set(), wind: 0, water: 0 };
   flight.mode = 'script'; flight.feet = null; flight.flare = 0; flight.diving = false; flight.clearL = flight.clearR = 1;
   diver.onSplash = (p) => { audio.splash(); splashFx(p, 1); audio.setMusic(0.9, true); setTimeout(() => { people.applaud(6.5); audio.applause(6.5); }, 700); };
-  diver.onSurface = (p) => { splashFx(V(p.x, 0, p.z + 1.2), 0.35); audio.birdSplash(0.3); };
+  diver.onSurface = (p) => { splashFx(V(p.x, 0, p.z + 1.2), 0.35); audio.birdSplash(0.3); diverInWater(); };
 }
 function updateFinale(dt) {
   const f = fin; f.t += dt; const t = f.t;
@@ -446,19 +477,20 @@ function splashFx(p, power = 1) {
 // ---------- camera ----------
 const camPos = V(0, 0, 0), camWant = V(0, 0, 0), camLook = V(0, 0, 0), tmp = V(0, 0, 0);
 const camRay = new THREE.Raycaster();
-let camSnap = true, fleurGrow = 1, dbg = null;
+let camSnap = true, dbg = null;
 function updateCamera(dt) {
   const perched = flight.mode === 'perched' || flight.mode === 'swim';
   const elev = perched ? flight.camElev : 0.22 - flight.pitch * 0.55;
   const dist = S.camera.distance, ce = Math.cos(elev);
-  camLook.copy(flight.pos); camLook.y += 0.7;
-  camWant.set(flight.pos.x - Math.sin(flight.camYaw) * ce * dist, flight.pos.y + 0.7 + Math.sin(elev) * dist, flight.pos.z - Math.cos(flight.camYaw) * ce * dist);
+  const lift = 0.15 + 0.37 * S.bird.scale;
+  camLook.copy(flight.pos); camLook.y += lift;
+  camWant.set(flight.pos.x - Math.sin(flight.camYaw) * ce * dist, flight.pos.y + lift + Math.sin(elev) * dist, flight.pos.z - Math.cos(flight.camYaw) * ce * dist);
   if (camSnap) { camPos.copy(camWant); camSnap = false; } else camPos.lerp(camWant, k(S.camera.smooth, dt));
   camera.position.copy(camPos);
   tmp.subVectors(camPos, camLook); const len = tmp.length(); tmp.normalize();
   camRay.set(camLook, tmp); camRay.far = len;
   const hit = camRay.intersectObjects(world.colliders, false)[0];
-  if (hit && !hit.object.userData.diver) camera.position.copy(camLook).addScaledVector(tmp, Math.max(0.6, hit.distance - 0.3));
+  if (hit && !hit.object.userData.diver && !hit.object.userData.swimmer) camera.position.copy(camLook).addScaledVector(tmp, Math.max(0.6, hit.distance - 0.3));
   camera.lookAt(camLook);
   const f = S.flight, boost = perched ? 0 : clamp((flight.speed - f.cruiseSpeed) / (f.maxSpeed - f.cruiseSpeed), 0, 1);
   const fov = S.camera.fov + boost * S.camera.diveFovBoost;
@@ -473,7 +505,7 @@ function updateHint() {
   $('pause').classList.toggle('off', !(started && paused && state === 'play'));
   if (!started || state !== 'play' || paused) return hint('');
   if (toastT > 0) return hint(toast);
-  if (flight.mode === 'swim') return hint('<kbd>W</kbd> paddle · <kbd>Space</kbd> take off');
+  if (flight.mode === 'swim') return hint((orbHere() ? '<kbd>E</kbd> open the word list · ' : '') + '<kbd>W</kbd> paddle · <kbd>Space</kbd> take off');
   if (flight.mode === 'perched') {
     if (orbHere()) return hint('<kbd>E</kbd> open the word list');
     return hint('<kbd>Space</kbd> take off' + (!byId.kuca.done ? ' · fly to the glowing orb and land on the house' : ''));
@@ -520,7 +552,7 @@ function tick(dt) {
 
   for (const o of orbs) if (o.alive && !(cut && cut.o === o)) {
     o.grow = Math.min(1, o.grow + dt * 1.4); const g = smooth(o.grow) * (1 + Math.sin(time * 3.1 + o.def.at.x) * 0.06);
-    o.vis.scale.setScalar(g); o.vis.position.y = o.def.at.y + Math.sin(time * 1.8 + o.def.at.z) * 0.25;
+    o.vis.scale.setScalar(g * S.orb.size); o.vis.position.y = o.def.at.y + Math.sin(time * 1.8 + o.def.at.z) * 0.25;
   }
   if (fleur.visible) {
     fleurGrow = Math.min(1, fleurGrow + dt * 0.8); const out = fin ? smooth(fin.t / 1.2) : 0;
@@ -532,7 +564,7 @@ function tick(dt) {
 
   if (cut) updateCutscene(dt); else if (!fin) updateCamera(dt);
   if (dbg) { camera.position.set(dbg[0], dbg[1], dbg[2]); camera.lookAt(dbg[3], dbg[4], dbg[5]); }
-  updateHint();
+  updateHint(); $('skip').classList.toggle('off', !((cut && !cut.ending) || (fin && !fin.ending && fin.t < 25.5)));
   renderer.render(scene, camera);
 }
 audio.setMusic(0.2 + 0.6 * (save.done.length / orbs.length), save.finale);
@@ -541,10 +573,10 @@ updateLegend(); frame();
 // for testing from the console
 window.__game = { flight, inp, keys, mouse, bird, orbs, byId, world, camera, S, tags, shared, diver, fleur, audio,
   get state() { return state; }, get paused() { return paused; }, get noLock() { return noLock; },
-  start() { started = true; noLock = true; $('start').classList.add('off'); $('hud').classList.remove('off'); refreshOrbs(false); updateLegend(); },
+  start() { started = true; noLock = true; $('start').classList.add('off'); $('hud').classList.remove('off'); refreshOrbs(false); updateLegend(); showFleur(); },
   view(...a) { dbg = a.length ? a : null; },
   step(seconds, dt = 1 / 60) { for (let t = 0; t < seconds; t += dt) tick(dt); },
-  checkShots, shotsFor, people, closeWords, openWords, pick, startCutscene, orbHere, openJournal, closeJournal, startFinale,
+  checkShots, shotsFor, people, skipScene, skipToFinale, restartLevel, closeWords, openWords, pick, startCutscene, orbHere, openJournal, closeJournal, startFinale,
   finish(id) { const o = byId[id]; for (const t of o.def.tags) paint(t, true); finishOrb(o); },
   unpainted() { const used = new Set(orbs.flatMap((o) => o.def.tags)); return Object.keys(tags).filter((t) => !used.has(t) && !['bird', 'sky', 'sun'].includes(t)); },
 };

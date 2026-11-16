@@ -64,7 +64,7 @@ export const shared = {
 };
 
 // pattern ids used in aPar.y
-export const PAT = { none: 0, kilim: 1, cobble: 2, roof: 3, blocks: 4, planks: 5, water: 6, grass: 7, sky: 9 };
+export const PAT = { none: 0, kilim: 1, cobble: 2, roof: 3, blocks: 4, planks: 5, water: 6, grass: 7, fall: 8, sky: 9 };
 
 const SWAY = /* glsl */`
   if (aAni.w > 0.0) {
@@ -167,6 +167,11 @@ void main(){
   } else if (pat < 7.5 && pat > 6.5) {     // grass tufts
     float tuft = texture2D(uNoise, wuv * vec2(0.9, 0.07)).b;
     pink = strokes(wuv.x * 2.2 + mid * 3.0, 0.1) * smoothstep(0.74, 0.86, tuft) * 0.4;
+  } else if (pat < 8.5 && pat > 7.5) {     // falling water: long streaks running down
+    float fb = texture2D(uNoise, wuv * vec2(0.22, 0.045) + vec2(0.0, uFlow * 0.07)).g;
+    float fb2 = texture2D(uNoise, wuv * vec2(0.5, 0.11) + vec2(0.3, uFlow * 0.12)).b;
+    streak = max(strokes(wuv.x * 1.5 + sin(wuv.y * 0.9 + blotch * 4.0) * 0.18, 0.16) * smoothstep(0.34, 0.56, fb), strokes(wuv.x * 3.7 + mid, 0.12) * smoothstep(0.55, 0.75, fb2) * 0.8);
+    hatch = 0.0;
   } else if (sky) {                        // evening sky: warm at the horizon, deep above
     vec3 dir = normalize(vWorld - vec3(0.0, 10.0, 0.0));
     col = mix(vCol, vBleed, smoothstep(0.02, 0.6, dir.y));
@@ -359,7 +364,7 @@ export class Builder {
       g.setAttribute('position', F(t.pos, 3)); g.setAttribute('normal', F(t.nor, 3)); g.setAttribute('uv', F(t.uv, 2));
       g.setAttribute('aCol', F(t.col, 3)); g.setAttribute('aBleed', F(t.bleed, 3)); g.setAttribute('aPar', F(t.par, 4));
       g.setAttribute('aSeed', F(seed, 3)); g.setAttribute('aAni', F(ani, 4));
-      const mesh = new THREE.Mesh(g, washMat(t.name, { side: t.side })); mesh.frustumCulled = false; scene.add(mesh);
+      const mesh = new THREE.Mesh(g, washMat(t.name, { side: t.side ?? THREE.DoubleSide })); mesh.frustumCulled = false; scene.add(mesh);
       if (t.hpos.length) {
         const hg = new THREE.BufferGeometry();
         hg.setAttribute('position', F(t.hpos, 3)); hg.setAttribute('normal', F(t.hnor, 3)); hg.setAttribute('aSeed', F(hseed, 3)); hg.setAttribute('aAni', F(hani, 4));

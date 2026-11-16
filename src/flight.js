@@ -38,23 +38,32 @@ export class Flight {
     this.settle(hit ? hit.point : new THREE.Vector3(x, 0, z));
   }
 
-  // stand on the surface: the body rests above the highest ground under it, each foot finds its own ground
-  settle(p) {
-    const f = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), l = new THREE.Vector3(f.z, 0, -f.x);
-    let top = p.y; const nrm = new THREE.Vector3();
-    for (const [a, b] of [[0, 0], [0.42, 0], [-0.42, 0], [0, 0.28], [0, -0.28]]) {
-      _o.copy(p).addScaledVector(f, a).addScaledVector(l, b); _o.y = p.y + 1.1;
-      const h = this.cast(_o, DOWN, 1.7);
-      if (h && !h.object.userData.water) { if (h.point.y > top) top = h.point.y; nrm.add(h.n); }
+  // stand on the surface. Each foot finds its own ground; the body is lifted just enough to stay clear
+  // of it, and leans with the slope only where the surface is really steep (a tower roof, a cliff).
+  settle(p, again) {
+    const sc = S.bird.scale, f = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), l = new THREE.Vector3(f.z, 0, -f.x);
+    const nrm = new THREE.Vector3(), g = [];
+    for (const [a, b] of [[0, 0], [0.32, 0], [-0.32, 0], [0.18, 0.15], [0.18, -0.15], [-0.18, 0.15], [-0.18, -0.15], [0, 0.21], [0, -0.21]]) {
+      _o.copy(p).addScaledVector(f, a * sc).addScaledVector(l, b * sc); _o.y = p.y + 1.1;
+      const h = this.cast(_o, DOWN, 2.2);
+      if (h && !h.object.userData.water) { g.push([a * sc, b * sc, h.point.y]); nrm.add(h.n); }
     }
     if (nrm.lengthSq() < 0.01) nrm.set(0, 1, 0); nrm.normalize();
-    // lean the body with the slope (most of the way), so it rests along a steep roof instead of cutting into it
-    this.perchPitch = -Math.asin(clamp(nrm.dot(f), -1, 1)) * 0.75; this.perchRoll = -Math.asin(clamp(nrm.dot(l), -1, 1)) * 0.75;
-    this.pos.set(p.x, p.y + (top - p.y) * 0.5 + this.perchH, p.z);
+    const st = clamp((0.8 - nrm.y) / 0.18, 0, 1), lean = st * st * (3 - 2 * st) * 0.85;
+    // on a really steep surface it clings facing up the slope, which is how a bird holds on
+    if (st > 0.5 && !again) { this.yaw = Math.atan2(-nrm.x, -nrm.z); return this.settle(p, true); }
+    this.perchPitch = -Math.asin(clamp(nrm.dot(f), -1, 1)) * lean; this.perchRoll = -Math.asin(clamp(nrm.dot(l), -1, 1)) * lean;
+    const tp = Math.tan(this.perchPitch), tr = Math.tan(this.perchRoll), D0 = 0.3 * sc, az = 0.4 * sc, ax = 0.26 * sc;
+    let y = p.y + this.perchH;
+    for (const [a, b, gy] of g) {   // the underside of the body at this spot must stay above the ground there
+      const hb = D0 * Math.sqrt(Math.max(0, 1 - (a / az) ** 2 - (b / ax) ** 2));
+      y = Math.max(y, gy + 0.05 * sc + hb - (a * tp + b * tr));
+    }
+    this.pos.set(p.x, y, p.z);
     this.feet = this.footOffsets.map((o) => {
       _o.copy(this.pos).addScaledVector(l, o.x).addScaledVector(f, o.z);
-      const h = this.cast(_o, DOWN, this.perchH + 0.7);
-      return h ? { drop: h.distance, n: h.n } : { drop: this.perchH, n: UP.clone() };
+      const h = this.cast(_o, DOWN, this.perchH + 0.9 * sc);
+      return h && !h.object.userData.water ? { p: h.point.clone(), n: h.n } : { p: _o.clone().setY(_o.y - this.perchH), n: UP.clone() };
     });
   }
 
@@ -88,11 +97,11 @@ export class Flight {
       this.speed += (inp.tilt * f.swimSpeed - this.speed) * k(3, dt); this.paddle = Math.min(1, Math.abs(this.speed) / f.swimSpeed);
       const fw = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), move = fw.clone().multiplyScalar(this.speed); move.z += this.drift;
       if (move.lengthSq() > 1e-4) {
-        _o.copy(this.pos); _o.y += 0.25;
-        const h = this.cast(_o, move.clone().normalize(), 0.75);
+        _o.copy(this.pos); _o.y += 0.15;
+        const h = this.cast(_o, move.clone().normalize(), 0.3 + 0.45 * S.bird.scale);
         if (h && !h.object.userData.water) move.set(0, 0, 0);
       }
-      this.pos.addScaledVector(move, dt); this.pos.y = this.waterY + 0.2 + Math.sin(this.swimT * 2.4) * 0.04;
+      this.pos.addScaledVector(move, dt); this.pos.y = this.waterY + 0.14 * S.bird.scale + Math.sin(this.swimT * 2.4) * 0.03;
       if (Math.abs(this.pos.x) > 12.5 && this.waterY < 1) this.pos.x = Math.sign(this.pos.x) * 12.5;
       if (inp.takeoff) {
         this.mode = 'flying'; this.yaw = this.camYaw; this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.12;
@@ -153,7 +162,7 @@ export class Flight {
     const room = (h, base) => (h ? clamp((h.distance - base) / (WR - base), 0, 1) : 1);
     const hl = feel(left, WR), hr = feel(_d.copy(left).negate().clone(), WR);
     const dl = feel(fwd.clone().addScaledVector(left, 0.8).normalize(), WR), dr = feel(fwd.clone().addScaledVector(left, -0.8).normalize(), WR);
-    feel(UP, 0.85);
+    feel(UP, 0.3 + 0.4 * S.bird.scale);
     const cl = Math.min(room(hl, 0.5), room(dl, 0.3) + 0.25), cr = Math.min(room(hr, 0.5), room(dr, 0.3) + 0.25);
     this.clearL += (cl - this.clearL) * k(16, dt); this.clearR += (cr - this.clearR) * k(16, dt);
     this.camYaw += ((1 - cr) - (1 - cl)) * 1.1 * dt;                       // ease away from the nearer wall
@@ -189,7 +198,7 @@ export class Flight {
           this.splashPower = clamp((Math.abs(this.vel.y) + this.speed * 0.25) / 16, 0.2, 1);
           this.mode = 'swim'; this.waterY = below.point.y; this.speed = Math.min(this.speed, 6) * 0.5; this.vel.set(0, 0, 0);
           this.power = this.diving = false; this.flare = 0; this.feet = null; this.landedOn = null; this.camElev = 0.3; this.mousePitch = 0;
-          this.clearL = this.clearR = 1; this.pos.y = this.waterY + 0.2; this.events.push('splash'); return;
+          this.clearL = this.clearR = 1; this.pos.y = this.waterY + 0.14 * S.bird.scale; this.events.push('splash'); return;
         }
       } else if (this.landable(below)) {
         if (h <= 0.1 && this.grace <= 0) return this.land(below);

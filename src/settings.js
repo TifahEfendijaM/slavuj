@@ -22,13 +22,13 @@ export default {
     diveAngle: 60,        // degrees; 90 would be straight down
     takeoffSpeed: 10,
     takeoffPitch: 20,     // degrees
-    bodyRadius: 0.55,     // how close the body may come to a wall
-    wingReach: 1.3,       // how far to the side the bird feels for walls
+    bodyRadius: 0.42,     // how close the body may come to a wall
+    wingReach: 1.0,       // how far to the side the bird feels for walls
     maxLandSlope: 0.5,   // surfaces steeper than this (normal.y below it) cannot be landed on
   },
-  camera: { fov: 60, distance: 5.5, smooth: 6, diveFovBoost: 12 },
-  bird: { scale: 1.5, blue: '#2466e8', blueDark: '#1a4fc0', yellow: '#ffc61a' },
-  orb: { hoverHeight: 3 },
+  camera: { fov: 60, distance: 4.4, smooth: 6, diveFovBoost: 12 },
+  bird: { scale: 1.0, blue: '#2466e8', blueDark: '#1a4fc0', yellow: '#ffc61a' },
+  orb: { hoverHeight: 2.3, size: 0.72 },   // how high an orb floats above its object, and how big it is
   cutscene: {
     closeDuration: 8.6,    // seconds, when one object is coloured
     wideDuration: 9.5,    // seconds, when colour spreads over many objects (close look first, then wide)
@@ -37,6 +37,6 @@ export default {
   },
   world: { boundsRadius: 105, ceiling: 82 },
   ink: { lineWidth: 1.7, color: '#3b352f' },
-  audio: { volume: 0.55, music: 0.5, pronunciationRate: 0.85, flap: 0.55, finaleFlap: 0.15 },
+  audio: { volume: 0.55, music: 0.5, pronunciationRate: 0.85, flap: 0.55, finaleFlap: 0.15, wind: 0.6 },
   colors: { paper: '#f5efdf', river: '#2f9a80', riverDeep: '#1f7f86', skin: '#e0a37a', trunks: '#c0392b', hair: '#3a2a20' },
 };

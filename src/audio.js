@@ -57,9 +57,9 @@ function loop(type, freq, q) {
 const ramp = (param, v, s = 0.3) => { if (ctx) param.setTargetAtTime(v, now(), s); };
 
 // ---------- continuous layers ----------
-let rush, windL, leavesL, waterL, murmurL, wind = 0, water = 0, birds = false, city = 0, murmur = 0;
+let rush, rushLow, songBus = null, windL, leavesL, waterL, murmurL, wind = 0, water = 0, birds = false, city = 0, murmur = 0;
 function startLoops() {
-  rush = loop('bandpass', 700, 0.6);       // air past the bird, follows its speed
+  rush = loop('bandpass', 420, 1.3); rushLow = loop('lowpass', 240, 0.5);       // wind in a fast dive: silent at cruising speed
   windL = loop('lowpass', 380, 0.4); leavesL = loop('highpass', 3500, 0.3); waterL = loop('bandpass', 900, 0.5); murmurL = loop('bandpass', 480, 1.4);
   setInterval(() => {
     if (!ctx) return;
@@ -70,10 +70,15 @@ function startLoops() {
     ramp(waterL.flt.frequency, 800 + 300 * Math.sin(t * 1.7) + 150 * Math.sin(t * 5.1), 0.2);
     if (birds && Math.random() < 0.16) { const f = 2600 + Math.random() * 2200, n = 1 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.11, [[0, f], [0.05, f * 1.2], [0.09, f * 0.95]], 0.035, { bus: amb }); }
     ramp(murmurL.g.gain, murmur * (0.012 + 0.03 * Math.random()), 0.12); ramp(murmurL.flt.frequency, 380 + Math.random() * 320, 0.15);   // voices, far off
-    if (Math.random() < 0.07 * city) { const n = 2 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.19, [[0, 2350], [0.12, 2330]], 0.01 + 0.02 * city, { bus: amb, type: 'triangle', decay: true, attack: 0.003 }); }
+    if (city > 0.25 && Math.random() < 0.05 * city) { const n = 2 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.21, [[0, 1560], [0.3, 1550]], 0.004 + 0.012 * city, { bus: amb, decay: true, attack: 0.012 }); }
   }, 250);
 }
-export function setRush(speed, flying) { if (ctx) { ramp(rush.g.gain, flying ? Math.min(0.11, Math.max(0, speed - 8) * 0.004) : 0, 0.15); ramp(rush.flt.frequency, 500 + speed * 28, 0.2); } }
+export function setRush(speed, flying) {
+  if (!ctx) return;
+  const x = flying ? Math.min(1, Math.max(0, (speed - 16) / 14)) : 0, t = now(), gust = 0.75 + 0.17 * Math.sin(t * 1.7) + 0.08 * Math.sin(t * 4.1);
+  ramp(rush.g.gain, x * x * 0.16 * gust * S.audio.wind, 0.25); ramp(rush.flt.frequency, 330 + 380 * x + 70 * Math.sin(t * 2.3), 0.3);
+  ramp(rushLow.g.gain, x * 0.2 * S.audio.wind, 0.3);
+}
 export function setLife(o) { if ('wind' in o) wind = o.wind; if ('water' in o) water = o.water; if ('birds' in o) birds = o.birds; if ('city' in o) city = +o.city; if ('murmur' in o) murmur = o.murmur; }
 
 // ---------- the bird ----------
@@ -110,18 +115,22 @@ export function song(id, duration) {
   // the melody keeps its own pace; a longer scene simply hears it again from the start
   const total = seq.reduce((a, e) => a + e[e.length - 1], 0), f = 1;
   if (ctx) {
+    if (!songBus) { songBus = ctx.createGain(); songBus.connect(sfx); }
+    const bus = songBus;
     let t = now() + 0.05; const end = t + duration;
     for (let rep = 0; rep < 3 && t < end - 1.5; rep++) for (const e of seq) {
       const d = e[e.length - 1] * f; if (t + d > end) break;
-      if (e[0] === 'n') tone(t, [[0, sc[e[1]] * 0.94], [0.03, sc[e[1]]], [d * 0.92, sc[e[1]] * 1.01]], 0.2);
-      if (e[0] === 'v') tone(t, [[0, sc[e[1]]], [d * 0.95, sc[e[1]]]], 0.2, { vibrato: 45 });
-      if (e[0] === 'g') tone(t, [[0, sc[e[1]]], [d * 0.95, sc[e[2]]]], 0.2);
-      if (e[0] === 't') { const c = Math.max(2, Math.round(d / 0.065)); for (let i = 0; i < c; i++) tone(t + (i * d) / c, [[0, sc[i % 2 ? e[2] : e[1]]], [(d / c) * 0.9, sc[i % 2 ? e[2] : e[1]] * 1.03]], 0.18); }
+      if (e[0] === 'n') tone(t, [[0, sc[e[1]] * 0.94], [0.03, sc[e[1]]], [d * 0.92, sc[e[1]] * 1.01]], 0.2, { bus });
+      if (e[0] === 'v') tone(t, [[0, sc[e[1]]], [d * 0.95, sc[e[1]]]], 0.2, { vibrato: 45, bus });
+      if (e[0] === 'g') tone(t, [[0, sc[e[1]]], [d * 0.95, sc[e[2]]]], 0.2, { bus });
+      if (e[0] === 't') { const c = Math.max(2, Math.round(d / 0.065)); for (let i = 0; i < c; i++) tone(t + (i * d) / c, [[0, sc[i % 2 ? e[2] : e[1]]], [(d / c) * 0.9, sc[i % 2 ? e[2] : e[1]] * 1.03]], 0.18, { bus }); }
       t += d;
     }
   }
   return wait(duration);
 }
+
+export function stopSong() { if (ctx && songBus) { songBus.gain.setTargetAtTime(0, now(), 0.04); songBus = null; } }
 
 // ---------- interface and magic ----------
 const BELL = [1046.5, 1318.5, 1568, 2093];
