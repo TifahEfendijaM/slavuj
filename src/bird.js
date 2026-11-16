@@ -70,7 +70,7 @@ export function createBird() {
   });
 
   let prevBeat = 0, phase = 0, cyc = 0, open = 0, amp = 0, t = 0, sing = 0, fl = 0, slow = 0, landT = 9, wasPerched = true, bob = 0;
-  const q = new THREE.Quaternion(), n = new THREE.Vector3();
+  const q = new THREE.Quaternion(), qi = new THREE.Quaternion(), n = new THREE.Vector3(), CYC = 1.45;
 
   return {
     root, downstroke: 0,
@@ -79,7 +79,7 @@ export function createBird() {
     // st: mode, power, diving, speed, flare, turn, clearL, clearR, sing, feet [{drop, n}], yaw
     update(dt, st) {
       t += dt;
-      const perched = st.mode === 'perched';
+      const perched = st.mode !== 'flying', swim = st.mode === 'swim';
       if (perched && !wasPerched) landT = 0;
       wasPerched = perched; landT += dt;
       const settling = perched && landT < 0.3;
@@ -88,13 +88,13 @@ export function createBird() {
 
       // flap-bounding: a burst of beats, then the wings close for a moment
       const steady = st.power || fl > 0.25 || slow > 0.3 || st.speed < 9;
-      cyc += dt; if (cyc > 0.66) cyc = 0;
-      const bound = !perched && !steady && !st.diving && cyc > 0.44;
+      cyc += dt; if (cyc > CYC) cyc = 0;
+      const bound = !perched && !steady && !st.diving && cyc > CYC * 0.64;
       const wantOpen = perched ? (settling ? 0.6 : 0) : st.diving ? 0.08 : bound ? 0.05 : 1;
-      open += (wantOpen - open) * k(perched ? 10 : 20, dt);
-      const freq = st.power ? 11.5 : fl > 0.25 ? 12.5 : 9.5;
+      open += (wantOpen - open) * k(perched ? 10 : 11, dt);
+      const freq = st.power ? 6.4 : fl > 0.25 ? 7.4 : 4.8;
       const wantAmp = perched ? (settling ? 0.5 : 0) : st.diving ? 0 : st.power ? 1.05 : fl > 0.25 ? 0.6 : 0.78;
-      amp += (wantAmp - amp) * k(9, dt);
+      amp += (wantAmp - amp) * k(6, dt);
       phase += dt * freq * Math.PI * 2;
       const beat = Math.sin(phase), up = Math.max(0, Math.cos(phase));
       if (prevBeat > 0 && beat <= 0 && !perched && amp * open > 0.4) this.downstroke = amp;
@@ -103,7 +103,7 @@ export function createBird() {
       for (const w of wings) {
         const clear = w.s > 0 ? st.clearL : st.clearR;                 // +x is the bird's left
         const f = clamp(Math.max(1 - open, 1 - (clear ?? 1), up * 0.35 * amp), 0, 1);
-        w.fold += (f - w.fold) * k(22, dt);
+        w.fold += (f - w.fold) * k(14, dt);
         const F = w.fold, a = (beat * 0.85 * amp + 0.14) * (1 - F) - 0.3 * F + fl * 0.25 * (1 - F);
         w.sh.rotation.set(0, w.s * lerp(0.08, 1.36, F), w.s * a);
         w.outer.rotation.set(0, lerp(0, 0.18, F) + up * 0.5 * amp * (1 - F), -beat * 0.3 * amp * (1 - F));
@@ -113,10 +113,10 @@ export function createBird() {
       }
 
       // the whole body rides up on the burst and dips while the wings are closed
-      const bobWant = perched ? 0 : (steady || st.diving ? 0 : Math.sin((cyc / 0.66) * Math.PI * 2 - 0.6) * 0.09) - beat * 0.03 * amp;
-      bob += (bobWant - bob) * k(14, dt);
+      const bobWant = perched ? 0 : (steady || st.diving ? 0 : Math.sin((cyc / CYC) * Math.PI * 2 - 0.6) * 0.09) - beat * 0.03 * amp;
+      bob += (bobWant - bob) * k(8, dt);
       const squash = settling ? -Math.sin((landT / 0.3) * Math.PI) * 0.07 : 0;
-      tilt.position.y = (bob + squash) * SC;
+      tilt.position.y = (bob + squash + (swim ? Math.sin(t * 2.4) * 0.02 : 0)) * SC;
       tilt.rotation.x = -(0.5 * fl + 0.28 * slow) + (perched ? -0.12 : 0);     // nose up when slow or landing
 
       // tail: fanned and lowered to brake, twisted into turns, cocked when perched
@@ -139,10 +139,10 @@ export function createBird() {
         let len, fx = 0, fz = 0;
         if (perched && st.feet) {
           len = clamp(st.feet[i].drop / SC - 0.17, 0.03, 0.3);
-          n.copy(st.feet[i].n).applyAxisAngle(UP, -st.yaw); q.setFromUnitVectors(UP, n);
+          n.copy(st.feet[i].n).applyQuaternion(qi.copy(root.quaternion).invert()); q.setFromUnitVectors(UP, n);
           l.foot.quaternion.slerp(q, k(18, dt)); l.hip.rotation.x = 0;
         } else {
-          len = lerp(0.05, 0.2, fl); l.hip.rotation.x = lerp(1.2, -0.5, fl);       // tucked back, reaching forward to land
+          len = swim ? 0.04 : lerp(0.05, 0.2, fl); l.hip.rotation.x = swim ? 1.2 + Math.sin(t * 7 + i * 3.1) * 0.5 * (st.paddle || 0) : lerp(1.2, -0.5, fl);       // tucked back, reaching forward to land
           l.foot.quaternion.slerp(q.identity(), k(10, dt));
         }
         l.len += (len - l.len) * k(perched ? 30 : 12, dt);

@@ -78,13 +78,20 @@ export function createDiver(pos) {
           d.state = 'under'; d.t = 0; root.visible = false; d.onSplash?.(d.splashPos);
         }
       }
-    } else if (d.state === 'under' && d.t > 2.6) {
-      d.state = 'swim'; root.visible = true; root.rotation.set(0, Math.PI, 0); pose(0, 0.4, 0);
-      arms[0].sh.rotation.z = -(Math.PI - 0.35); arms[0].sh.rotation.x = 0;
-    } else if (d.state === 'swim') {
-      root.position.set(d.splashPos.x, -1.42 * SC + Math.sin(time * 2.2) * 0.07, d.splashPos.z + 1.2);
-      arms[0].sh.rotation.z = -(Math.PI - 0.35) + Math.sin(time * 5) * 0.25;
+    } else if (d.state === 'under' && d.t > 1.7) {
+      d.state = 'rise'; d.t = 0; root.visible = true; root.rotation.set(0, Math.PI, 0); pose(0, 0.2, 0); d.onSurface?.(d.splashPos);
+    } else if (d.state === 'rise' || d.state === 'swim') {
+      // he comes up through the surface, shakes the water off, then lifts an arm and waves
+      const up = d.state === 'swim' ? 1 : sm(0, 1.5, d.t), wave = d.state === 'swim' ? 1 : sm(1.6, 2.6, d.t);
+      if (d.state === 'rise' && d.t > 2.8) d.state = 'swim';
+      root.position.set(d.splashPos.x, lerp(-2.7, -1.42, up) * SC + Math.sin(time * 2.2) * 0.07 * up, d.splashPos.z + 1.2);
+      pose(0, 0.25, 0);
+      arms[0].sh.rotation.z = -lerp(0.6, Math.PI - 0.35, wave) + Math.sin(time * 5) * 0.25 * wave;
+      arms[1].sh.rotation.z = 0.9 + Math.sin(time * 2.2) * 0.15;
+      head.rotation.y = d.state === 'rise' && d.t < 1.9 ? Math.sin(d.t * 16) * 0.35 * (1 - wave) : 0;
     }
   };
+  // already in the water (a later visit, after the finale has been seen)
+  d.swimAt = (p) => { d.splashPos.copy(p); d.state = 'swim'; root.visible = true; root.rotation.set(0, Math.PI, 0); };
   return d;
 }

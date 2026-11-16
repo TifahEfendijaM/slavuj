@@ -67,15 +67,18 @@ export const shared = {
 export const PAT = { none: 0, kilim: 1, cobble: 2, roof: 3, blocks: 4, planks: 5, water: 6, grass: 7, sky: 9 };
 
 const SWAY = /* glsl */`
-  if (aAni.w != 0.0) {
+  if (aAni.w > 0.0) {
     float ph = aSeed.x * 0.37 + aSeed.z * 0.51;
     w.x += sin(uTime * 1.4 + ph) * aAni.w * uLife;
     w.z += cos(uTime * 1.1 + ph * 1.3) * aAni.w * 0.6 * uLife;
+  } else if (aAni.w < 0.0) {              // negative: a slow drift (clouds)
+    w.x += sin(uFlow * 0.035 - aAni.w) * -aAni.w;
+    w.z += sin(uFlow * 0.021 - aAni.w * 1.7) * -aAni.w * 0.5;
   }`;
 
 const VERT = /* glsl */`
 attribute vec3 aCol, aBleed, aSeed; attribute vec4 aPar, aAni;
-uniform float uT, uTime, uLife;
+uniform float uT, uTime, uLife, uFlow;
 varying vec3 vWorld, vN, vCol, vBleed, vSeed; varying vec4 vPar; varying vec2 vUv, vAni;
 void main(){
   vec4 w = modelMatrix * vec4(position, 1.0);
@@ -226,7 +229,7 @@ export const inkMaterial = new LineMaterial({ color: new THREE.Color(S.ink.color
 
 const HULL_VERT = /* glsl */`
 attribute vec3 aSeed; attribute vec4 aAni;
-uniform float uW, uTime, uLife; uniform vec2 uRes;
+uniform float uW, uTime, uLife, uFlow; uniform vec2 uRes;
 void main(){
   vec4 w = modelMatrix * vec4(position, 1.0);
   ${SWAY}
@@ -244,7 +247,7 @@ const hullMats = {};
 export function hullMat(width = S.ink.lineWidth) {
   return hullMats[width] ||= new THREE.ShaderMaterial({
     vertexShader: HULL_VERT, fragmentShader: HULL_FRAG, side: THREE.BackSide,
-    uniforms: { uW: { value: width }, uRes: shared.uRes, uInk: shared.uInk, uTime: shared.uTime, uLife: shared.uLife },
+    uniforms: { uW: { value: width }, uRes: shared.uRes, uInk: shared.uInk, uTime: shared.uTime, uLife: shared.uLife, uFlow: shared.uFlow },
   });
 }
 export function addHull(mesh, width) { const h = new THREE.Mesh(mesh.geometry, hullMat(width)); mesh.add(h); return h; }

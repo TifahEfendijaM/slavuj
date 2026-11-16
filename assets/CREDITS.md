@@ -7,6 +7,7 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | Caveat (font) | Bosnian words, titles | npm `@fontsource/caveat` (Google Fonts, Impallari Type) | SIL Open Font License 1.1 |
 | Patrick Hand (font) | Interface text | npm `@fontsource/patrick-hand` (Google Fonts, Patrick Wagesreiter) | SIL Open Font License 1.1 |
 | three.js | 3D engine | npm `three` | MIT |
+| `journal-mostar.webp` | Painting of Stari Most on the journal's Mostar page | Supplied by the project owner | To be confirmed by the owner before publishing |
 
 Everything else is generated in code and belongs to the project: the bird, the town, all textures, the journal drawing, the music and every sound effect.
 

@@ -20,7 +20,8 @@ export class Flight {
     this.camYaw = 0; this.mousePitch = 0; this.camElev = 0.14;
     this.mode = 'perched'; this.power = false; this.diving = false; this.flare = 0;
     this.clearL = 1; this.clearR = 1; this.grace = 0; this.landedOn = null; this.feet = null;
-    this.events = []; this.bumpCool = 0; this.skimming = false;
+    this.events = []; this.bumpCool = 0; this.perchPitch = 0; this.perchRoll = 0;
+    this.waterY = 0; this.swimT = 0; this.drift = 0; this.splashPower = 0; this.paddle = 0;
   }
 
   cast(origin, dir, far) {
@@ -40,13 +41,16 @@ export class Flight {
   // stand on the surface: the body rests above the highest ground under it, each foot finds its own ground
   settle(p) {
     const f = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), l = new THREE.Vector3(f.z, 0, -f.x);
-    let top = p.y;
+    let top = p.y; const nrm = new THREE.Vector3();
     for (const [a, b] of [[0, 0], [0.42, 0], [-0.42, 0], [0, 0.28], [0, -0.28]]) {
       _o.copy(p).addScaledVector(f, a).addScaledVector(l, b); _o.y = p.y + 1.1;
       const h = this.cast(_o, DOWN, 1.7);
-      if (h && !h.object.userData.water && h.point.y > top) top = h.point.y;
+      if (h && !h.object.userData.water) { if (h.point.y > top) top = h.point.y; nrm.add(h.n); }
     }
-    this.pos.set(p.x, top + this.perchH, p.z);
+    if (nrm.lengthSq() < 0.01) nrm.set(0, 1, 0); nrm.normalize();
+    // lean the body with the slope (most of the way), so it rests along a steep roof instead of cutting into it
+    this.perchPitch = -Math.asin(clamp(nrm.dot(f), -1, 1)) * 0.75; this.perchRoll = -Math.asin(clamp(nrm.dot(l), -1, 1)) * 0.75;
+    this.pos.set(p.x, p.y + (top - p.y) * 0.5 + this.perchH, p.z);
     this.feet = this.footOffsets.map((o) => {
       _o.copy(this.pos).addScaledVector(l, o.x).addScaledVector(f, o.z);
       const h = this.cast(_o, DOWN, this.perchH + 0.7);
@@ -67,11 +71,33 @@ export class Flight {
 
     if (this.mode === 'perched') {
       this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - (inp.tilt - (ptr ? ptr.y : 0)) * f.keyPitchRate * dt, -0.25, 1.1);
-      this.pitch += -this.pitch * k(10, dt); this.roll += -this.roll * k(10, dt);
+      this.pitch += (this.perchPitch - this.pitch) * k(10, dt); this.roll += (this.perchRoll - this.roll) * k(10, dt);
       if (inp.takeoff) {
         this.mode = 'flying'; this.landedOn = null; this.yaw = this.camYaw; this.feet = null;
         this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.1;
         this.speed = f.takeoffSpeed; this.lift = f.flapClimb; this.grace = 0.5; this.pos.y += 0.15; this.events.push('takeoff');
+      }
+      return;
+    }
+
+    if (this.mode === 'swim') {
+      this.swimT += dt;
+      this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - inp.tilt * 0, -0.1, 1.1);
+      this.pitch += -this.pitch * k(8, dt); this.roll += -this.roll * k(8, dt);
+      this.yaw += angDiff(this.camYaw, this.yaw) * k(3, dt);
+      this.speed += (inp.tilt * f.swimSpeed - this.speed) * k(3, dt); this.paddle = Math.min(1, Math.abs(this.speed) / f.swimSpeed);
+      const fw = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), move = fw.clone().multiplyScalar(this.speed); move.z += this.drift;
+      if (move.lengthSq() > 1e-4) {
+        _o.copy(this.pos); _o.y += 0.25;
+        const h = this.cast(_o, move.clone().normalize(), 0.75);
+        if (h && !h.object.userData.water) move.set(0, 0, 0);
+      }
+      this.pos.addScaledVector(move, dt); this.pos.y = this.waterY + 0.2 + Math.sin(this.swimT * 2.4) * 0.04;
+      if (Math.abs(this.pos.x) > 12.5 && this.waterY < 1) this.pos.x = Math.sign(this.pos.x) * 12.5;
+      if (inp.takeoff) {
+        this.mode = 'flying'; this.yaw = this.camYaw; this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.12;
+        this.speed = f.takeoffSpeed * 0.85; this.lift = f.flapClimb; this.grace = 0.7; this.pos.y += 0.3;
+        this.splashPower = 0.4; this.events.push('takeoff', 'splash');
       }
       return;
     }
@@ -155,18 +181,21 @@ export class Flight {
 
     // ---- below: land, skim the water, or flare when the ground is close ----
     const below = this.cast(this.pos, DOWN, 3.4);
-    let flare = 0, skim = false;
+    let flare = 0;
     if (below) {
       const h = below.distance - this.perchH;
       if (below.object.userData.water) {
-        if (h < 0.25) { this.pos.y = below.point.y + this.perchH + 0.25; this.mousePitch = Math.max(this.mousePitch, 0.06); this.pitch = Math.max(this.pitch, 0); skim = true; }
+        if (h < 0.2 && this.grace <= 0) {   // into the water: a splash as big as the arrival, then it floats
+          this.splashPower = clamp((Math.abs(this.vel.y) + this.speed * 0.25) / 16, 0.2, 1);
+          this.mode = 'swim'; this.waterY = below.point.y; this.speed = Math.min(this.speed, 6) * 0.5; this.vel.set(0, 0, 0);
+          this.power = this.diving = false; this.flare = 0; this.feet = null; this.landedOn = null; this.camElev = 0.3; this.mousePitch = 0;
+          this.clearL = this.clearR = 1; this.pos.y = this.waterY + 0.2; this.events.push('splash'); return;
+        }
       } else if (this.landable(below)) {
         if (h <= 0.1 && this.grace <= 0) return this.land(below);
         flare = clamp(1 - (h - 0.1) / 1.9, 0, 1) * clamp(Math.max((-this.vel.y - 0.4) / 1.6, (9 - this.speed) / 2), 0, 1);
       } else if (below.distance < R0) this.pos.addScaledVector(below.n, R0 - below.distance);
     }
-    if (skim && !this.skimming) this.events.push('skim');
-    this.skimming = skim;
     this.flare += (flare - this.flare) * k(10, dt);
   }
 }

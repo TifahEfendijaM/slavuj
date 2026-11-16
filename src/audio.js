@@ -57,10 +57,10 @@ function loop(type, freq, q) {
 const ramp = (param, v, s = 0.3) => { if (ctx) param.setTargetAtTime(v, now(), s); };
 
 // ---------- continuous layers ----------
-let rush, windL, leavesL, waterL, life = 0, wind = 0, water = 0, birds = false, city = false;
+let rush, windL, leavesL, waterL, murmurL, wind = 0, water = 0, birds = false, city = 0, murmur = 0;
 function startLoops() {
   rush = loop('bandpass', 700, 0.6);       // air past the bird, follows its speed
-  windL = loop('lowpass', 380, 0.4); leavesL = loop('highpass', 3500, 0.3); waterL = loop('bandpass', 900, 0.5);
+  windL = loop('lowpass', 380, 0.4); leavesL = loop('highpass', 3500, 0.3); waterL = loop('bandpass', 900, 0.5); murmurL = loop('bandpass', 480, 1.4);
   setInterval(() => {
     if (!ctx) return;
     const t = now();
@@ -69,17 +69,21 @@ function startLoops() {
     ramp(waterL.g.gain, water * (0.05 + 0.015 * Math.sin(t * 2.3)), 0.4);
     ramp(waterL.flt.frequency, 800 + 300 * Math.sin(t * 1.7) + 150 * Math.sin(t * 5.1), 0.2);
     if (birds && Math.random() < 0.16) { const f = 2600 + Math.random() * 2200, n = 1 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.11, [[0, f], [0.05, f * 1.2], [0.09, f * 0.95]], 0.035, { bus: amb }); }
-    if (city && Math.random() < 0.07) { const n = 2 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.19, [[0, 2350], [0.12, 2330]], 0.028, { bus: amb, type: 'triangle', decay: true, attack: 0.003 }); }
+    ramp(murmurL.g.gain, murmur * (0.012 + 0.03 * Math.random()), 0.12); ramp(murmurL.flt.frequency, 380 + Math.random() * 320, 0.15);   // voices, far off
+    if (Math.random() < 0.07 * city) { const n = 2 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.19, [[0, 2350], [0.12, 2330]], 0.01 + 0.02 * city, { bus: amb, type: 'triangle', decay: true, attack: 0.003 }); }
   }, 250);
 }
 export function setRush(speed, flying) { if (ctx) { ramp(rush.g.gain, flying ? Math.min(0.11, Math.max(0, speed - 8) * 0.004) : 0, 0.15); ramp(rush.flt.frequency, 500 + speed * 28, 0.2); } }
-export function setLife(o) { if ('wind' in o) wind = o.wind; if ('water' in o) water = o.water; if ('birds' in o) birds = o.birds; if ('city' in o) city = o.city; }
+export function setLife(o) { if ('wind' in o) wind = o.wind; if ('water' in o) water = o.water; if ('birds' in o) birds = o.birds; if ('city' in o) city = +o.city; if ('murmur' in o) murmur = o.murmur; }
 
 // ---------- the bird ----------
-export function flap(strength) { if (ctx) noise(now(), 0.085, { f0: 1500, f1: 500, q: 0.7, vol: 0.05 + 0.07 * strength }); }
+export function flap(strength, scale = 1) { if (ctx) noise(now(), 0.12, { f0: 1300, f1: 450, q: 0.7, vol: (0.04 + 0.05 * strength) * S.audio.flap * scale, attack: 0.03 }); }
 export function takeoff() { if (!ctx) return; const t = now(); for (let i = 0; i < 4; i++) noise(t + i * 0.07, 0.09, { f0: 1700, f1: 600, q: 0.7, vol: 0.13 }); }
 export function land() { if (!ctx) return; const t = now(); tone(t, [[0, 150], [0.09, 70]], 0.2, { decay: true, attack: 0.004 }); noise(t, 0.12, { f0: 900, f1: 300, vol: 0.1 }); noise(t + 0.08, 0.1, { f0: 1600, f1: 700, vol: 0.06 }); }
 export function bump() { if (ctx) { const t = now(); tone(t, [[0, 120], [0.12, 60]], 0.22, { decay: true, attack: 0.004 }); noise(t, 0.1, { f0: 500, f1: 200, vol: 0.1 }); } }
+// the bird meets the water: p is 0..1, from a gentle touch to a full dive
+export function birdSplash(p) { if (!ctx) return; const t = now(); noise(t, 0.25 + 0.5 * p, { type: 'lowpass', f0: 1800 + 1800 * p, f1: 400, q: 0.4, vol: 0.1 + 0.3 * p, attack: 0.008 }); noise(t + 0.04, 0.5 + 0.6 * p, { f0: 3200, f1: 1500, q: 0.5, vol: 0.04 + 0.1 * p, attack: 0.06 }); if (p > 0.5) tone(t, [[0, 170], [0.2, 60]], 0.25 * p, { decay: true, attack: 0.005 }); }
+export function applause(seconds = 6) { if (!ctx) return; const t = now(); for (let i = 0; i < seconds * 26; i++) { const at = Math.random() * seconds, env = Math.sin(Math.PI * Math.min(1, at / seconds) ** 0.6); noise(t + at, 0.035, { f0: 1500 + Math.random() * 1800, q: 1.6, vol: 0.05 * env + 0.008, attack: 0.002, bus: amb }); } }
 export function skim() { if (ctx) { const t = now(); noise(t, 0.3, { f0: 2500, f1: 900, q: 0.8, vol: 0.12 }); tone(t, [[0, 700], [0.12, 1300]], 0.04); } }
 
 // one chirp per syllable, the same contour every time for the same word
@@ -92,27 +96,23 @@ export function speak(word) {
 // the free-sing button: one short simple chirp
 export function chirp() { if (ctx) { const t = now(), b = 2500 + Math.random() * 500; tone(t, [[0, b], [0.07, b * 1.3]], 0.2); tone(t + 0.1, [[0, b * 1.25], [0.09, b * 0.9]], 0.18); } }
 
-// the colouring song: long and melodic, a different one for each word
+// the colouring song: long and melodic, kept for the colouring scenes only
 export function song(id, duration) {
-  let h = 7; for (const ch of id) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
-  const r = () => { h = (h * 1664525 + 1013904223) >>> 0; return h / 4294967296; };
-  const sc = [1, 1.125, 1.25, 1.5, 1.6875, 2, 2.25, 2.5].map((x) => x * (1750 + r() * 350));
-  const seq = []; let at = 1 + Math.floor(r() * 3);
-  const step = () => { at = Math.max(0, Math.min(7, at + (r() < 0.6 ? 1 : -1) * (1 + Math.floor(r() * 2)))); return at; };
-  for (let p = 0; p < 5; p++) {
-    const kind = Math.floor(r() * 4);
-    if (kind === 0) for (let i = 0; i < 4; i++) seq.push(['n', step(), 0.13]);
-    else if (kind === 1) { const a = at, b = step(); seq.push(['t', a, b, 0.45]); }
-    else if (kind === 2) { const a = at, b = step(); seq.push(['g', a, b, 0.34], ['n', step(), 0.16]); }
-    else { seq.push(['n', step(), 0.13], ['n', step(), 0.13], ['v', step(), 0.6]); }
-    seq.push(['r', 0.12]);
-  }
-  seq.push(['n', 4, 0.12], ['n', 5, 0.12], ['n', 6, 0.12], ['g', 7, 5, 0.6]);
-  const total = seq.reduce((s, e) => s + e[e.length - 1], 0), f = duration / total;
+  const sc = [1, 1.125, 1.25, 1.5, 1.6875, 2, 2.25].map((x) => x * 1900);
+  const N = (i, d) => ['n', i, d], T = (a, b, d) => ['t', a, b, d], Gl = (a, b, d) => ['g', a, b, d], Rs = (d) => ['r', d];
+  const seq = [
+    N(0, .14), N(2, .14), N(4, .14), N(5, .32), Rs(.1), T(4, 5, .5), Rs(.12),
+    Gl(5, 2, .36), N(3, .15), N(4, .15), N(6, .42), Rs(.14),
+    T(2, 4, .45), N(5, .18), N(4, .18), N(2, .32), Rs(.16),
+    N(2, .12), N(4, .12), N(5, .12), N(6, .12), ['v', 5, .7], Rs(.12),
+    T(5, 6, .4), Gl(6, 3, .3), N(4, .14), N(5, .14), N(6, .14), Gl(6, 5, .55),
+  ];
+  // the melody keeps its own pace; a longer scene simply hears it again from the start
+  const total = seq.reduce((a, e) => a + e[e.length - 1], 0), f = 1;
   if (ctx) {
-    let t = now() + 0.05;
-    for (const e of seq) {
-      const d = e[e.length - 1] * f;
+    let t = now() + 0.05; const end = t + duration;
+    for (let rep = 0; rep < 3 && t < end - 1.5; rep++) for (const e of seq) {
+      const d = e[e.length - 1] * f; if (t + d > end) break;
       if (e[0] === 'n') tone(t, [[0, sc[e[1]] * 0.94], [0.03, sc[e[1]]], [d * 0.92, sc[e[1]] * 1.01]], 0.2);
       if (e[0] === 'v') tone(t, [[0, sc[e[1]]], [d * 0.95, sc[e[1]]]], 0.2, { vibrato: 45 });
       if (e[0] === 'g') tone(t, [[0, sc[e[1]]], [d * 0.95, sc[e[2]]]], 0.2);
