@@ -4,16 +4,20 @@ import '@fontsource/caveat/latin-ext-700.css';
 import '@fontsource/patrick-hand/latin-400.css';
 import '@fontsource/patrick-hand/latin-ext-400.css';
 import S from './settings.js';
-import { shared, setResolution } from './paper.js';
-import { buildWorld } from './world.js';
+import { shared, setResolution, tags, tag, SUN_DIR } from './paper.js';
+import { buildWorld, BANK } from './world.js';
 import { createBird } from './bird.js';
+import { createDiver } from './diver.js';
 import { Flight } from './flight.js';
 import * as audio from './audio.js';
+import { WORDS, ORDER, CULTURE } from './vocab.js';
 
 const $ = (id) => document.getElementById(id);
-const clamp = THREE.MathUtils.clamp;
+const clamp = THREE.MathUtils.clamp, V = (x, y, z) => new THREE.Vector3(x, y, z);
 const k = (rate, dt) => 1 - Math.exp(-rate * dt);
-const smooth = (x) => x * x * (3 - 2 * x);
+const smooth = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const SPEAKER = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#3b352f"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#3b352f" stroke-width="1.8" stroke-linecap="round"/></svg>';
 
 // ---------- scene ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -22,158 +26,375 @@ document.body.prepend(renderer.domElement);
 const canvas = renderer.domElement;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(S.camera.fov, 1, 0.1, 2000);
-
 const world = buildWorld(scene);
-const bird = createBird();
-scene.add(bird.root);
-const flight = new Flight(world.colliders, bird.perchHeight);
+const bird = createBird(); scene.add(bird.root);
+const diver = createDiver(world.diverPos); scene.add(diver.root);
+const flight = new Flight(world.colliders, bird);
 
 function resize() {
   const w = innerWidth, h = innerHeight, px = Math.min(devicePixelRatio, 2);
   renderer.setPixelRatio(px); renderer.setSize(w, h);
-  camera.aspect = w / h; camera.updateProjectionMatrix();
-  setResolution(w, h, px);
+  camera.aspect = w / h; camera.updateProjectionMatrix(); setResolution(w, h, px);
 }
 addEventListener('resize', resize); resize();
 
-// ---------- the orb ----------
-const orbDef = world.orbs[0];
-const orb = new THREE.Group();
-{
-  const c = document.createElement('canvas'); c.width = c.height = 128;
-  const g = c.getContext('2d'), grad = g.createRadialGradient(64, 64, 4, 64, 64, 64);
+// ---------- progress (kept between visits) ----------
+const KEY = 'slavuj-mostar-1', fresh = new URLSearchParams(location.search).has('fresh');
+let save = { done: [], finale: false };
+try { if (!fresh) save = { ...save, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { /* no storage */ }
+const store = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* no storage */ } };
+const painting = new Set();
+const paint = (name, instant) => { const t = tag(name); t.painted = true; if (instant) t.uT.value = 1e5; else { t.uT.value = 0; painting.add(t); } };
+
+// ---------- orbs ----------
+function blobTexture(soft) {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  const grad = g.createRadialGradient(64, 64, 4, 64, 64, 64);
   grad.addColorStop(0, 'rgba(255,214,60,0.95)'); grad.addColorStop(0.35, 'rgba(255,196,30,0.5)'); grad.addColorStop(1, 'rgba(255,190,30,0)');
   g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthWrite: false, transparent: true }));
-  halo.scale.setScalar(2.6);
-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.3, 20, 14), new THREE.MeshBasicMaterial({ color: '#ffd21f' }));
-  const shine = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 10), new THREE.MeshBasicMaterial({ color: '#fff3b0' }));
-  shine.position.set(-0.08, 0.09, 0.08);
-  orb.add(halo, core, shine);
+  if (!soft) { // a ragged edge, so the glow seems to dissolve as it spreads
+    g.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 46; i++) { const a = Math.random() * 6.28, r = 30 + Math.random() * 34, s = 4 + Math.random() * 11; g.beginPath(); g.arc(64 + Math.cos(a) * r, 64 + Math.sin(a) * r, s, 0, 6.28); g.fill(); }
+  }
+  return new THREE.CanvasTexture(c);
 }
-const orbHome = orbDef.perch.clone(); orbHome.y += S.orb.hoverHeight;
-orb.position.copy(orbHome); scene.add(orb);
-let orbAlive = true;
+const haloTex = blobTexture(true), wispTex = blobTexture(false);
+const coreGeo = new THREE.SphereGeometry(0.3, 20, 14), shineGeo = new THREE.SphereGeometry(0.17, 14, 10);
+function orbVisual() {
+  const g = new THREE.Group();
+  const core = new THREE.Mesh(coreGeo, new THREE.MeshBasicMaterial({ color: '#ffd21f', transparent: true }));
+  const shine = new THREE.Mesh(shineGeo, new THREE.MeshBasicMaterial({ color: '#fff3b0', transparent: true })); shine.position.set(-0.08, 0.09, 0.08);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, depthWrite: false, transparent: true })); halo.scale.setScalar(2.6);
+  const wisp = new THREE.Sprite(new THREE.SpriteMaterial({ map: wispTex, depthWrite: false, transparent: true, opacity: 0 })); wisp.scale.setScalar(2.6);
+  g.add(halo, wisp, core, shine); g.userData = { core, shine, halo, wisp }; g.visible = false; scene.add(g);
+  return g;
+}
+const orbs = world.orbs.map((def) => ({ def, id: def.id, w: WORDS[def.id], vis: orbVisual(), alive: false, done: save.done.includes(def.id), struck: new Set(), grow: 0 }));
+const byId = Object.fromEntries(orbs.map((o) => [o.id, o]));
+for (const o of orbs) { o.vis.position.copy(o.def.at); if (o.done) for (const t of o.def.tags) paint(t, true); }
+const available = (o) => !o.done && (o.def.stage === 0 || (byId.kuca.done && (o.def.requires || []).every((r) => byId[r].done) &&
+  (o.def.stage === 1 || orbs.every((x) => x.done || x.def.stage === 2))));
+function refreshOrbs(announce) {
+  let n = 0;
+  for (const o of orbs) if (available(o) && !o.alive) { o.alive = true; o.vis.visible = true; o.grow = 0; n++; }
+  if (announce && n) audio.orbsAppear();
+  return n;
+}
+const allDone = () => orbs.every((o) => o.done);
+
+// the golden fleur-de-lis that starts the finale
+const fleur = new THREE.Group();
+{
+  const p = new THREE.Path(); p.moveTo(0, 1.6); p.quadraticCurveTo(0.6, 0.95, 0.17, 0.08); p.quadraticCurveTo(0.5, 0.9, 0.95, 0.78); p.quadraticCurveTo(1.32, 0.45, 0.9, 0.05);
+  p.quadraticCurveTo(0.95, 0.4, 0.6, 0.35); p.quadraticCurveTo(0.42, 0.3, 0.42, 0); p.lineTo(0.42, -0.22); p.lineTo(0.3, -0.22); p.quadraticCurveTo(0.5, -0.7, 0.8, -0.9); p.quadraticCurveTo(0.35, -1.0, 0, -1.35);
+  const half = p.getPoints(8), pts = [...half, ...half.slice(1, -1).reverse().map((q) => new THREE.Vector2(-q.x, q.y))];
+  const geo = new THREE.ExtrudeGeometry(new THREE.Shape(pts), { depth: 0.24, bevelEnabled: false }).translate(0, 0, -0.12);
+  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#f5b81c', transparent: true }));
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 40), new THREE.LineBasicMaterial({ color: '#8a5a10', transparent: true }));
+  const band = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.24, 0.34), new THREE.MeshBasicMaterial({ color: '#ffe07a', transparent: true })); band.position.y = -0.11;
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, depthWrite: false, transparent: true })); halo.scale.setScalar(6);
+  fleur.add(halo, m, e, band); fleur.userData = { parts: [m, e, band, halo] };
+  fleur.scale.setScalar(2.3); fleur.position.copy(world.fleur); fleur.visible = false; scene.add(fleur);
+}
 
 // ---------- state ----------
-let state = 'play';           // play | words | cutscene
-let started = false, locked = false, noLock = false, singing = false, cut = null, time = 0;
-const inp = { dx: 0, dy: 0, turn: 0, tilt: 0, flap: false, dive: false, takeoff: false };
-const keys = new Set();
+let state = 'play';           // play | words | cutscene | journal | finale
+let started = false, locked = false, noLock = false, paused = false, singing = false, time = 0, cut = null, fin = null, current = null;
+let toast = '', toastT = 0, freeSingT = 0;
+const inp = { dx: 0, dy: 0, turn: 0, tilt: 0, flap: false, dive: false, takeoff: false, pointer: null };
+const keys = new Set(), mouse = { x: innerWidth / 2, y: innerHeight / 2 };
+const fx = [];
 
-flight.placeAt(world.start.x, world.start.z, Math.atan2(orbDef.centre.x - world.start.x, orbDef.centre.z - world.start.z));
-flight.onLand = (obj) => { if (orbAlive && orbDef.meshes.includes(obj)) flight.hopTo(orbDef.perch); };
+flight.placeAt(world.start.x, world.start.z, Math.atan2(byId.kuca.def.focus.x - world.start.x, byId.kuca.def.focus.z - world.start.z));
 
-const atOrb = () => orbAlive && flight.mode === 'perched' && !flight.hop &&
-  (orbDef.meshes.includes(flight.landedOn) || Math.hypot(flight.pos.x - orbDef.centre.x, flight.pos.z - orbDef.centre.z) < S.orb.nearRadius);
+// which orb the bird has landed at: the object it stands on, or the nearest one it stands beside
+function orbHere() {
+  if (flight.mode !== 'perched') return null;
+  const direct = byId[flight.landedOn?.userData.orb];
+  if (direct?.alive) return direct;
+  let best = null, bd = 1e9;
+  for (const o of orbs) if (o.alive && o.def.near) { const d = flight.pos.distanceTo(V(...o.def.near.p)); if (d < o.def.near.r && d < bd) { best = o; bd = d; } }
+  return best;
+}
 
 // ---------- input ----------
 function lock() {
   audio.unlock();
   if (noLock) return;
-  try { const p = canvas.requestPointerLock(); p?.catch?.(() => { noLock = true; }); } catch (e) { noLock = true; }
+  try { const p = canvas.requestPointerLock(); p?.catch?.(() => { noLock = true; paused = false; }); } catch (e) { noLock = true; }
 }
-$('start').addEventListener('click', () => { started = true; $('start').style.display = 'none'; lock(); });
-canvas.addEventListener('click', () => { if (started && state !== 'words') lock(); });
-document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === canvas; });
-document.addEventListener('pointerlockerror', () => { noLock = true; });
-document.addEventListener('mousemove', (e) => { if (locked) { inp.dx += e.movementX; inp.dy += e.movementY; } });
+function resume() { paused = false; if (!noLock) { lock(); setTimeout(() => { if (!locked && !noLock && state === 'play') paused = true; }, 250); } }
+$('start').addEventListener('click', (e) => {
+  if (e.target.closest('a,button')) return;
+  started = true; $('start').classList.add('off'); $('hud').classList.remove('off'); lock(); refreshOrbs(false); updateLegend();
+  if (save.finale) audio.setLife({ wind: 1, water: 1, birds: true, city: true });
+});
+$('reset').addEventListener('click', () => { try { localStorage.removeItem(KEY); } catch (e) { /* */ } location.reload(); });
+if (save.done.length) $('resetWrap').style.display = '';
+canvas.addEventListener('click', () => { if (started && state === 'play') resume(); });
+$('pause').addEventListener('click', resume);
+document.addEventListener('pointerlockchange', () => {
+  locked = document.pointerLockElement === canvas;
+  if (locked) paused = false; else if (started && state === 'play' && !noLock) paused = true;
+  updateLegend();
+});
+document.addEventListener('pointerlockerror', () => { noLock = true; paused = false; updateLegend(); });
+document.addEventListener('mousemove', (e) => { if (locked) { inp.dx += e.movementX; inp.dy += e.movementY; } mouse.x = e.clientX; mouse.y = e.clientY; });
 addEventListener('keydown', (e) => {
-  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
   if (e.repeat) return;
   keys.add(e.code);
   if (!started) return;
+  audio.unlock();
   if (state === 'play') {
+    if (e.code === 'Escape') { paused = !paused; return; }
+    if (paused) { if (e.code === 'Space' || e.code === 'Enter') resume(); return; }
     if (e.code === 'Space') inp.takeoff = true;
-    if (e.code === 'KeyE' && atOrb()) openWords();
+    if (e.code === 'KeyE') { const o = orbHere(); if (o) openWords(o); }
+    if (e.code === 'KeyJ' || e.code === 'Tab') openJournal();
+    if (e.code === 'KeyF') { audio.chirp(); freeSingT = 0.35; }
   } else if (state === 'words') {
     if (e.code === 'Escape' || e.code === 'KeyE') closeWords();
     const n = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code);
     if (n >= 0) pick(n);
+  } else if (state === 'journal') {
+    if (['Escape', 'KeyJ', 'Tab', 'Enter'].includes(e.code)) closeJournal();
   }
 });
 addEventListener('keyup', (e) => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
+function updateLegend() {
+  $('legend').innerHTML = `${locked ? 'Mouse steer' : noLock ? 'Move the cursor to steer' : 'Mouse steer'} · <kbd>Space</kbd> flap · <kbd>Shift</kbd> dive · <kbd>E</kbd> words · <kbd>J</kbd> journal · <kbd>F</kbd> sing · <kbd>Esc</kbd> pause`;
+}
 
 // ---------- word list ----------
 const wordsEl = $('words'), listEl = $('wordList');
-const struck = new Set();
 let busy = false;
-function openWords() {
-  state = 'words'; document.exitPointerLock?.();
-  listEl.innerHTML = '';
-  orbDef.choices.forEach((w, i) => {
-    const b = document.createElement('button');
-    b.innerHTML = `<small>${i + 1}</small>${w}`;
-    if (struck.has(i)) { b.classList.add('wrong'); b.disabled = true; }
+const markSvg = (cls, paths) => `<svg class="mark ${cls}" viewBox="0 0 100 20" preserveAspectRatio="none">${paths.map((d) => `<path d="${d}" pathLength="1" vector-effect="non-scaling-stroke"/>`).join('')}</svg>`;
+const STRIKE = ['M2 11 C 22 6, 40 15, 62 9 S 90 8, 98 11'], UNDER = ['M3 9 C 25 4, 55 13, 97 6', 'M12 15 C 40 11, 60 17, 88 12'];
+function sayButton(word) {
+  const b = document.createElement('button'); b.className = 'say'; b.title = 'Listen'; b.innerHTML = SPEAKER;
+  b.addEventListener('click', (e) => {
+    e.stopPropagation(); audio.unlock();
+    if (audio.pronounce(word)) { b.classList.add('playing'); setTimeout(() => b.classList.remove('playing'), 700); }
+  });
+  return b;
+}
+function openWords(o) {
+  current = o; state = 'words'; document.exitPointerLock?.(); audio.uiOpen();
+  $('question').textContent = o.w.q; listEl.innerHTML = '';
+  o.w.choices.forEach((w, i) => {
+    const row = document.createElement('div'); row.className = 'row';
+    const b = document.createElement('button'); b.className = 'word';
+    b.innerHTML = `<small>${i + 1}</small><span class="txt">${w}${markSvg('strike', STRIKE)}${markSvg('under', UNDER)}</span>`;
+    if (o.struck.has(i)) { b.classList.add('wrong'); b.disabled = true; b.querySelector('.strike').classList.add('done'); }
     b.addEventListener('click', () => pick(i));
-    listEl.append(b);
+    row.append(b, sayButton(w)); listEl.append(row);
   });
   wordsEl.classList.remove('off');
 }
-function closeWords() { state = 'play'; wordsEl.classList.add('off'); }
+function closeWords() { if (busy) return; state = 'play'; wordsEl.classList.add('off'); audio.uiClose(); resume(); }
 async function pick(i) {
-  if (busy || state !== 'words' || struck.has(i) || i >= orbDef.choices.length) return;
-  const b = listEl.children[i], word = orbDef.choices[i];
+  const o = current;
+  if (busy || state !== 'words' || !o || o.struck.has(i) || i >= o.w.choices.length) return;
+  const row = listEl.children[i], b = row.firstChild, word = o.w.choices[i], right = word === o.w.word;
   busy = true; wordsEl.classList.add('busy'); b.classList.add('speaking'); singing = true;
   audio.unlock();
-  const right = word === orbDef.word;
-  if (right) lock();                      // grab the mouse again while we still have the click
-  await audio.speak(word);                // the result only shows after the bird has said it
+  if (right && !noLock) lock();                  // take the mouse back while we still have the click
+  await audio.speak(word);                       // the answer only shows once the bird has chirped it
   singing = false; b.classList.remove('speaking');
   if (right) {
-    b.classList.add('right');
-    await new Promise((r) => setTimeout(r, 450));
-    wordsEl.classList.add('off');
-    startCutscene();
+    b.classList.add('right'); b.querySelector('.under').classList.add('draw'); audio.underline(0.45);
+    [...listEl.children].forEach((r, j) => { if (j !== i) r.classList.add('fade'); });
+    await sleep(1150);
+    wordsEl.classList.add('off'); busy = false; wordsEl.classList.remove('busy');
+    startCutscene(o);
   } else {
-    struck.add(i); b.classList.add('wrong'); b.disabled = true;
+    o.struck.add(i); b.classList.add('wrong'); b.disabled = true; b.querySelector('.strike').classList.add('draw'); audio.scribble(0.32);
+    busy = false; wordsEl.classList.remove('busy');
   }
-  busy = false; wordsEl.classList.remove('busy');
+}
+
+// ---------- predefined cutscene cameras ----------
+const losRay = new THREE.Raycaster();
+function clearView(from, to, id) {
+  const d = to.clone().sub(from), len = d.length(); losRay.set(from, d.normalize()); losRay.far = len * 0.85;
+  const h = losRay.intersectObjects(world.colliders, false)[0];
+  return !h || h.object.userData.orb === id;
+}
+const dirOf = (a) => V(Math.sin(a), 0, Math.cos(a));
+function closeShot(def, dur) {
+  const f = def.focus, s = def.size, base = Math.abs(f.x) < 14 ? 0 : f.x < 0 ? Math.PI / 2 : -Math.PI / 2;
+  for (const off of [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9, Math.PI]) {
+    const a = base + off, from = f.clone().addScaledVector(dirOf(a), s * 1.9 + 5); from.y += s * 0.55 + 1.6;
+    if (!clearView(from, f, def.id)) continue;
+    for (const turn of [0.5, -0.5, 0.2]) {
+      const to = f.clone().addScaledVector(dirOf(a + turn), s * 1.6 + 4.5); to.y += s * 0.85 + 2.6;
+      if (clearView(to, f, def.id)) return { from, to, lookFrom: f, lookTo: f, dur };
+    }
+  }
+  return { from: V(f.x + 4, f.y + s * 2 + 8, f.z + 4), to: V(f.x - 3, f.y + s * 2 + 10, f.z + 5), lookFrom: f, lookTo: f, dur };
+}
+function wideShot(def, dur) {
+  const f = def.focus, c = f.clone().lerp(V(0, BANK, 0), 0.45), a = Math.abs(f.x) < 14 ? 0.2 : f.x < 0 ? Math.PI / 2 : -Math.PI / 2;
+  const from = c.clone().addScaledVector(dirOf(a), 40); from.y += 30; const to = c.clone().addScaledVector(dirOf(a + 0.3), 50); to.y += 40;
+  return { from, to, lookFrom: f.clone().lerp(c, 0.4), lookTo: c, dur };
+}
+for (const o of orbs) {
+  const d = o.def, C = S.cutscene;
+  if (d.id === 'rijeka') o.shots = [{ from: V(10, 22, 72), to: V(-5, 34, 88), lookFrom: V(1, 1, 26), lookTo: V(0, 4, 0), dur: C.wideDuration }];
+  else if (d.shot === 'bridge') o.shots = [{ from: V(12, 6.5, 46), to: V(-9, 12, 40), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5 }];
+  else if (d.shot === 'close') o.shots = [closeShot(d, C.closeDuration)];
+  else if (d.shot === 'wide') o.shots = [wideShot(d, C.wideDuration)];
+  else o.shots = [closeShot(d, 3.3), wideShot(d, C.wideDuration - 3.3)];
 }
 
 // ---------- colouring cutscene ----------
 const look = new THREE.Vector3();
-async function fadeCut(fn) {
-  $('fade').classList.add('on'); await new Promise((r) => setTimeout(r, 230));
-  fn(); $('fade').classList.remove('on');
-}
-function startCutscene() {
-  state = 'cutscene';
+async function fadeCut(fn) { $('fade').classList.add('on'); await sleep(230); fn(); $('fade').classList.remove('on'); }
+function startCutscene(o) {
+  state = 'cutscene'; hideLearn();
   fadeCut(() => {
     document.body.classList.add('cine');
-    cut = { t: 0 }; singing = true;
-    audio.song(S.cutscene.duration - 0.5).then(() => { singing = false; });
+    const dur = o.shots.reduce((s, x) => s + x.dur, 0);
+    cut = { o, t: 0, dur, started: false, home: o.def.at.clone() };
+    singing = true; audio.orbRelease();
+    audio.song(o.id, dur - 0.9).then(() => { singing = false; });
   });
 }
 function updateCutscene(dt) {
-  const c = S.cutscene, cam = orbDef.cam;
-  cut.t += dt;
-  const e = smooth(clamp(cut.t / c.duration, 0, 1));
-  camera.position.lerpVectors(cam.from, cam.to, e);
-  camera.lookAt(look.lerpVectors(cam.lookFrom, cam.lookTo, e));
-  camera.fov = c.fov; camera.updateProjectionMatrix();
-  // the orb sinks into the roof and becomes the first drop of paint
-  const drop = clamp(cut.t / c.paintDelay, 0, 1);
-  orb.position.lerpVectors(orbHome, orbDef.paint.uSeed.value, smooth(drop));
-  orb.scale.setScalar(1 - 0.9 * drop); orb.visible = drop < 1;
-  const p = clamp((cut.t - c.paintDelay) / c.paintDuration, 0, 1);
-  orbDef.paint.uProgress.value = 1 - Math.pow(1 - p, 1.5);
-  if (cut.t >= c.duration && !cut.ending) {
-    cut.ending = true;
+  const c = cut, o = c.o; c.t += dt;
+  let seg = o.shots[0], t0 = 0;
+  for (const s of o.shots) { if (c.t < t0 + s.dur || s === o.shots[o.shots.length - 1]) { seg = s; break; } t0 += s.dur; }
+  const e = smooth((c.t - t0) / seg.dur);
+  camera.position.lerpVectors(seg.from, seg.to, e); camera.lookAt(look.lerpVectors(seg.lookFrom, seg.lookTo, e));
+  if (camera.fov !== S.cutscene.fov) { camera.fov = S.cutscene.fov; camera.updateProjectionMatrix(); }
+  // the orb rises, swells, dims and frays away
+  const u = o.vis.userData, r = clamp(c.t / S.cutscene.paintDelay, 0, 1), sw = smooth((r - 0.28) / 0.72);
+  o.vis.position.copy(c.home); o.vis.position.y += smooth(r / 0.4) * 0.8;
+  u.core.scale.setScalar(1 + sw * 2.4); u.shine.scale.setScalar(1 + sw * 2.4);
+  u.core.material.opacity = 1 - sw; u.shine.material.opacity = 1 - sw;
+  u.halo.scale.setScalar(2.6 + sw * 5); u.halo.material.opacity = 1 - sw;
+  u.wisp.scale.setScalar(2.6 + sw * 9); u.wisp.material.opacity = Math.sin(Math.PI * Math.min(1, r * 1.05)) * 0.9; u.wisp.material.rotation = r * 1.2;
+  if (r >= 1) o.vis.visible = false;
+  if (!c.started && c.t >= S.cutscene.paintDelay) { c.started = true; for (const t of o.def.tags) paint(t); audio.paintWash(4.5); }
+  if (c.t >= c.dur && !c.ending) {
+    c.ending = true;
     fadeCut(() => {
-      cut = null; orbAlive = false; scene.remove(orb); singing = false;
-      document.body.classList.remove('cine');
-      camera.fov = S.camera.fov; camera.updateProjectionMatrix();
-      camSnap = true; state = 'play';
+      cut = null; singing = false; document.body.classList.remove('cine');
+      camera.fov = S.camera.fov; camera.updateProjectionMatrix(); camSnap = true; state = 'play';
+      finishOrb(o);
     });
+  }
+}
+function finishOrb(o) {
+  o.done = true; o.alive = false; scene.remove(o.vis);
+  if (!save.done.includes(o.id)) save.done.push(o.id); store();
+  showLearn(o.w); renderJournal(o.id);
+  const n = refreshOrbs(true);
+  if (o.id === 'kuca' && n) say('New orbs have appeared all over Mostar. Find them in any order.', 7);
+  else if (n && byId.most.alive && !byId.most.done && orbs.filter((x) => x.alive).length === 1) say('Only Stari Most is left. Its orb is waiting on the bridge.', 7);
+  else if (n) say('A new orb has appeared nearby.', 5);
+  if (allDone() && !save.finale) { fleur.visible = true; fleurGrow = 0; audio.orbsAppear(); say('Something golden is shining high above the bridge. Fly through it.', 9); }
+  if (!noLock && !locked) setTimeout(() => { if (!locked && state === 'play') paused = true; }, 300);
+}
+let learnTimer = 0;
+function showLearn(w) { const el = $('learn'); el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en; el.classList.remove('off'); audio.learned(); $('hud').classList.add('pulse'); clearTimeout(learnTimer); learnTimer = setTimeout(hideLearn, 4500); }
+function hideLearn() { $('learn').classList.add('off'); $('hud').classList.remove('pulse'); }
+function say(text, seconds) { toast = text; toastT = seconds; }
+
+// ---------- feather journal ----------
+function renderJournal(newId) {
+  const known = ORDER.filter((id) => (id === 'sunce' ? save.finale : byId[id]?.done));
+  $('count').textContent = `${known.length}/${ORDER.length}`;
+  $('jcount').textContent = `${known.length} of ${ORDER.length} words from Mostar`;
+  const list = $('jwords'); list.innerHTML = '';
+  for (const id of ORDER) {
+    const row = document.createElement('div'), w = WORDS[id];
+    if (known.includes(id)) { row.className = 'jw' + (id === newId ? ' new' : ''); row.innerHTML = `<b>${w.word}</b><i>${w.en}</i>`; row.append(sayButton(w.word)); }
+    else { row.className = 'jw unknown'; row.textContent = '· · · · ·'; }
+    list.append(row);
+  }
+  $('cplace').textContent = CULTURE.place; $('csub').textContent = CULTURE.subtitle;
+  $('cfacts').innerHTML = CULTURE.facts.map(([h, p]) => `<p><b>${h}</b>${p}</p>`).join('');
+  $('culture').classList.toggle('locked', !save.finale); $('endcard').style.display = save.finale ? '' : 'none';
+}
+function openJournal(newId) { if (state !== 'play') return; state = 'journal'; document.exitPointerLock?.(); renderJournal(newId); $('journal').classList.remove('off'); audio.page(); hideLearn(); }
+function closeJournal() { state = 'play'; $('journal').classList.add('off'); audio.page(); resume(); }
+$('hud').addEventListener('click', () => { if (state === 'play') openJournal(); });
+$('jclose').addEventListener('click', closeJournal);
+$('journal').addEventListener('click', (e) => { if (e.target === $('journal')) closeJournal(); });
+renderJournal();
+
+// ---------- the finale ----------
+function applyAlive() { paint('sky', true); paint('sun', true); shared.uSun.value = 1; shared.uLife.value = 1; audio.setMusic(0.9, true); }
+if (save.finale) applyAlive();
+const FIN_SHOTS = [
+  { t0: 0, t1: 7.5, from: V(30, 30, 50), to: V(24, 35, 44), lookFrom: V(-60, 62, -80), lookTo: V(-75, 60, -92) },
+  { t0: 7.5, t1: 14, from: V(34, 60, 98), to: V(8, 48, 82), lookFrom: V(0, 12, 0), lookTo: V(0, 10, -8) },
+  { t0: 14, t1: 22.8, from: V(-10.5, 7.5, 31), to: V(-7.5, 5.5, 27), diver: true },
+  { t0: 22.8, t1: 26, from: V(3, 26, 66), to: V(0, 33, 80), lookFrom: V(0, 13, 0), lookTo: V(0, 14, 0) },
+];
+function startFinale() {
+  state = 'finale'; hideLearn(); document.body.classList.add('cine'); audio.pickup();
+  const P = [[0, flight.pos.x, flight.pos.y, flight.pos.z], [2, -14, 64, -6], [4.5, -26, 56, 10], [7, -18, 46, 34], [9.5, 2, 38, 48], [12, 14, 30, 36], [14, 10, 25, 16], [15.6, 4.5, 22.5, 6.5],
+    [16.6, -2.5, 22, 5], [17.4, -4, 18.5, 9], [18.3, -2, 12, 13], [19.6, 3, 8, 22], [21.5, 0, 9, 40], [23.5, -4, 17, 56], [26, 0, 26, 68], [28, 2, 30, 80]];
+  fin = { t: 0, P, curve: new THREE.CatmullRomCurve3(P.map((p) => V(p[1], p[2], p[3]))), ev: new Set(), wind: 0, water: 0 };
+  flight.mode = 'script'; flight.feet = null; flight.flare = 0; flight.diving = false; flight.clearL = flight.clearR = 1;
+  diver.onSplash = (p) => { audio.splash(); splashFx(p); audio.setMusic(0.9, true); audio.swell(true, 3); };
+}
+function updateFinale(dt) {
+  const f = fin; f.t += dt; const t = f.t;
+  const once = (name, at, fn) => { if (t >= at && !f.ev.has(name)) { f.ev.add(name); fn(); } };
+  once('sing', 0.4, () => { singing = true; audio.speak('sunce').then(() => { singing = false; }); });
+  once('sky', 1.2, () => { paint('sky'); paint('sun'); audio.swell(true, 7); audio.paintWash(6); });
+  once('birds', 11, () => audio.setLife({ birds: true })); once('city', 12.5, () => audio.setLife({ city: true }));
+  once('hush', 14.6, () => { audio.hush(3.4); audio.swell(false, 1); });
+  once('jump', 15, () => { diver.jump(); singing = true; audio.song('sunce', 3.4).then(() => { singing = false; }); });
+  shared.uSun.value = smooth((t - 3) / 7); shared.uLife.value = smooth((t - 8.5) / 3);
+  f.wind = smooth((t - 6) / 4); f.water = smooth((t - 9.5) / 3); audio.setLife({ wind: f.wind, water: f.water });
+  // the bird flies itself through the scene
+  let i = 0; while (i < f.P.length - 2 && t > f.P[i + 1][0]) i++;
+  const u = clamp((i + clamp((t - f.P[i][0]) / (f.P[i + 1][0] - f.P[i][0]), 0, 1)) / (f.P.length - 1), 0, 1);
+  const p = f.curve.getPoint(u), tan = f.curve.getTangent(u);
+  const yaw = Math.atan2(tan.x, tan.z), dy = Math.atan2(Math.sin(yaw - flight.yaw), Math.cos(yaw - flight.yaw));
+  flight.pos.copy(p); flight.yaw += dy * k(8, dt); flight.camYaw = flight.yaw; flight.pitch = Math.asin(clamp(tan.y, -1, 1));
+  flight.roll += (clamp(-dy * 3, -0.8, 0.8) - flight.roll) * k(6, dt); flight.speed = 14; flight.power = tan.y > 0.05;
+  // the camera
+  const s = FIN_SHOTS.find((x) => t < x.t1) || FIN_SHOTS[FIN_SHOTS.length - 1], e = smooth((t - s.t0) / (s.t1 - s.t0));
+  if (f.shot !== s) { if (f.shot) { $('fade').classList.add('on'); setTimeout(() => $('fade').classList.remove('on'), 160); } f.shot = s; }
+  camera.position.lerpVectors(s.from, s.to, e);
+  if (s.diver) { const d = diver.state === 'jump' ? diver.root.position : diver.state === 'stand' ? world.diverPos : diver.splashPos; f.look = (f.look || world.diverPos.clone()).lerp(V(d.x, d.y + 1, d.z), k(5, dt)); camera.lookAt(f.look); }
+  else camera.lookAt(look.lerpVectors(s.lookFrom, s.lookTo, e));
+  if (camera.fov !== 46) { camera.fov = 46; camera.updateProjectionMatrix(); }
+  if (t >= 26 && !f.ending) {
+    f.ending = true;
+    fadeCut(() => {
+      fin = null; save.finale = true; store(); document.body.classList.remove('cine');
+      camera.fov = S.camera.fov; camera.updateProjectionMatrix(); camSnap = true;
+      flight.mode = 'flying'; flight.mousePitch = 0; flight.grace = 0.5; fleur.visible = false;
+      state = 'play'; openJournal('sunce');
+    });
+  }
+}
+function splashFx(p) {
+  const m = new THREE.MeshBasicMaterial({ color: '#fbf7ec', transparent: true });
+  for (let i = 0; i < 22; i++) {
+    const d = new THREE.Mesh(shineGeo, m); d.scale.setScalar(0.5 + Math.random() * 1.1); d.position.copy(p); scene.add(d);
+    const a = Math.random() * 6.28, sp = 1 + Math.random() * 3.2, v = V(Math.cos(a) * sp, 5 + Math.random() * 6, Math.sin(a) * sp);
+    fx.push({ t: 0, life: 1.6, step(dt) { v.y -= 14 * dt; d.position.addScaledVector(v, dt); d.visible = d.position.y > -0.2; }, end() { scene.remove(d); } });
+  }
+  for (let i = 0; i < 3; i++) {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 40), new THREE.MeshBasicMaterial({ color: '#fbf7ec', transparent: true, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(p.x, 0.06, p.z); scene.add(ring);
+    fx.push({ t: -i * 0.35, life: 2.6, step() { const q = Math.max(0, this.t) / this.life; ring.scale.setScalar(0.6 + q * 7); ring.material.opacity = (1 - q) * 0.9; ring.visible = this.t > 0; }, end() { scene.remove(ring); } });
   }
 }
 
 // ---------- camera ----------
-const camPos = new THREE.Vector3(), camWant = new THREE.Vector3(), camLook = new THREE.Vector3(), tmp = new THREE.Vector3();
+const camPos = V(0, 0, 0), camWant = V(0, 0, 0), camLook = V(0, 0, 0), tmp = V(0, 0, 0);
 const camRay = new THREE.Raycaster();
-let camSnap = true;
+let camSnap = true, fleurGrow = 1, dbg = null;
 function updateCamera(dt) {
   const perched = flight.mode === 'perched';
   const elev = perched ? flight.camElev : 0.22 - flight.pitch * 0.55;
@@ -182,11 +403,10 @@ function updateCamera(dt) {
   camWant.set(flight.pos.x - Math.sin(flight.camYaw) * ce * dist, flight.pos.y + 0.7 + Math.sin(elev) * dist, flight.pos.z - Math.cos(flight.camYaw) * ce * dist);
   if (camSnap) { camPos.copy(camWant); camSnap = false; } else camPos.lerp(camWant, k(S.camera.smooth, dt));
   camera.position.copy(camPos);
-  // keep walls from coming between the camera and the bird
   tmp.subVectors(camPos, camLook); const len = tmp.length(); tmp.normalize();
   camRay.set(camLook, tmp); camRay.far = len;
   const hit = camRay.intersectObjects(world.colliders, false)[0];
-  if (hit) camera.position.copy(camLook).addScaledVector(tmp, Math.max(0.6, hit.distance - 0.3));
+  if (hit && !hit.object.userData.diver) camera.position.copy(camLook).addScaledVector(tmp, Math.max(0.6, hit.distance - 0.3));
   camera.lookAt(camLook);
   const f = S.flight, boost = perched ? 0 : clamp((flight.speed - f.cruiseSpeed) / (f.maxSpeed - f.cruiseSpeed), 0, 1);
   const fov = S.camera.fov + boost * S.camera.diveFovBoost;
@@ -195,48 +415,80 @@ function updateCamera(dt) {
 
 // ---------- hints ----------
 const hintEl = $('hint');
-let lastHint = '';
-function hint(html) {
-  if (html === lastHint) return; lastHint = html;
-  if (html) { hintEl.innerHTML = html; hintEl.classList.remove('off'); } else hintEl.classList.add('off');
-}
+let lastHint = null;
+function hint(html) { if (html === lastHint) return; lastHint = html; if (html) { hintEl.innerHTML = html; hintEl.classList.remove('off'); } else hintEl.classList.add('off'); }
 function updateHint() {
-  if (!started || state !== 'play') return hint('');
-  if (!locked && !noLock) return hint('Click to keep flying');
+  $('pause').classList.toggle('off', !(started && paused && state === 'play'));
+  $('reticle').classList.toggle('off', !(started && noLock && !paused && state === 'play'));
+  if (!started || state !== 'play' || paused) return hint('');
+  if (toastT > 0) return hint(toast);
   if (flight.mode === 'perched') {
-    if (atOrb()) return hint('<kbd>E</kbd> open the word list');
-    return hint('<kbd>Space</kbd> take off' + (orbAlive ? ' · fly to the glowing orb and land on the house' : ''));
+    if (orbHere()) return hint('<kbd>E</kbd> open the word list');
+    return hint('<kbd>Space</kbd> take off' + (!byId.kuca.done ? ' · fly to the glowing orb and land on the house' : ''));
   }
   hint('');
 }
 
 // ---------- loop ----------
 const clock = new THREE.Clock();
-function frame() {
-  const dt = Math.min(clock.getDelta(), 0.05);
-  time += dt; shared.uTime.value = time;
+function frame() { tick(Math.min(clock.getDelta(), 0.05)); requestAnimationFrame(frame); }
+function tick(dt) {
+  time += dt; shared.uTime.value = time; shared.uFlow.value += dt * shared.uLife.value;
+  for (const t of painting) t.uT.value += dt;
   inp.turn = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
   inp.tilt = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
   inp.flap = keys.has('Space'); inp.dive = keys.has('ShiftLeft') || keys.has('ShiftRight');
+  if (noLock && !locked) { // steer by where the cursor is, for browsers that cannot capture the mouse
+    const dz = (v) => { const a = Math.abs(v); return a < 0.12 ? 0 : Math.sign(v) * Math.min(1, (a - 0.12) / 0.6); };
+    inp.pointer = innerWidth > 0 && innerHeight > 0 ? { x: dz((mouse.x / innerWidth - 0.5) * 2), y: dz((mouse.y / innerHeight - 0.5) * 2) } : { x: 0, y: 0 };
+  } else inp.pointer = null;
 
-  if (state === 'play' && started && (locked || noLock)) flight.update(dt, inp);
-  inp.dx = inp.dy = 0; inp.takeoff = false;
+  const running = started && !paused && state === 'play' && (locked || noLock);
+  if (running) {
+    flight.update(dt, inp);
+    for (const ev of flight.events) audio[ev]?.();
+    if (fleur.visible && flight.mode === 'flying' && flight.pos.distanceTo(fleur.position) < 3.6) startFinale();
+    toastT -= dt;
+  }
+  flight.events.length = 0; inp.dx = inp.dy = 0; inp.takeoff = false;
+  if (fin) updateFinale(dt);
+  diver.update(dt, time);
 
+  freeSingT -= dt;
   bird.root.position.copy(flight.pos);
   bird.root.rotation.set(-flight.pitch, flight.yaw, flight.roll);
-  bird.update(dt, { mode: flight.mode, flapping: flight.flapping, diving: flight.diving, sing: singing });
+  bird.update(dt, { mode: flight.mode === 'perched' ? 'perched' : 'flying', power: flight.power, diving: flight.diving, speed: flight.speed, flare: flight.flare, turn: flight.roll,
+    clearL: flight.clearL, clearR: flight.clearR, sing: singing || freeSingT > 0, feet: flight.feet, yaw: flight.yaw });
+  if (bird.downstroke) { if (running || fin) audio.flap(bird.downstroke); bird.downstroke = 0; }
+  audio.setRush(flight.speed, flight.mode !== 'perched' && (running || !!fin));
 
-  if (orbAlive && !cut) {
-    orb.position.y = orbHome.y + Math.sin(time * 1.8) * 0.25;
-    orb.scale.setScalar(1 + Math.sin(time * 3.1) * 0.06);
+  for (const o of orbs) if (o.alive && !(cut && cut.o === o)) {
+    o.grow = Math.min(1, o.grow + dt * 1.4); const g = smooth(o.grow) * (1 + Math.sin(time * 3.1 + o.def.at.x) * 0.06);
+    o.vis.scale.setScalar(g); o.vis.position.y = o.def.at.y + Math.sin(time * 1.8 + o.def.at.z) * 0.25;
   }
-  if (cut) updateCutscene(dt); else updateCamera(dt);
+  if (fleur.visible) {
+    fleurGrow = Math.min(1, fleurGrow + dt * 0.8); const out = fin ? smooth(fin.t / 1.2) : 0;
+    fleur.scale.setScalar(2.3 * smooth(fleurGrow) * (1 + out * 2.5)); fleur.rotation.y = time * 0.9; fleur.position.y = world.fleur.y + Math.sin(time * 1.3) * 0.5;
+    for (const m of fleur.userData.parts) m.material.opacity = 1 - out;
+    if (out >= 1) fleur.visible = false;
+  }
+  for (let i = fx.length - 1; i >= 0; i--) { const e = fx[i]; e.t += dt; e.step(dt); if (e.t >= e.life) { e.end(); fx.splice(i, 1); } }
+
+  if (cut) updateCutscene(dt); else if (!fin) updateCamera(dt);
+  if (dbg) { camera.position.set(dbg[0], dbg[1], dbg[2]); camera.lookAt(dbg[3], dbg[4], dbg[5]); }
   updateHint();
   renderer.render(scene, camera);
-  requestAnimationFrame(frame);
 }
-frame();
+audio.setMusic(0.2 + 0.6 * (save.done.length / orbs.length), save.finale);
+updateLegend(); frame();
 
 // for testing from the console
-window.__game = { flight, inp, keys, orbDef, world, camera, S, get state() { return state; },
-  start() { started = true; noLock = true; $('start').style.display = 'none'; }, openWords, pick, startCutscene };
+window.__game = { flight, inp, keys, mouse, bird, orbs, byId, world, camera, S, tags, shared, diver, fleur, audio,
+  get state() { return state; }, get paused() { return paused; }, get noLock() { return noLock; },
+  start() { started = true; noLock = true; $('start').classList.add('off'); $('hud').classList.remove('off'); refreshOrbs(false); updateLegend(); },
+  view(...a) { dbg = a.length ? a : null; },
+  step(seconds, dt = 1 / 60) { for (let t = 0; t < seconds; t += dt) tick(dt); },
+  openWords, pick, startCutscene, orbHere, openJournal, closeJournal, startFinale,
+  finish(id) { const o = byId[id]; for (const t of o.def.tags) paint(t, true); finishOrb(o); },
+  unpainted() { const used = new Set(orbs.flatMap((o) => o.def.tags)); return Object.keys(tags).filter((t) => !used.has(t) && !['bird', 'sky', 'sun'].includes(t)); },
+};
