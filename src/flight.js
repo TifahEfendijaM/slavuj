@@ -9,6 +9,7 @@ const k = (rate, dt) => 1 - Math.exp(-rate * dt);
 export const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const DOWN = new THREE.Vector3(0, -1, 0), UP = new THREE.Vector3(0, 1, 0);
 const _o = new THREE.Vector3(), _d = new THREE.Vector3();
+const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _inv = new THREE.Matrix4();
 const _nm = new THREE.Matrix3();
 
 export class Flight {
@@ -116,6 +117,20 @@ export class Flight {
     this.lift = 0; this.grace = 0.25; this.airT = 1; this.pos.addScaledVector(fw, 0.3); this.pos.y += 0.05; this.events.push('takeoff'); return 'left';
   }
 
+  // push the bird out of anything that moves (people, animals, the swimmer) and has come up against it
+  makeWay() {
+    if (this._mc !== this.colliders.length) { this._mc = this.colliders.length; this.movers = this.colliders.filter((c) => c.userData.person || c.userData.swimmer); }
+    const R = S.flight.bodyRadius * 0.8;
+    for (const c of this.movers) {
+      const m = c.matrixWorld, sx = _v1.setFromMatrixColumn(m, 0).length(), sy = _v2.setFromMatrixColumn(m, 1).length(), sz = _v3.setFromMatrixColumn(m, 2).length();
+      _inv.copy(m).invert(); _o.copy(this.pos).applyMatrix4(_inv);       // the bird in the box's own space, where the box is -0.5..0.5
+      const px = 0.5 + R / sx - Math.abs(_o.x), py = 0.5 + R / sy - Math.abs(_o.y), pz = 0.5 + R / sz - Math.abs(_o.z);
+      if (px <= 0 || py <= 0 || pz <= 0) continue;
+      if (px * sx < pz * sz) _o.x += Math.sign(_o.x || 1) * px; else _o.z += Math.sign(_o.z || 1) * pz;
+      const y = this.pos.y; this.pos.copy(_o.applyMatrix4(m)); this.pos.y = y;
+    }
+  }
+
   land(hit) {
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
     this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
@@ -167,6 +182,7 @@ export class Flight {
         if (h && !h.object.userData.water) move.set(0, 0, 0);
       }
       this.pos.addScaledVector(move, dt); this.pos.y = this.waterY + 0.14 * S.bird.scale + Math.sin(this.swimT * 2.4) * 0.03;
+      this.makeWay();      // the swimmer (or the diver) comes past: the floating bird is nudged aside, never swum through
       if (Math.abs(this.pos.x) > 12.5 && this.waterY < 1) this.pos.x = Math.sign(this.pos.x) * 12.5;
       if (inp.takeoff) {
         this.mode = 'flying'; this.yaw = this.camYaw; this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.06;

@@ -84,7 +84,7 @@ export function createPeople(scene, world, R) {
     const arms = [-1, 1].map((s) => { const sh = grp(torso, s * 0.2, 0.56, 0); P(G.uarm, top, sh, 0, -0.135, 0); const el = grp(sh, 0, -0.27, 0); P(G.farm, top, el, 0, -0.14, 0); const hand = P(G.hand, skin, el, 0, -0.3, 0); return { sh, el, hand, s }; });
     const p = { o, root, hips, torso, head, legs, arms, phase: R() * 6, clap: 0, s: 0, dir: 1, P, sc, y0: o.y };
     const moving = o.kind === 'walk' || o.kind === 'bike' || o.kind === 'keeper' || o.kind === 'swimmer';
-    if (o.kind === 'swimmer') p.block = block(o.x, 0.2, o.z, 0.9, 0.8, 2.2, { wall: true, person: true });
+    if (o.kind === 'swimmer') p.block = block(o.x, 0.3, o.z, 1.0, 1.1, 2.3, { wall: true, person: true });
     else if (o.kind !== 'girl' && o.kind !== 'swing') p.block = block(o.x, o.y + sc, o.z, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), 2 * sc, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), { wall: true, person: true });
     if (moving && o.to) { p.from = pos.clone(); p.to = new THREE.Vector3(o.to[0], o.y, o.to[1]); root.rotation.y = Math.atan2(p.to.x - p.from.x, p.to.z - p.from.z); }
     if (seated || o.kind === 'raft') { hips.position.y = 0.5; for (const l of legs) { l.hip.rotation.x = -1.5; l.knee.rotation.x = o.kind === 'raft' ? 0.55 : 1.45; } }
@@ -372,11 +372,13 @@ export function createPeople(scene, world, R) {
             p.s += p.dir * dt * o.speed / p.from.distanceTo(p.to); if (p.s > 1 || p.s < 0) { p.dir *= -1; p.s = Math.min(1, Math.max(0, p.s)); }
             const want = Math.atan2((p.to.x - p.from.x) * p.dir, (p.to.z - p.from.z) * p.dir); p.root.rotation.y += Math.atan2(Math.sin(want - p.root.rotation.y), Math.cos(want - p.root.rotation.y)) * k(2, dt);
             p.root.position.lerpVectors(p.from, p.to, p.s).addScaledVector(birdD.set(Math.sin(p.root.rotation.y), 0, Math.cos(p.root.rotation.y)), -0.95);
-            p.block.matrixWorld.setPosition(p.from.x + (p.to.x - p.from.x) * p.s, 0.2, p.from.z + (p.to.z - p.from.z) * p.s);
             a0.sh.rotation.x = -(t * 3.2) % 6.283; a1.sh.rotation.x = -(t * 3.2 + Math.PI) % 6.283; p.head.rotation.y = Math.sin(t * 3.2) * 0.5;
           }
           p.legs.forEach((l, i) => { l.hip.rotation.x = (alive ? Math.sin(t * 9 + i * Math.PI) : i ? 0.2 : -0.2) * 0.3; });
           p.root.position.y = p.y0 + (alive ? Math.sin(t * 3.2) * 0.02 : 0);
+          // his collision box: his body, from his feet to his reaching hands, turned the way he swims (still or moving)
+          const ry = p.root.rotation.y; birdD.set(Math.sin(ry), 0, Math.cos(ry));
+          p.block.matrixWorld.compose(tmpA.copy(p.root.position).addScaledVector(birdD, 1.1).setY(0.3), p.block.quaternion.setFromAxisAngle(UPY, ry), tmpB.set(1.0, 1.1, 2.3));
         } else if (o.kind === 'fisher') {    // waits; now and then lifts the rod a little
           const tug = alive ? Math.max(0, Math.sin(t * 0.7)) ** 6 : 0;
           p.rod.rotation.x = -tug * 0.12 + (alive ? Math.sin(t * 1.3) * 0.01 : 0); p.head.rotation.y = alive ? Math.sin(t * 0.3) * 0.2 : 0; p.float.position.y = -1.62 + (alive ? Math.sin(t * 2.2) * 0.03 : 0);
