@@ -21,8 +21,8 @@ export default {
     maxPitchDown: 35,     // degrees (without diving)
     diveAngle: 60,        // degrees; 90 would be straight down
     takeoffSpeed: 9,
-    takeoffPitch: 5,      // degrees
-    takeoffLift: 1.3,       // height gained per second right at take-off; it builds up to flapClimb while Space is held
+    takeoffPitch: 12,      // degrees
+    takeoffLift: 6,       // height gained per second right at take-off; it builds up to flapClimb while Space is held
     bodyRadius: 0.3,     // how close the body may come to a wall
     wingReach: 0.62,       // how far to the side the bird feels for walls
     maxLandSlope: 0.5,   // surfaces steeper than this (normal.y below it) cannot be landed on

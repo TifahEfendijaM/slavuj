@@ -84,7 +84,7 @@ export class Flight {
       if (inp.takeoff) {
         this.mode = 'flying'; this.landedOn = null; this.yaw = this.camYaw; this.feet = null;
         this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.02;
-        this.speed = f.takeoffSpeed; this.lift = f.takeoffLift; this.grace = 0.35; this.airT = 0; this.pos.y += 0.1; this.events.push('takeoff');
+        this.speed = f.takeoffSpeed; this.lift = f.takeoffLift; this.grace = 0.45; this.airT = 0; this.pos.y += 0.1; this.events.push('takeoff');
       }
       return;
     }
@@ -172,7 +172,8 @@ export class Flight {
 
     // ---- straight ahead ----
     const step = this.vel.length() * dt, dir = this.vel.clone().normalize();
-    const ahead = this.cast(this.pos, dir, step + R0);
+    let ahead = this.cast(this.pos, dir, step + R0);
+    for (const sd of [-0.75, 0.75]) { const h = this.cast(_o.copy(this.pos).addScaledVector(left, sd * R0), dir, step + R0); if (h && !h.object.userData.water && (!ahead || h.distance < ahead.distance)) ahead = h; }
     if (ahead && !ahead.object.userData.water) {
       if (this.landable(ahead) && this.grace <= 0) return this.land(ahead);
       const n = new THREE.Vector3(ahead.n.x, 0, ahead.n.z);

@@ -433,7 +433,7 @@ renderJournal();
 
 // ---------- the finale ----------
 const dropBlock = (test) => { const i = world.colliders.findIndex(test); if (i >= 0) world.colliders.splice(i, 1); };
-function wake() { dropBlock((c) => c.userData.diver); dropBlock((c) => c.userData.asleep); }
+function wake() { dropBlock((c) => c.userData.diver); }
 let swimBlock = null;
 function diverInWater() {   // the bird cannot swim or fly through him
   const p = diver.splashPos;

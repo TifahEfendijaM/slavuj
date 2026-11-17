@@ -94,11 +94,10 @@ export function land() { if (!ctx) return; const t = now(); tone(t, [[0, 150], [
 export function bump() { if (ctx) { const t = now(); tone(t, [[0, 120], [0.12, 60]], 0.22, { decay: true, attack: 0.004 }); noise(t, 0.1, { f0: 500, f1: 200, vol: 0.1 }); } }
 // the bird meets the water: p is 0..1, from a gentle touch to a full dive
 export function birdSplash(p) { if (!ctx) return; const t = now(); noise(t, 0.25 + 0.5 * p, { type: 'lowpass', f0: 1800 + 1800 * p, f1: 400, q: 0.4, vol: 0.1 + 0.3 * p, attack: 0.008 }); noise(t + 0.04, 0.5 + 0.6 * p, { f0: 3200, f1: 1500, q: 0.5, vol: 0.04 + 0.1 * p, attack: 0.06 }); if (p > 0.5) tone(t, [[0, 170], [0.2, 60]], 0.25 * p, { decay: true, attack: 0.005 }); }
-// a crowd clapping, with a few cheers; gain below 1 is the same crowd heard from further off
+// a crowd clapping; gain below 1 is the same crowd heard from further off
 export function applause(seconds = 6, gain = 1) {
   if (!ctx) return; const t = now();
   for (let i = 0; i < seconds * 48; i++) { const at = Math.random() * seconds, env = Math.sin(Math.PI * Math.min(1, at / seconds)) ** 0.5; noise(t + at, 0.045, { f0: 1000 + Math.random() * 2400, q: 1.1, vol: (0.13 * env + 0.015) * gain, attack: 0.002, bus: amb }); }
-  for (let i = 0; i < seconds * 0.9; i++) { const at = Math.random() * seconds * 0.8, f = 430 + Math.random() * 260; tone(t + at, [[0, f], [0.22, f * 1.55], [0.5, f * 1.2]], 0.045 * gain, { type: 'triangle', vibrato: 14, bus: amb, attack: 0.05 }); }
 }
 export function skim() { if (ctx) { const t = now(); noise(t, 0.3, { f0: 2500, f1: 900, q: 0.8, vol: 0.12 }); tone(t, [[0, 700], [0.12, 1300]], 0.04); } }
 
