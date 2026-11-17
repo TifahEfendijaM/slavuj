@@ -600,7 +600,8 @@ let camSnap = true, dbg = null, camDist = S.camera.distance;
 const camOff = V(0, 0, 0), camFocus = V(0, 0, 0);
 function updateCamera(dt) {
   const perched = flight.mode === 'perched' || flight.mode === 'swim';
-  const elev = perched ? flight.camElev : 0.22 - flight.pitch * 0.55;
+  // not flying: below its lowest spot (the ground is near) the camera stays put and the view tilts up instead
+  const low = flight.mode === 'swim' ? -0.1 : -0.25, raw = perched ? flight.camElev : 0.22 - flight.pitch * 0.55, elev = perched ? Math.max(raw, low) : raw, tiltUp = perched ? Math.max(0, low - raw) : 0;
   camDist += ((perched ? S.camera.distance : S.camera.flightDistance) - camDist) * k(2.5, dt);
   const dist = camDist, ce = Math.cos(elev);
   const lift = 0.15 + 0.37 * S.bird.scale;
@@ -616,7 +617,10 @@ function updateCamera(dt) {
   camRay.set(camLook, tmp); camRay.far = len;
   const hit = camRay.intersectObjects(world.colliders, false)[0];
   if (hit && !hit.object.userData.diver && !hit.object.userData.swimmer) camera.position.copy(camLook).addScaledVector(tmp, Math.max(0.35, hit.distance - 0.25));
-  camera.lookAt(camLook);
+  if (tiltUp > 0.001) {
+    tmp.subVectors(camLook, camera.position); const h = Math.hypot(tmp.x, tmp.z), pitch = Math.atan2(tmp.y, h) + tiltUp;
+    camera.lookAt(camera.position.x + tmp.x / h * Math.cos(pitch), camera.position.y + Math.sin(pitch), camera.position.z + tmp.z / h * Math.cos(pitch));
+  } else camera.lookAt(camLook);
   const f = S.flight, boost = perched ? 0 : clamp((flight.speed - f.cruiseSpeed) / (f.maxSpeed - f.cruiseSpeed), 0, 1);
   const fov = S.camera.fov + boost * S.camera.diveFovBoost;
   if (Math.abs(camera.fov - fov) > 0.01) { camera.fov += (fov - camera.fov) * k(4, dt); camera.updateProjectionMatrix(); }
