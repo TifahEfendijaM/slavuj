@@ -72,8 +72,8 @@ const SWAY = /* glsl */`
     w.x += sin(uTime * 1.4 + ph) * aAni.w * uLife;
     w.z += cos(uTime * 1.1 + ph * 1.3) * aAni.w * 0.6 * uLife;
   } else if (aAni.w < 0.0) {              // negative: a slow drift (clouds)
-    w.x += sin(uFlow * 0.035 - aAni.w) * -aAni.w;
-    w.z += sin(uFlow * 0.021 - aAni.w * 1.7) * -aAni.w * 0.5;
+    w.x += sin(uFlow * 0.11 - aAni.w) * -aAni.w * 1.3;
+    w.z += sin(uFlow * 0.067 - aAni.w * 1.7) * -aAni.w * 0.6;
   }`;
 
 const VERT = /* glsl */`

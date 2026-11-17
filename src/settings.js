@@ -20,15 +20,16 @@ export default {
     maxPitchUp: 45,       // degrees
     maxPitchDown: 35,     // degrees (without diving)
     diveAngle: 60,        // degrees; 90 would be straight down
-    takeoffSpeed: 10,
-    takeoffPitch: 20,     // degrees
-    bodyRadius: 0.42,     // how close the body may come to a wall
-    wingReach: 1.0,       // how far to the side the bird feels for walls
+    takeoffSpeed: 9,
+    takeoffPitch: 5,      // degrees
+    takeoffLift: 1.3,       // height gained per second right at take-off; it builds up to flapClimb while Space is held
+    bodyRadius: 0.3,     // how close the body may come to a wall
+    wingReach: 0.62,       // how far to the side the bird feels for walls
     maxLandSlope: 0.5,   // surfaces steeper than this (normal.y below it) cannot be landed on
   },
-  camera: { fov: 60, distance: 4.4, smooth: 6, diveFovBoost: 12 },
-  bird: { scale: 1.0, blue: '#2466e8', blueDark: '#1a4fc0', yellow: '#ffc61a' },
-  orb: { hoverHeight: 2.3, size: 0.72 },   // how high an orb floats above its object, and how big it is
+  camera: { fov: 60, distance: 2.7, smooth: 6, diveFovBoost: 12 },
+  bird: { scale: 0.5, blue: '#2466e8', blueDark: '#1a4fc0', yellow: '#ffc61a' },
+  orb: { hoverHeight: 2, size: 0.5 },   // how high an orb floats above its object, and how big it is
   cutscene: {
     closeDuration: 8.6,    // seconds, when one object is coloured
     wideDuration: 9.5,    // seconds, when colour spreads over many objects (close look first, then wide)

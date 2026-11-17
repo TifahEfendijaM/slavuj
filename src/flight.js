@@ -83,8 +83,8 @@ export class Flight {
       this.pitch += (this.perchPitch - this.pitch) * k(10, dt); this.roll += (this.perchRoll - this.roll) * k(10, dt);
       if (inp.takeoff) {
         this.mode = 'flying'; this.landedOn = null; this.yaw = this.camYaw; this.feet = null;
-        this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.1;
-        this.speed = f.takeoffSpeed; this.lift = f.flapClimb; this.grace = 0.5; this.pos.y += 0.15; this.events.push('takeoff');
+        this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.02;
+        this.speed = f.takeoffSpeed; this.lift = f.takeoffLift; this.grace = 0.35; this.airT = 0; this.pos.y += 0.1; this.events.push('takeoff');
       }
       return;
     }
@@ -104,15 +104,15 @@ export class Flight {
       this.pos.addScaledVector(move, dt); this.pos.y = this.waterY + 0.14 * S.bird.scale + Math.sin(this.swimT * 2.4) * 0.03;
       if (Math.abs(this.pos.x) > 12.5 && this.waterY < 1) this.pos.x = Math.sign(this.pos.x) * 12.5;
       if (inp.takeoff) {
-        this.mode = 'flying'; this.yaw = this.camYaw; this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.12;
-        this.speed = f.takeoffSpeed * 0.85; this.lift = f.flapClimb; this.grace = 0.7; this.pos.y += 0.3;
+        this.mode = 'flying'; this.yaw = this.camYaw; this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.06;
+        this.speed = f.takeoffSpeed * 0.85; this.lift = f.takeoffLift + 1; this.grace = 0.5; this.airT = 0; this.pos.y += 0.2;
         this.splashPower = 0.4; this.events.push('takeoff', 'splash');
       }
       return;
     }
 
     // ---- flying ----
-    this.grace -= dt;
+    this.grace -= dt; this.airT = (this.airT || 0) + dt;
     this.diving = inp.dive && this.grace <= 0;
     this.power = (inp.flap || this.grace > 0) && !this.diving;
     if (this.diving) this.mousePitch = 0;
@@ -141,7 +141,7 @@ export class Flight {
       this.mousePitch += (-0.08 - this.mousePitch) * Math.min(1, 2.5 * dt);
     if (this.speed <= f.minSpeed + 0.4 && !this.power && ptr && this.pitch > -0.08) this.pitch += (-0.08 - this.pitch) * Math.min(1, 4 * dt);
 
-    const liftTarget = this.diving ? 0 : this.power ? f.flapClimb : -f.cruiseSink;
+    const liftTarget = this.diving ? 0 : this.power ? f.flapClimb * Math.min(1, 0.28 + this.airT / 1.3) : -f.cruiseSink;   // the climb builds up after take-off
     this.lift += (liftTarget - this.lift) * k(5, dt);
     if (this.pos.y > W.ceiling) this.lift = Math.min(this.lift, 0);
 
