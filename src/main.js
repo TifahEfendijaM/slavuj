@@ -461,7 +461,6 @@ function updateCutscene(dt) {
   const c = cut, o = c.o; c.t += dt;
   let seg = c.shots[0], t0 = 0;
   for (const s of c.shots) { if (c.t < t0 + s.dur || s === c.shots[c.shots.length - 1]) { seg = s; break; } t0 += s.dur; }
-  if (c.seg && c.seg !== seg) { $('fade').classList.add('on'); setTimeout(() => $('fade').classList.remove('on'), 150); }
   c.seg = seg;
   const e = smooth((c.t - t0) / seg.dur);
   camera.position.lerpVectors(seg.from, seg.to, e); camera.lookAt(look.lerpVectors(seg.lookFrom, seg.lookTo, e));
@@ -599,7 +598,7 @@ function updateFinale(dt) {
   flight.roll += (clamp(-dy * 3, -0.8, 0.8) - flight.roll) * k(6, dt); flight.speed = 14; flight.power = tan.y > 0.05;
   // the camera
   const s = FIN_SHOTS.find((x) => t < x.t1) || FIN_SHOTS[FIN_SHOTS.length - 1], e = smooth((t - s.t0) / (s.t1 - s.t0));
-  if (f.shot !== s) { if (f.shot) { $('fade').classList.add('on'); setTimeout(() => $('fade').classList.remove('on'), 160); } f.shot = s; }
+  if (f.shot !== s) f.shot = s;      // a straight cut between the finale's shots
   camera.position.lerpVectors(s.from, s.to, e);
   if (s.diver) { const d = diver.state === 'jump' ? diver.root.position : diver.state === 'stand' ? world.diverPos : diver.splashPos; f.look = (f.look || world.diverPos.clone()).lerp(V(d.x, d.y + 1, d.z), k(5, dt)); camera.lookAt(f.look); }
   else camera.lookAt(look.lerpVectors(s.lookFrom, s.lookTo, e));
