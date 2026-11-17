@@ -712,7 +712,7 @@ function tick(dt) {
   freeSingT -= dt;
   bird.root.position.copy(flight.pos);
   bird.root.rotation.set(-flight.pitch, flight.yaw, flight.roll);
-  bird.update(dt, { walk: flight.walk / S.flight.runSpeed, hop: !!flight.hop, rise: flight.mode === 'flying' && flight.hopOff > 0, paddle: flight.paddle, mode: flight.mode === 'perched' || flight.mode === 'swim' ? flight.mode : 'flying', power: flight.power, diving: flight.diving, speed: flight.speed, flare: flight.flare, turn: flight.roll,
+  bird.update(dt, { walk: flight.walk / S.flight.runSpeed, hop: !!flight.hop, paddle: flight.paddle, mode: flight.mode === 'perched' || flight.mode === 'swim' ? flight.mode : 'flying', power: flight.power, diving: flight.diving, speed: flight.speed, flare: flight.flare, turn: flight.roll,
     clearL: flight.clearL, clearR: flight.clearR, sing: singing || freeSingT > 0, feet: flight.feet, yaw: flight.yaw });
   if (bird.downstroke) { if (running || fin) audio.flap(bird.downstroke, fin ? S.audio.finaleFlap : 1); bird.downstroke = 0; }
   audio.setRush(flight.speed, flight.mode === 'flying' && running, dt);

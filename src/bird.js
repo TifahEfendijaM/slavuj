@@ -95,10 +95,10 @@ export function createBird() {
       cyc += dt; if (cyc > CYC) cyc = 0;
       const bound = !perched && !steady && !st.diving && cyc > CYC * 0.64;
       const pad = swim ? (st.paddle || 0) : 0;
-      const wantOpen = swim ? 0.34 * pad : perched ? (settling ? 0.6 : 0) : st.rise ? 0.55 : st.diving ? 0.08 : bound ? 0.05 : 1;      // rise: hopping off an edge, wings half open
+      const wantOpen = swim ? 0.34 * pad : perched ? (settling ? 0.6 : 0) : st.diving ? 0.08 : bound ? 0.05 : 1;
       open += (wantOpen - open) * k(perched ? 10 : 11, dt);
       const freq = st.power ? 6.4 : fl > 0.25 ? 7.4 : 4.8;
-      const wantAmp = perched ? (settling ? 0.5 : 0) : st.rise || st.diving ? 0 : st.power ? 1.05 : fl > 0.25 ? 0.6 : 0.78;
+      const wantAmp = perched ? (settling ? 0.5 : 0) : st.diving ? 0 : st.power ? 1.05 : fl > 0.25 ? 0.6 : 0.78;
       amp += (wantAmp - amp) * k(6, dt);
       phase += dt * freq * Math.PI * 2;
       const beat = Math.sin(phase), up = Math.max(0, Math.cos(phase));
