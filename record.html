@@ -67,7 +67,7 @@ const has = async (id) => { const r = await fetch(`/assets/audio/words/${encodeU
 const existing = new Set((await Promise.all(all.map(async (w) => ((await has(slug(w))) ? slug(w) : null)))).filter(Boolean));
 
 const $ = (id) => document.getElementById(id), list = $('list');
-let cur = 0, ctx = null, stream = null, node = null, recording = false, chunks = [], takes = {}, player = null;
+let cur = 0, ctx = null, stream = null, recording = false, takes = {}, player = null;
 const rows = all.map((word, i) => {
   const li = document.createElement('li'), id = slug(word);
   li.innerHTML = `<div><span class="w"></span><span class="en"></span></div><div class="btns"><button class="rec">● Record</button><button class="play" disabled>▶ Play</button><button class="save" disabled>Save</button></div>`;
@@ -92,36 +92,49 @@ function refresh() {
 function select(i) { if (recording) return; cur = Math.max(0, Math.min(rows.length - 1, i)); refresh(); rows[cur].li.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
 const say = (t) => { $('status').textContent = t; };
 
+// The microphone is recorded with the browser's own recorder (it does not need the page's audio engine to be
+// running); the audio engine is only used for the level bar and to decode each take, and is woken on every key press.
+let rec = null, parts = [], analyser = null, lastInfo = '';
+function wake() { if (!ctx) ctx = new AudioContext(); if (ctx.state !== 'running') ctx.resume().catch(() => {}); }
 async function micOn() {
-  if (ctx) return true;
+  wake();
+  if (stream) return true;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: false } });
-  } catch (e) { say('The microphone could not be opened: allow it in the browser and try again.'); return false; }
-  ctx = new AudioContext(); const src = ctx.createMediaStreamSource(stream);
-  node = ctx.createScriptProcessor(2048, 1, 1);
-  node.onaudioprocess = (e) => {
-    const d = e.inputBuffer.getChannelData(0); let pk = 0; for (let i = 0; i < d.length; i++) pk = Math.max(pk, Math.abs(d[i]));
-    $('lvl').style.width = Math.min(100, pk * 140) + '%'; $('lvl').style.background = pk > 0.97 ? 'var(--red)' : 'var(--green)';
-    if (recording) chunks.push(new Float32Array(d));
-  };
-  src.connect(node); node.connect(ctx.destination);      // (the processor outputs silence; it must be connected to run)
-  $('micBtn').textContent = 'Microphone on'; say('Ready. Press Space to record the highlighted word.'); return true;
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
+  } catch (e) { say('The microphone could not be opened (' + e.name + '): allow it for this site in the browser, and for the browser in macOS Privacy & Security → Microphone.'); return false; }
+  analyser = ctx.createAnalyser(); analyser.fftSize = 1024; ctx.createMediaStreamSource(stream).connect(analyser);
+  const buf = new Float32Array(analyser.fftSize);
+  const meter = () => { analyser.getFloatTimeDomainData(buf); let pk = 0; for (const v of buf) pk = Math.max(pk, Math.abs(v)); $('lvl').style.width = Math.min(100, pk * 140) + '%'; $('lvl').style.background = pk > 0.97 ? 'var(--red)' : 'var(--green)'; requestAnimationFrame(meter); };
+  meter();
+  const track = stream.getAudioTracks()[0];
+  $('micBtn').textContent = 'Microphone on'; say(`Ready (${track ? track.label || 'microphone' : 'no audio track!'}). Press Space to record the highlighted word.`); return true;
 }
 $('micBtn').onclick = micOn;
 
 async function toggleRec() {
+  wake();
   if (!(await micOn())) return;
-  if (!recording) { chunks = []; recording = true; say(`Recording “${rows[cur].word}”… press Space to stop.`); refresh(); return; }
-  recording = false;
-  const take = clean(chunks, ctx.sampleRate);
-  if (!take) { say('Nothing was heard. Check the microphone level and try again.'); refresh(); return; }
+  if (!recording) {
+    parts = []; rec = new MediaRecorder(stream); rec.ondataavailable = (e) => { if (e.data.size) parts.push(e.data); };
+    rec.start(); recording = true; say(`Recording “${rows[cur].word}”… press Space to stop.`); refresh(); return;
+  }
+  recording = false; refresh();
+  const done = new Promise((r) => { rec.onstop = r; }); rec.stop(); await done;
+  const blob = new Blob(parts, { type: rec.mimeType });
+  let audio;
+  try { audio = await ctx.decodeAudioData(await blob.arrayBuffer()); }
+  catch (e) { say(`The recording could not be read (${blob.size} bytes of ${rec.mimeType || 'audio'}). Try again; if it keeps happening, tell Claude this message.`); return; }
+  const data = audio.getChannelData(0); let pk = 0; for (const v of data) pk = Math.max(pk, Math.abs(v));
+  lastInfo = `loudest ${(pk * 100).toFixed(1)}%, ${audio.duration.toFixed(1)} s recorded`;
+  const take = clean([data], audio.sampleRate);
+  if (!take) { say(`Nothing was heard (${lastInfo}). Speak closer to the microphone and try again; if the level bar does not move, the browser is not getting any sound.`); return; }
   takes[rows[cur].id] = take; refresh(); play(); say(`Recorded (${(take.length / take.rate).toFixed(1)} s). P to hear it again, Enter to save it, Space to record again.`);
 }
 // cut the silence at both ends, even out the volume, fade the edges, and drop to 24 kHz to keep files small
 function clean(parts, rate) {
   let n = 0; for (const p of parts) n += p.length; if (!n) return null;
   const a = new Float32Array(n); let o = 0; for (const p of parts) { a.set(p, o); o += p.length; }
-  let pk = 0; for (const v of a) pk = Math.max(pk, Math.abs(v)); if (pk < 0.02) return null;
+  let pk = 0; for (const v of a) pk = Math.max(pk, Math.abs(v)); if (pk < 0.004) return null;      // (a quiet microphone is fine: the volume is evened out)
   const th = pk * 0.06, win = Math.round(rate * 0.01); let s = 0, e = a.length - 1;
   const loud = (i) => { let m = 0; for (let k = i; k < Math.min(a.length, i + win); k++) m = Math.max(m, Math.abs(a[k])); return m > th; };
   while (s < a.length && !loud(s)) s += win; while (e > s && !loud(Math.max(0, e - win))) e -= win;
