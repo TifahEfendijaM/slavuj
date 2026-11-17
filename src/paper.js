@@ -353,14 +353,18 @@ export class Builder {
         const c = s.box.getCenter(new THREE.Vector3()), rad = Math.max(0.5, s.box.getSize(_v).length() / 2), dist = c.distanceTo(src);
         let sd, radius, delay, dur;
         if (t.mode === 'one') { sd = src; radius = t.radius ?? 160; delay = 0; dur = t.dur ?? 4.6; }
-        else if (dist < rad + 2) { sd = src; radius = rad + dist + 0.5; delay = 0; dur = 4.2; }
+        else if (dist < rad + 2) { sd = src; radius = rad + dist + 0.5; delay = 0; dur = t.quickNear ? 2.2 : 4.2; }
         else { sd = c.clone().addScaledVector(_d.subVectors(src, c).normalize(), rad * 0.9); radius = rad * 2; delay = t.waveDelay + Math.min(dist, 150) / 150 * 2.5; dur = 2.0; }
         for (const [v0, cnt] of s.ranges) for (let i = v0; i < v0 + cnt; i++) {
           seed[i * 3] = sd.x; seed[i * 3 + 1] = sd.y; seed[i * 3 + 2] = sd.z;
           ani[i * 4] = radius; ani[i * 4 + 1] = delay; ani[i * 4 + 2] = dur; ani[i * 4 + 3] = t.sway[i];
         }
         t.end = Math.max(t.end || 0, delay + dur);
-        if (delay === 0) t.nearEnd = Math.max(t.nearEnd || 0, dur);      // the first object, the one the orb sits on      // seconds after painting starts until the last of it is coloured
+        // the first object, the one the orb sits on: when it is fully coloured (a wave over everything reaches it early)
+        if (t.mode === 'one') { if (dist < (t._nearest ?? 1e9)) {      // only the piece nearest the orb; (the shader: dry colour once
+          t._nearest = dist;                                               // the front, minus its wet band and ragged edge, has passed)
+          const pr = Math.min(1, ((dist + rad) / radius + 1.25) / 2.3); t.nearEnd = (1 - Math.pow(1 - pr, 2 / 3)) * dur; } }
+        else if (delay === 0) t.nearEnd = Math.max(t.nearEnd || 0, dur);      // seconds after painting starts until the last of it is coloured
         for (const [v0, cnt] of s.hranges) for (let i = v0; i < v0 + cnt; i++) {
           hseed[i * 3] = sd.x; hseed[i * 3 + 1] = sd.y; hseed[i * 3 + 2] = sd.z; hani[i * 4 + 3] = t.hsway[i];
         }

@@ -174,7 +174,7 @@ export function buildWorld(scene) {
   });
   for (const z of [-112, -86, -62, -42, 24, 46, 72, 98, 120]) willow(14.4, z, 0.9 + R2() * 0.25);
   for (const z of [-114, -90, -66, -44, -24, 56, 76, 100, 120]) willow(-14.4, z, 0.9 + R2() * 0.25);
-  orb('stijena', [9.7, 5.6, -23.5], 6, ['rock'], 'wide', 7.6);
+  orb('stijena', [9.7, 5.6, -23.5], 6, ['rock'], 'combo', 7.6);
   // boulders in the river
   let ri = 0;
   for (const [x, z, s] of [[3, 30, 1.5], [-5, -18, 1.1], [6, -42, 1.3], [-3, 64, 1.2], [6, 50, 0.9], [-6, 86, 1.4], [4, -80, 1.2]])
@@ -833,6 +833,8 @@ export function buildWorld(scene) {
   A(DODE, -19.5, BANK + 0.45, 47, { tag: 'rock', col: BOULDERS[1][0], bleed: BOULDERS[1][1] }, 0.4, 0, 0, [1.4, 0.8, 1.2]);
 
   // where each tag's colour starts from: the orb that paints it
+  // in a scene with a close look then a wide one, the first object colours quickly enough to be photographed before the cut
+  for (const o of orbs) if (o.shot === 'combo') for (const t of o.tags) tag(t).quickNear = true;
   for (const o of orbs) for (const t of o.tags) tag(t).source = o.focus.clone();
   tag('sky').source = sunPos.clone(); tag('sun').source = sunPos.clone();
   b.finish(scene);

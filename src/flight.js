@@ -46,7 +46,8 @@ export class Flight {
     for (const [a, b] of [[0, 0], [0.32, 0], [-0.32, 0], [0.18, 0.15], [0.18, -0.15], [-0.18, 0.15], [-0.18, -0.15], [0, 0.21], [0, -0.21]]) {
       _o.copy(p).addScaledVector(f, a * sc).addScaledVector(l, b * sc); _o.y = p.y + 1.1;
       const h = this.cast(_o, DOWN, 2.2);
-      if (h && !h.object.userData.water) { g.push([a * sc, b * sc, h.point.y]); nrm.add(h.n); }
+      // a surface far above where the feet are (a chimney beside the bird) is an obstacle, not ground to stand on
+      if (h && !h.object.userData.water && h.point.y < p.y + 0.3) { g.push([a * sc, b * sc, h.point.y]); nrm.add(h.n); }
     }
     if (nrm.lengthSq() < 0.01) nrm.set(0, 1, 0); nrm.normalize();
     const st = clamp((0.8 - nrm.y) / 0.18, 0, 1), lean = st * st * (3 - 2 * st) * 0.85;
@@ -73,7 +74,7 @@ export class Flight {
     const f = S.flight, sc = S.bird.scale;
     if (this.hop) {
       const h = this.hop; h.t += dt; const u = Math.min(1, h.t / h.dur);
-      this.pos.lerpVectors(h.from, h.to, h.ease ? 1 - (1 - u) * (1 - u) : u); this.pos.y += Math.sin(Math.PI * u) * h.arc;
+      this.pos.lerpVectors(h.from, h.to, u); this.pos.y += Math.sin(Math.PI * u) * h.arc;
       if (u >= 1) { this.hop = null; this.landedOn = h.obj; this.settle(h.point); }
       return;
     }
@@ -81,7 +82,13 @@ export class Flight {
     this.yaw += angDiff(this.camYaw, this.yaw) * k(7, dt);
     this.walk = this.walk ? Math.min(f.runSpeed, this.walk + f.walkAccel * dt) : f.walkStart;
     const fw = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), step = this.walk * dt, gy = this.groundY, reach = 0.3 * sc + 0.08;
-    const hopTo = (hit) => { const dy = hit.point.y - gy; this.feet = null; this.hop = { from: this.pos.clone(), to: hit.point.clone().setY(hit.point.y + this.perchH), point: hit.point.clone(), obj: hit.object, t: 0, dur: 0.38 + Math.abs(dy) * 0.3, arc: 0.16 + Math.max(0, dy) * 0.3 + Math.abs(dy) * 0.12 }; };
+    // a hop needs a clear way: straight up to just above where it lands, then across (never into a wall or a chimney)
+    const clearTo = (to) => {
+      const top = Math.max(this.pos.y, to.y) + 0.1, mid = new THREE.Vector3(this.pos.x, top, this.pos.z), end = new THREE.Vector3(to.x, top, to.z);
+      for (const [a, b] of [[this.pos, mid], [mid, end]]) { const d = b.clone().sub(a), L = d.length(); if (L > 0.01 && this.cast(a, d.normalize(), L)) return false; }
+      return true;
+    };
+    const hopTo = (hit) => { if (!clearTo(hit.point.clone().setY(hit.point.y + this.perchH))) { this.walk = 0; return false; } const dy = hit.point.y - gy; this.feet = null; this.hop = { from: this.pos.clone(), to: hit.point.clone().setY(hit.point.y + this.perchH), point: hit.point.clone(), obj: hit.object, t: 0, dur: 0.38 + Math.abs(dy) * 0.3, arc: 0.16 + Math.max(0, dy) * 0.3 + Math.abs(dy) * 0.12 }; return true; };
     const ahead = this.cast(this.pos, fw, step + reach);
     if (ahead && !ahead.object.userData.water) {                          // something in the way: hop onto it if it is low enough
       const top = this.cast(new THREE.Vector3(this.pos.x + fw.x * (ahead.distance + reach), gy + f.hopUp + 0.3, this.pos.z + fw.z * (ahead.distance + reach)), DOWN, f.hopUp + 0.32);
@@ -111,14 +118,21 @@ export class Flight {
 
   land(hit) {
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
-    this.landedOn = hit.object; this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
-    // stand where the bird actually is (the surface right under it), not where a feeler ray touched,
-    // and glide the last few centimetres there instead of jumping
-    const from = this.pos.clone(), under = this.cast(_o.copy(from).setY(from.y + 0.3), DOWN, this.perchH + 1.2);
-    if (under && this.landable(under) && Math.abs(under.point.y - hit.point.y) < 0.6) hit = under;
-    this.settle(hit.point); this.events.push('land');
-    const d = this.pos.distanceTo(from);
-    if (d > 0.03) { this.hop = { from, to: this.pos.clone(), point: hit.point.clone(), obj: hit.object, t: 0, dur: clamp(d * 0.5, 0.07, 0.2), arc: 0, ease: true }; this.pos.copy(from); }
+    this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
+    // touched by a feeler reaching ahead of the body: land under the body as it is when that feeler touches,
+    // not out where the feeler's tip was (that was a jump of up to half a metre)
+    if (hit.dir) {
+      const R0 = S.flight.bodyRadius, d = hit.dir; _d.set(d.x, 0, d.z).normalize();
+      _o.copy(this.pos).addScaledVector(_d, Math.max(0, hit.distance - R0)); _o.y = Math.max(this.pos.y, hit.point.y) + 0.5;
+      const top = _o.y, ok = (h) => h && this.landable(h) && Math.abs(h.point.y - hit.point.y) < 0.8;
+      let h = this.cast(_o, DOWN, 1.6);
+      if (!ok(h)) {      // the body is just past an edge: the nearest spot on the surface towards where it was touched
+        const from = _o.clone(), to = hit.point.clone().setY(top);
+        for (let u = 0.1; u <= 1.001 && !ok(h); u += 0.1) h = this.cast(_o.lerpVectors(from, to, u), DOWN, 1.6);
+      }
+      if (ok(h)) hit = h;
+    }
+    this.landedOn = hit.object; this.settle(hit.point); this.events.push('land');
   }
 
   update(dt, inp) {
@@ -226,7 +240,7 @@ export class Flight {
     let ahead = this.cast(this.pos, dir, step + R0);
     for (const sd of [-0.75, 0.75]) { const h = this.cast(_o.copy(this.pos).addScaledVector(left, sd * R0), dir, step + R0); if (h && !h.object.userData.water && (!ahead || h.distance < ahead.distance)) ahead = h; }
     if (ahead && !ahead.object.userData.water) {
-      if (this.landable(ahead) && this.grace <= 0) return this.land(ahead);
+      if (this.landable(ahead) && this.grace <= 0) { ahead.dir = dir; return this.land(ahead); }
       const n = new THREE.Vector3(ahead.n.x, 0, ahead.n.z);
       if (n.lengthSq() < 0.01) n.copy(fwd).negate(); n.normalize();
       const fl = new THREE.Vector3(dir.x, 0, dir.z); fl.addScaledVector(n, -fl.dot(n));

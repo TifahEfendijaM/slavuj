@@ -365,7 +365,7 @@ function shotsFor(o, bird) {
   if (d.shot === 'bridge') return [{ from: V(13, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
   if (d.shot === 'close') return [closeShot(o, bird, C.closeDuration)];
   if (d.shot === 'wide') return [wideShot(o, C.wideDuration)];
-  return [closeShot(o, bird, Math.max(4, C.paintDelay + nearEnd(o) + 0.8)), wideShot(o, C.wideDuration - 4)];     // the close look lasts until its object is coloured
+  return [closeShot(o, bird, 4), wideShot(o, C.wideDuration - 4)];
 }
 // used from the console to check every orb's camera without playing through it
 function checkShots() {
@@ -446,7 +446,7 @@ function updateCutscene(dt) {
 const paintEnd = (o) => Math.max(0, ...o.def.tags.map((t) => tag(t).end || 4.6));      // (the clock hands and the diver colour on their own, within 4.6 s)
 // in a scene with a close look and then a wide one, the photo is of the first object, fully coloured, before the cut
 const nearEnd = (o) => Math.max(0, ...o.def.tags.map((t) => tag(t).nearEnd ?? tag(t).end ?? 4.6));
-const snapTime = (o, dur) => o.def.shot === 'combo' ? S.cutscene.paintDelay + nearEnd(o) + 0.3 : Math.min(S.cutscene.paintDelay + paintEnd(o) + 0.4, dur - 0.2);
+const snapTime = (o, dur) => o.def.shot === 'combo' ? Math.min(S.cutscene.paintDelay + nearEnd(o) + 0.2, 3.8) : Math.min(S.cutscene.paintDelay + paintEnd(o) + 0.4, dur - 0.2);
 function finishOrb(o) {
   o.done = true; o.alive = false; scene.remove(o.vis); if (o.id === 'sat') hands.visible = true;
   if (!save.done.includes(o.id)) save.done.push(o.id); store();
