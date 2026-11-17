@@ -31,6 +31,7 @@
     font-size: 23px; white-space: nowrap; transition: opacity .25s; z-index: 3; box-shadow: 3px 4px 0 rgba(59, 53, 47, .18); }
   #legend, #reticle { display: none; }
   #pause table { margin: 10px auto 0; font-size: 18px; border-spacing: 14px 4px; text-align: left; } #pause td:first-child { text-align: right; white-space: nowrap; }
+  #pause td { vertical-align: top; padding: 2px 0; } #pause td i { opacity: .55; font-style: normal; } #pause tr.multi td { line-height: 1.35; } #pause tr.gap td { padding-top: 12px; }
   #pause .menu { display: flex; gap: 14px; justify-content: center; margin-top: 16px; }
   #pause .menu button { font-size: 20px; padding: 5px 18px 7px; background: #fffaf0; cursor: pointer; box-shadow: 2px 3px 0 rgba(59, 53, 47, .18); }
   #pause .menu button:hover, #pause .menu button.armed { background: #fff2c4; }
@@ -159,10 +160,12 @@
 </div>
 <div id="card" class="wobbly off" title="Click to close"><img id="cardImg" alt=""><div><b></b><span></span></div></div>
 <div id="pause" class="overlay off"><div class="card wobbly">Paused · click to keep flying<table>
-      <tr><td>Mouse</td><td>steer</td></tr>
-      <tr><td><kbd>Space</kbd></td><td>take off · flap hard to climb</td></tr>
-      <tr><td>Hold the mouse button</td><td>dive in flight · walk on the ground · paddle on water</td></tr>
-      <tr><td><kbd>J</kbd> · <kbd>F</kbd> · <kbd>Esc</kbd></td><td>journal · sing · pause</td></tr>
+      <tr><td><kbd>Mouse</kbd></td><td>steer</td></tr>
+      <tr><td><kbd>Space</kbd></td><td>take off, flap hard to climb</td></tr>
+      <tr class="multi"><td><kbd>Hold click</kbd></td><td>dive <i>in flight</i><br>walk <i>on the ground</i><br>paddle <i>on water</i></td></tr>
+      <tr class="gap"><td><kbd>J</kbd></td><td>journal</td></tr>
+      <tr><td><kbd>F</kbd></td><td>sing</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>pause</td></tr>
     </table>
     <div class="menu"><button id="restart" class="wobbly">Restart level</button><button id="toFinale" class="wobbly">Skip to the finale</button></div>
     <div class="note">Restart clears this level's colours and words. Skip to the finale colours everything and collects every word (for testing).</div>
