@@ -47,7 +47,7 @@ export const WORDS = {
   cekati:  { word: 'čekati',  en: 'to wait',  q: 'What is she doing at the bus stop?', choices: ['plivati', 'čekati', 'veslati'] },
   sladoled: { word: 'sladoled', en: 'ice cream', q: 'What is in her hand, and on the cart?', choices: ['sladoled', 'hljeb', 'supa'] },
   jesti:   { word: 'jesti',   en: 'to eat',   q: 'What is she doing with her ice cream?', choices: ['jesti', 'pjevati', 'trčati'] },
-  stolice: { word: 'stolice', en: 'chairs',   q: 'There are two of them at this table. Which word is it?', choices: ['klupe', 'stolice', 'vrata'] },
+  stolice: { word: 'stolice', en: 'chairs',   q: 'People sit on them at the café tables. Which word is it?', choices: ['klupe', 'stolice', 'vrata'] },
   piti:    { word: 'piti',    en: 'to drink', q: 'What is he doing with his coffee?', choices: ['piti', 'jesti', 'trčati'] },
   svadjanje: { word: 'svađanje', en: 'arguing', q: 'These two at the café table are not happy with each other. What is this called?', choices: ['svađanje', 'spavanje', 'plivanje'] },
   djeca:   { word: 'djeca',   en: 'children', q: 'Who is playing here?', choices: ['mačke', 'skakači', 'djeca'] },

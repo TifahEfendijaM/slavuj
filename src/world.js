@@ -703,8 +703,8 @@ export function buildWorld(scene) {
     box(0.44, 0.05, 0.44, 0, 0.46, 0, { ...Ch, pat: PAT.planks, ps: 6 }); box(0.44, 0.5, 0.04, 0, 0.76, -0.2, { ...Ch, pat: PAT.planks, ps: 6 });
     for (const lx of [-0.18, 0.18]) for (const lz of [-0.18, 0.18]) box(0.04, 0.46, 0.04, lx, 0.23, lz, { ...Ch, solid: false, ink: false });
   }); b.pop(); };
-  // first table: the coffee drinker's (piti colours it with his coffee things; stolice colours its two chairs). Second table: the quarrel's.
-  for (const [tx, tz, tt, tc, tid, cid] of [[-57.6, 8.2, 'coffee', 'chair', 'piti', 'stolice'], [-57.6, 12.2, 'argue', 'argue', 'svadjanje', 'svadjanje']]) {
+  // first table: the coffee drinker's (piti colours it with his coffee things). Second table: the quarrel's. stolice colours all four chairs.
+  for (const [tx, tz, tt, tc, tid, cid] of [[-57.6, 8.2, 'coffee', 'chair', 'piti', 'stolice'], [-57.6, 12.2, 'argue', 'chair', 'svadjanje', 'stolice']]) {
     b.object(() => {
       const Tb = { tag: tt, col: '#f3ecdc', bleed: '#d9cfb8', orb: tid, edge: 40 };
       A(CYL12, tx, G0 + 0.74, tz, Tb, 0, 0, 0, [0.5, 0.06, 0.5]); A(CYL, tx, G0 + 0.37, tz, { ...Tb, col: '#4a4a48', bleed: '#2f2f2e', edge: 50 }, 0, 0, 0, [0.05, 0.74, 0.05]); A(CYL12, tx, G0 + 0.03, tz, { ...Tb, col: '#4a4a48', solid: false }, 0, 0, 0, [0.26, 0.05, 0.26]);
@@ -718,7 +718,7 @@ export function buildWorld(scene) {
     A(CYL12, -57.6, y + 0.006, 8.2, { ...K, col: '#c98a4a', bleed: '#a8672f' }, 0, 0, 0, [0.3, 0.012, 0.3]);    // the copper tray
   });
   orb('piti', [-58.1, G0 + 0.9, 8.2], 2.2, ['drink', 'coffee'], 'close', G0 + 1.6, { near: { p: [-58.5, BANK + 0.6, 6.7], r: 1.9 } });
-  orb('stolice', [-56.75, G0 + 0.5, 8.2], 1.5, ['chair'], 'close', G0 + 1, { near: { p: [-56.3, BANK + 0.6, 8.9], r: 1.7 }, at: new Vector3(-56.75, G0 + 1.9, 8.2) });
+  orb('stolice', [-56.75, G0 + 0.5, 8.2], 1.5, ['chair'], 'combo', G0 + 1, { near: { p: [-56.3, BANK + 0.6, 8.9], r: 1.7 }, at: new Vector3(-56.75, G0 + 1.9, 8.2) });
 
   orb('svadjanje', [-57.6, G0 + 0.8, 12.2], 2.2, ['argue'], 'close', G0 + 1.7, { near: { p: [-57.6, BANK + 0.6, 13.8], r: 2.2 } });
 
