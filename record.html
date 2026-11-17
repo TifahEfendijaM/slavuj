@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slavuj · Word Recorder</title>
+<style>
+  :root { --paper: #f5efdf; --paper2: #efe6d0; --ink: #3b352f; --soft: #8a7f72; --yellow: #ffc61a; --blue: #2466e8; --red: #b8452c; --green: #4f8068; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'Patrick Hand', 'Comic Sans MS', cursive; }
+  button { font-family: inherit; color: inherit; cursor: pointer; }
+  main { max-width: 860px; margin: 0 auto; padding: 28px 16px 80px; }
+  h1 { font-family: 'Caveat', cursive; font-size: 54px; margin: 0; color: var(--blue); }
+  .intro { font-size: 19px; line-height: 1.45; margin: 6px 0 14px; }
+  .intro kbd, .keys kbd { border: 2px solid var(--ink); border-radius: 6px; padding: 0 6px; background: #fffaf0; box-shadow: 1px 2px 0 var(--ink); font-family: inherit; }
+  .bar { position: sticky; top: 0; z-index: 2; background: var(--paper); padding: 10px 0; border-bottom: 2px dashed #d8ccb2; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .meter { flex: 1; min-width: 160px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fffaf0; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--green); transition: width .05s; }
+  .count { font-size: 20px; }
+  .mic { font-size: 18px; padding: 4px 14px; border: 2px solid var(--ink); border-radius: 10px; background: var(--yellow); box-shadow: 2px 3px 0 rgba(59,53,47,.25); }
+  .status { font-size: 17px; color: var(--soft); min-height: 24px; }
+  ol { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; }
+  li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 12px; border: 2px solid transparent; border-radius: 12px; background: #fbf6ea; }
+  li.cur { border-color: var(--ink); background: #fff8df; }
+  li.done .w::after { content: '  ✓'; color: var(--green); }
+  .w { font-family: 'Caveat', cursive; font-size: 34px; line-height: 1; }
+  .en { font-size: 16px; color: var(--soft); margin-left: 8px; }
+  .btns { display: flex; gap: 6px; }
+  .btns button { font-size: 16px; padding: 3px 11px; border: 2px solid var(--ink); border-radius: 9px; background: #fffaf0; }
+  .btns button.rec { background: #fde4dc; }
+  .btns button.rec.on { background: var(--red); color: #fff; }
+  .btns button:disabled { opacity: .35; cursor: default; }
+  @media (max-width: 560px) { li { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Word recorder</h1>
+  <p class="intro">
+    Record each Bosnian word once, clearly and naturally, one speaker for all of them.
+    Saved recordings go straight into <code>assets/audio/words/</code> and the game uses them instead of the browser voice.<br>
+    <span class="keys"><kbd>Space</kbd> start / stop recording · <kbd>P</kbd> play it back · <kbd>Enter</kbd> save and go to the next word · <kbd>↑</kbd><kbd>↓</kbd> choose a word</span><br>
+    Silence at the start and end is cut off by itself, and the volume is evened out.
+  </p>
+  <div class="bar">
+    <button class="mic" id="micBtn">Turn on the microphone</button>
+    <div class="meter"><i id="lvl"></i></div>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="status" id="status"></div>
+  <ol id="list"></ol>
+</main>
+<script type="module">
+import '@fontsource/caveat/latin-700.css';
+import '@fontsource/caveat/latin-ext-700.css';
+import '@fontsource/patrick-hand/latin-400.css';
+import '@fontsource/patrick-hand/latin-ext-400.css';
+import { WORDS } from './src/vocab.js';
+
+// every word the game can say: the words themselves and the answer choices (which have speaker buttons too)
+const en = {}; for (const w of Object.values(WORDS)) en[w.word] = w.en;
+const all = []; const seen = new Set();
+for (const w of Object.values(WORDS)) for (const x of [w.word, ...(w.choices || [])]) if (!seen.has(x)) { seen.add(x); all.push(x); }
+// same file name rule as the game (src/audio.js): lower case, no diacritics
+const slug = (w) => w.toLowerCase().replace(/đ/g, 'dj').replace(/[ćč]/g, 'c').replace(/š/g, 's').replace(/ž/g, 'z');
+// which words already have a recording (asked once; not watched, so saving does not reload this page)
+const has = async (id) => { const r = await fetch(`/assets/audio/words/${encodeURIComponent(id)}.wav`, { method: 'HEAD' }); return r.ok && (r.headers.get('content-type') || '').includes('audio'); };      // (a missing file comes back as a web page)
+const existing = new Set((await Promise.all(all.map(async (w) => ((await has(slug(w))) ? slug(w) : null)))).filter(Boolean));
+
+const $ = (id) => document.getElementById(id), list = $('list');
+let cur = 0, ctx = null, stream = null, node = null, recording = false, chunks = [], takes = {}, player = null;
+const rows = all.map((word, i) => {
+  const li = document.createElement('li'), id = slug(word);
+  li.innerHTML = `<div><span class="w"></span><span class="en"></span></div><div class="btns"><button class="rec">● Record</button><button class="play" disabled>▶ Play</button><button class="save" disabled>Save</button></div>`;
+  li.querySelector('.w').textContent = word; li.querySelector('.en').textContent = en[word] ? en[word] : '(answer choice)';
+  if (existing.has(id)) li.classList.add('done');
+  li.querySelector('.rec').onclick = () => { select(i); toggleRec(); };
+  li.querySelector('.play').onclick = () => { select(i); play(); };
+  li.querySelector('.save').onclick = () => { select(i); save(); };
+  li.onclick = (e) => { if (e.target.tagName !== 'BUTTON') select(i); };
+  list.append(li); return { li, word, id };
+});
+function refresh() {
+  rows.forEach((r, i) => {
+    r.li.classList.toggle('cur', i === cur);
+    r.li.querySelector('.rec').classList.toggle('on', recording && i === cur);
+    r.li.querySelector('.rec').textContent = recording && i === cur ? '■ Stop' : '● Record';
+    r.li.querySelector('.play').disabled = !takes[r.id] && !r.li.classList.contains('done');
+    r.li.querySelector('.save').disabled = !takes[r.id];
+  });
+  $('count').textContent = `${rows.filter((r) => r.li.classList.contains('done')).length} of ${rows.length} saved`;
+}
+function select(i) { if (recording) return; cur = Math.max(0, Math.min(rows.length - 1, i)); refresh(); rows[cur].li.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+const say = (t) => { $('status').textContent = t; };
+
+async function micOn() {
+  if (ctx) return true;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: false } });
+  } catch (e) { say('The microphone could not be opened: allow it in the browser and try again.'); return false; }
+  ctx = new AudioContext(); const src = ctx.createMediaStreamSource(stream);
+  node = ctx.createScriptProcessor(2048, 1, 1);
+  node.onaudioprocess = (e) => {
+    const d = e.inputBuffer.getChannelData(0); let pk = 0; for (let i = 0; i < d.length; i++) pk = Math.max(pk, Math.abs(d[i]));
+    $('lvl').style.width = Math.min(100, pk * 140) + '%'; $('lvl').style.background = pk > 0.97 ? 'var(--red)' : 'var(--green)';
+    if (recording) chunks.push(new Float32Array(d));
+  };
+  src.connect(node); node.connect(ctx.destination);      // (the processor outputs silence; it must be connected to run)
+  $('micBtn').textContent = 'Microphone on'; say('Ready. Press Space to record the highlighted word.'); return true;
+}
+$('micBtn').onclick = micOn;
+
+async function toggleRec() {
+  if (!(await micOn())) return;
+  if (!recording) { chunks = []; recording = true; say(`Recording “${rows[cur].word}”… press Space to stop.`); refresh(); return; }
+  recording = false;
+  const take = clean(chunks, ctx.sampleRate);
+  if (!take) { say('Nothing was heard. Check the microphone level and try again.'); refresh(); return; }
+  takes[rows[cur].id] = take; refresh(); play(); say(`Recorded (${(take.length / take.rate).toFixed(1)} s). P to hear it again, Enter to save it, Space to record again.`);
+}
+// cut the silence at both ends, even out the volume, fade the edges, and drop to 24 kHz to keep files small
+function clean(parts, rate) {
+  let n = 0; for (const p of parts) n += p.length; if (!n) return null;
+  const a = new Float32Array(n); let o = 0; for (const p of parts) { a.set(p, o); o += p.length; }
+  let pk = 0; for (const v of a) pk = Math.max(pk, Math.abs(v)); if (pk < 0.02) return null;
+  const th = pk * 0.06, win = Math.round(rate * 0.01); let s = 0, e = a.length - 1;
+  const loud = (i) => { let m = 0; for (let k = i; k < Math.min(a.length, i + win); k++) m = Math.max(m, Math.abs(a[k])); return m > th; };
+  while (s < a.length && !loud(s)) s += win; while (e > s && !loud(Math.max(0, e - win))) e -= win;
+  s = Math.max(0, s - Math.round(rate * 0.12)); e = Math.min(a.length, e + Math.round(rate * 0.18));
+  const step = rate / 24000, len = Math.floor((e - s) / step), out = new Float32Array(len), g = 0.89 / pk, fade = Math.round(24000 * 0.012);
+  for (let i = 0; i < len; i++) { const x = s + i * step, i0 = Math.floor(x), f = x - i0; out[i] = ((a[i0] ?? 0) * (1 - f) + (a[i0 + 1] ?? 0) * f) * g; }
+  for (let i = 0; i < fade; i++) { out[i] *= i / fade; out[len - 1 - i] *= i / fade; }
+  out.rate = 24000; return out;
+}
+function wav(samples, rate) {
+  const b = new ArrayBuffer(44 + samples.length * 2), v = new DataView(b), str = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  str(0, 'RIFF'); v.setUint32(4, 36 + samples.length * 2, true); str(8, 'WAVE'); str(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, samples[i])) * 0x7fff, true);
+  return new Blob([b], { type: 'audio/wav' });
+}
+function play() {
+  const r = rows[cur], take = takes[r.id]; player?.pause();
+  const url = take ? URL.createObjectURL(wav(take, take.rate)) : r.li.classList.contains('done') ? `/assets/audio/words/${encodeURIComponent(r.id)}.wav?t=${Date.now()}` : null;
+  if (url) { player = new Audio(url); player.play().catch(() => {}); }
+}
+async function save() {
+  const r = rows[cur], take = takes[r.id]; if (!take) return false;
+  const res = await fetch('/__word?id=' + encodeURIComponent(r.id), { method: 'POST', body: wav(take, take.rate) });
+  if (!res.ok) { say('Saving failed: is the game\'s dev server running (npm run dev)?'); return false; }
+  delete takes[r.id]; r.li.classList.add('done'); say(`Saved “${r.word}”.`); refresh(); return true;
+}
+addEventListener('keydown', async (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); toggleRec(); }
+  else if (e.code === 'KeyP') play();
+  else if (e.code === 'Enter') { e.preventDefault(); if (recording) return; if (await save()) select(cur + 1); }
+  else if (e.code === 'ArrowDown') { e.preventDefault(); select(cur + 1); }
+  else if (e.code === 'ArrowUp') { e.preventDefault(); select(cur - 1); }
+});
+refresh();
+</script>
+</body>
+</html>
