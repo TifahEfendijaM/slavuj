@@ -5,6 +5,7 @@ export default {
     minSpeed: 6,          // slowest the bird can fly
     maxSpeed: 34,         // top speed in a dive
     gravity: 16,          // how strongly climbing costs speed and diving gains it
+    glideGravity: 6,      // how strongly speed builds when just gliding downhill (no flapping, no diving)
     drag: 0.3,            // how fast extra speed above cruise fades
     glideRecover: 2.5,    // speed regained per second in ordinary flight
     flapClimb: 7,         // height gained per second while flapping hard (Space)

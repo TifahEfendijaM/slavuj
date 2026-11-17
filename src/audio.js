@@ -1,4 +1,5 @@
-// All sound is synthesised here, except word pronunciation: that plays a recording from
+// Sound is synthesised here, except a few animal and crowd recordings (assets/audio/sfx, CC0, see CREDITS.md)
+// and word pronunciation: that plays a recording from
 // assets/audio/words/<id>.(mp3|m4a|ogg|wav) when one exists, and otherwise falls back to the
 // browser's own speech voice for Croatian/Bosnian/Serbian (a placeholder, see CREDITS.md).
 import S from './settings.js';
@@ -6,6 +7,20 @@ import { WORDS } from './vocab.js';
 
 let ctx = null, master, sfx, mus, amb, noiseBuf;
 const wait = (s) => new Promise((r) => setTimeout(r, s * 1000));
+// recorded sounds: loaded once the sound is unlocked; until then (or if one fails) the synthesised one plays
+const SFX_URLS = Object.fromEntries(Object.entries(import.meta.glob('../assets/audio/sfx/*.mp3', { eager: true, query: '?url', import: 'default' })).map(([p, u]) => [p.split('/').pop().slice(0, -4), u]));
+const sfxBufs = {};
+function loadClips() { for (const [n, u] of Object.entries(SFX_URLS)) fetch(u).then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b)).then((buf) => { sfxBufs[n] = buf; }).catch(() => {}); }
+// play a recording; returns false if it is not loaded (so the caller can fall back)
+function clip(name, vol, o = {}) {
+  const buf = sfxBufs[name]; if (!ctx || !buf) return false;
+  const src = ctx.createBufferSource(), g = ctx.createGain(), t = now(); src.buffer = buf; src.playbackRate.value = o.rate ?? 1;
+  const dur = o.dur ?? buf.duration / src.playbackRate.value, fade = Math.min(o.fade ?? 0.01, dur / 3);
+  if (o.dur) src.loop = true;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + fade);
+  g.gain.setValueAtTime(vol, t + dur - fade); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(g).connect(o.bus || amb); src.start(t, o.offset ?? 0); src.stop(t + dur + 0.05); return true;
+}
 const now = () => ctx.currentTime;
 
 export function unlock() {
@@ -20,7 +35,7 @@ export function unlock() {
       amb = ctx.createGain(); amb.connect(master);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      startLoops(); setInterval(musicTick, 200);
+      startLoops(); setInterval(musicTick, 200); loadClips();
     }
     if (ctx.state !== 'running') ctx.resume();
   } catch (e) { ctx = null; }
@@ -93,6 +108,7 @@ export function flutter() { if (!ctx) return; const t = now(); for (let i = 0; i
 // a sheep bleating, as loud as it is near (g 0..1)
 export function baa(g = 1) {
   if (!ctx || g <= 0) return;
+  if (clip(Math.random() < 0.5 ? 'sheep-1' : 'sheep-4', 0.55 * g, { rate: 0.92 + Math.random() * 0.16 })) return;
   const t = now(), f0 = 270 + Math.random() * 90, dur = 0.7 + Math.random() * 0.35;
   const o = ctx.createOscillator(); o.type = 'sawtooth';
   o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.07, t + 0.12); o.frequency.linearRampToValueAtTime(f0 * 0.9, t + dur);
@@ -101,6 +117,9 @@ export function baa(g = 1) {
   for (const [f, q, v] of [[900, 1.4, 1], [2300, 3, 0.45]]) { const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q; const gv = ctx.createGain(); gv.gain.value = v; o.connect(bp).connect(gv).connect(out); }
   out.connect(amb); o.start(t); l.start(t); o.stop(t + dur + 0.05); l.stop(t + dur + 0.05);
 }
+// the horse neighing and the cat miaowing, as loud as they are near (g 0..1)
+export function neigh(g = 1) { if (ctx && g > 0) clip('horse-neigh', 0.6 * g, { rate: 0.95 + Math.random() * 0.1 }); }
+export function meow(g = 1) { if (ctx && g > 0) clip('cat-meow', 0.45 * g, { rate: 0.95 + Math.random() * 0.12 }); }
 // a knuckle on a wooden door
 export function knock(g = 1) { if (!ctx || g <= 0) return; const t = now(); tone(t, [[0, 190], [0.07, 120]], 0.2 * g, { decay: true, attack: 0.002, bus: amb }); noise(t, 0.05, { f0: 1100, q: 1.3, vol: 0.12 * g, attack: 0.002, bus: amb }); }
 export function takeoff() { if (!ctx) return; const t = now(); for (let i = 0; i < 4; i++) noise(t + i * 0.07, 0.09, { f0: 1700, f1: 600, q: 0.7, vol: 0.13 }); }
@@ -111,6 +130,7 @@ export function birdSplash(p) { if (!ctx) return; const t = now(); noise(t, 0.25
 // a crowd clapping; gain below 1 is the same crowd heard from further off
 export function applause(seconds = 6, gain = 1) {
   if (!ctx) return; const t = now();
+  const rec = sfxBufs['applause-40']; if (rec && clip('applause-40', 0.8 * gain, { dur: seconds, fade: Math.min(1.2, seconds / 4), offset: Math.random() * Math.max(0, rec.duration - 2) })) return;
   for (let i = 0; i < seconds * 48; i++) { const at = Math.random() * seconds, env = Math.sin(Math.PI * Math.min(1, at / seconds)) ** 0.5; noise(t + at, 0.045, { f0: 1000 + Math.random() * 2400, q: 1.1, vol: (0.13 * env + 0.015) * gain, attack: 0.002, bus: amb }); }
 }
 export function skim() { if (ctx) { const t = now(); noise(t, 0.3, { f0: 2500, f1: 900, q: 0.8, vol: 0.12 }); tone(t, [[0, 700], [0.12, 1300]], 0.04); } }

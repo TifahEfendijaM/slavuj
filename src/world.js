@@ -478,7 +478,7 @@ export function buildWorld(scene) {
 
   // ---------- Stari Most and the Crooked Bridge ----------
   tag('bridge').mode = 'one'; tag('bridge').radius = 30; tag('bridge').dur = 5.5;
-  const BR = { tag: 'bridge', col: '#f1ead8', bleed: '#dccfae', pat: PAT.blocks, ps: 0.5, orb: 'most' }, BR2 = { ...BR, col: '#cfc8ba', bleed: '#a9a297', orb: undefined };
+  const BR = { tag: 'bridge', col: '#f1ead8', bleed: '#dccfae', pat: PAT.blocks, ps: 0.5, orb: 'most' }, BR2 = { ...BR, tag: 'street', col: '#cfc8ba', bleed: '#a9a297', orb: 'kaldrma' };      // the little bridge over the creek is part of the cobbled street: kaldrma colours it
   const arch = new THREE.Shape();
   arch.moveTo(-17, 12.4); arch.lineTo(0, 18); arch.lineTo(17, 12.4); arch.lineTo(17, 4); arch.lineTo(13, 4);
   arch.absarc(0, 2.4, 13.1, 0.1225, Math.PI - 0.1225, false); arch.lineTo(-17, 4); arch.closePath();
@@ -523,7 +523,7 @@ export function buildWorld(scene) {
     { kind: 'argue', tag: 'argue', x: -58.42, y: BANK + 0.245, z: 12.2, ry: Math.PI / 2 }, { kind: 'argue', tag: 'argue', x: -56.78, y: BANK + 0.245, z: 12.2, ry: -Math.PI / 2, woman: true },
     { kind: 'wait', tag: 'wait', x: 82.7, y: BANK + 0.15, z: 10.4, ry: Math.PI / 2, woman: true },
     // children: football on the pitch, the slide in the playground
-    { kind: 'walk', tag: 'kids', x: 26.5, y: street, z: 73.6, to: [35, 78.4], speed: 2.7, sc: kid, ball: 0 }, { kind: 'walk', tag: 'kids', x: 36, y: street, z: 73.8, to: [28, 79.4], speed: 2.4, sc: kid, woman: true, ball: 1 },
+    { kind: 'walk', tag: 'kids', x: 26.5, y: street, z: 73.6, to: [35, 78.4], speed: 2.7, sc: kid, ball: 0 }, { kind: 'walk', tag: 'kids', x: 36, y: street, z: 73.8, to: [28, 79.4], speed: 2.4, sc: kid, woman: true, sport: true, ball: 1 },
     { kind: 'keeper', tag: 'kids', x: 23.5, y: street, z: 76, ry: Math.PI / 2, sc: kid },
     { kind: 'slide', tag: 'kids', x: SL.x - 0.45, y: SL.y + 1.96, z: SL.z, ry: -Math.PI / 2, sc: kid }, { kind: 'cheer', tag: 'kids', x: SL.x + 2.7, y: SL.y, z: SL.z - 0.9, ry: -1.9, sc: kid, woman: true },
     { kind: 'swing', tag: 'kids', x: 53.2, y: BANK + 2.5, z: 76.4, ry: 0, sc: kid, woman: true },

@@ -37,6 +37,11 @@ const flight = new Flight(world.colliders, bird);
 people.onScatter = () => audio.flutter();
 // the postman's knocks are heard only nearby
 people.onKnock = (p) => { if (live) audio.knock(clamp(1 - flight.pos.distanceTo(p) / 22, 0, 1)); };
+people.onNeigh = (p) => { if (live) audio.neigh(clamp(1 - flight.pos.distanceTo(p) / 32, 0, 1)); };      // heard only nearby
+people.onMeow = (p) => { if (live) audio.meow(clamp(1 - flight.pos.distanceTo(p) / 16, 0, 1)); };
+// the spectators on the bridge: they keep applauding now and then after the finale, heard from nearby
+const crowd = (() => { const w = world.people.filter((p) => p.kind === 'watch'), c = V(0, 0, 0); for (const p of w) c.add(V(p.x, p.y, p.z)); return c.multiplyScalar(1 / Math.max(1, w.length)); })();
+let clapWait = 6;
 let live = false;
 
 function resize() {
@@ -307,7 +312,19 @@ const sideOf = (f) => (Math.abs(f.x) < 14 ? 0 : f.x < 0 ? Math.PI / 2 : -Math.PI
 const _r = V(0, 0, 0), _u = V(0, 1, 0), _t = V(0, 0, 0);
 // rays only see the outside of things, so a camera standing inside a house sees "nothing in the way"
 const _inv = new Map(), _lp = V(0, 0, 0), _bb = new THREE.Box3();
+const bigs = new Set(), _up = V(0, 1, 0), upRay = new THREE.Raycaster();
+// the big things (the cliffs, the ground) are not boxes: look straight up, and if the first thing above is the
+// inside of a surface, the point is buried in it
+function buried(p) {
+  if (!bigs.size) for (const c of world.colliders) { const g = c.geometry; g.boundingBox || g.computeBoundingBox(); if (_bb.copy(g.boundingBox).applyMatrix4(c.matrixWorld).getSize(_lp).length() > 40 && !c.userData.water) bigs.add(c); }
+  const list = [...bigs], mats = list.map((c) => c.material.side);
+  for (const c of list) c.material.side = THREE.DoubleSide;
+  upRay.set(p, _up); upRay.far = 400; const h = upRay.intersectObjects(list, false)[0];
+  list.forEach((c, i) => { c.material.side = mats[i]; });
+  return !!h && h.face.normal.clone().transformDirection(h.object.matrixWorld).y > 0;
+}
 function inside(p, pad = 0.35) {
+  if (buried(p)) return true;
   for (const c of world.colliders) {
     const g = c.geometry; g.boundingBox || g.computeBoundingBox();
     if (c.userData.water) continue;
@@ -317,7 +334,7 @@ function inside(p, pad = 0.35) {
       if (_bb.copy(g.boundingBox).applyMatrix4(c.matrixWorld).getSize(_lp).length() > 40) m.big = true;     // the cliffs, the ground: their box is mostly air
       if (!c.userData.person) _inv.set(c, m);
     }
-    if (m.big) continue;
+    if (m.big) { bigs.add(c); continue; }
     _lp.copy(p).applyMatrix4(m); const sc = c.matrixWorld.getMaxScaleOnAxis() || 1;
     if (_bb.copy(g.boundingBox).expandByScalar(pad / sc).containsPoint(_lp)) return true;
   }
@@ -368,10 +385,25 @@ function cloudHit(a, b) {
   _ab.subVectors(b, a); const L = _ab.lengthSq();
   return world.clouds.some((cl) => { const t = clamp(_ac.subVectors(cl.c, a).dot(_ab) / L, 0, 1); return _ac.copy(a).addScaledVector(_ab, t).distanceTo(cl.c) < cl.r; });
 }
+// every word has one set camera: framed for the spot where the bird usually stands for it (the surface under
+// its orb, or the spot it opens from), not for wherever the bird happens to be, so the scene is the same every time
+const birdSpots = new Map();
+function birdSpot(o) {
+  if (!birdSpots.has(o.id)) {
+    const d = o.def, h = flight.cast(d.at.clone(), V(0, -1, 0), 80);
+    birdSpots.set(o.id, h && flight.landable(h) ? h.point.clone().setY(h.point.y + 0.5) : d.near ? V(...d.near.p) : d.swim ? V(...d.swim.p) : null);
+  }
+  return birdSpots.get(o.id);
+}
+const fixedShots = new Map();
+function setShots(o) {      // (framed for the window's shape: worked out again if the window changes shape)
+  const f = fixedShots.get(o.id); if (f && Math.abs(f.aspect - aspect()) < 0.01) return f.shots;
+  const shots = shotsFor(o, birdSpot(o)); fixedShots.set(o.id, { shots, aspect: aspect() }); return shots;
+}
 function shotsFor(o, bird) {
   const d = o.def, C = S.cutscene;
   if (d.id === 'rijeka') return [{ from: V(7, 20, 70), to: V(-4, 32, 86), lookFrom: V(1, 1, 26), lookTo: V(0, 4, 0), dur: C.wideDuration, wide: true }];
-  if (d.shot === 'bridge') return [{ from: V(13, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
+  if (d.shot === 'bridge') return [{ from: V(8.5, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
   if (d.shot === 'close') return [closeShot(o, bird, C.closeDuration)];
   if (d.shot === 'wide') return [wideShot(o, C.wideDuration)];
   return [closeShot(o, bird, 4), wideShot(o, C.wideDuration - 4)];
@@ -381,10 +413,10 @@ function checkShots() {
   const cam = new THREE.PerspectiveCamera(S.cutscene.fov, aspect(), 0.1, 3000), out = {}, D = V(0, -1, 0);
   const inFrame = (p) => { const q = p.clone().project(cam); return q.z < 1 && Math.abs(q.x) < 0.96 && Math.abs(q.y) < 0.76; };
   for (const o of orbs) {
-    const d = o.def, probs = [], h = flight.cast(d.at.clone(), D, 80);
-    const bird = h && flight.landable(h) ? h.point.clone().setY(h.point.y + 0.5) : d.near ? V(...d.near.p) : null;
+    const d = o.def, probs = [], bird = birdSpot(o);
     for (const s of shotsFor(o, bird)) for (const e of [0, 0.25, 0.5, 0.75, 1]) {
       cam.position.lerpVectors(s.from, s.to, e); cam.lookAt(s.lookFrom.clone().lerp(s.lookTo, e)); cam.updateMatrixWorld();
+      if (inside(cam.position, 0.1)) probs.push(`camera ${e} inside something`);
       if (s.wide) { if (s.pts) { const n = s.pts.filter(inFrame).length; if (n < Math.min(s.pts.length, 2) || n / s.pts.length < 0.6) probs.push(`wide ${e}: only ${n}/${s.pts.length} in frame`); } continue; }
       const right = V(1, 0, 0).applyQuaternion(cam.quaternion), up = V(0, 1, 0).applyQuaternion(cam.quaternion);
       for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!inFrame(s.c.clone().addScaledVector(right, a * s.r).addScaledVector(up, b * s.r))) probs.push(`close ${e}: object cut off`);
@@ -417,7 +449,7 @@ function startCutscene(o) {
   state = 'cutscene'; hideLearn();
   fadeCut(() => {
     document.body.classList.add('cine');
-    const shots = shotsFor(o, flight.pos.clone()), dur = shots.reduce((s, x) => s + x.dur, 0);
+    const shots = setShots(o), dur = shots.reduce((s, x) => s + x.dur, 0);
     cut = { o, t: 0, dur, shots, started: false, home: o.def.at.clone() };
     singing = true; audio.orbRelease(); audio.duckMusic(true); const tk = ++singTok;
     audio.song(o.id, dur - 0.9).then(() => { if (tk === singTok) singing = false; });
@@ -495,7 +527,7 @@ function snapshot(id) {
   const keep = { p: camera.position.clone(), q: camera.quaternion.clone(), fov: camera.fov }, vis = bird.root.visible;
   let from, to;
   if (id === 'sunce') { from = V(30, 30, 50); to = V(-60, 62, -80); }
-  else { const sh = shotsFor(byId[id], null)[0]; from = sh.from.clone().lerp(sh.to, 0.7); to = sh.lookFrom.clone().lerp(sh.lookTo, 0.7); }
+  else { const sh = setShots(byId[id])[0]; from = sh.from.clone().lerp(sh.to, 0.7); to = sh.lookFrom.clone().lerp(sh.lookTo, 0.7); }
   camera.position.copy(from); camera.lookAt(to); camera.fov = S.cutscene.fov; camera.updateProjectionMatrix(); bird.root.visible = false;
   const shown = orbs.filter((o) => o.vis.visible); for (const o of shown) o.vis.visible = false;
   renderer.render(scene, camera);
@@ -511,7 +543,8 @@ function showCard(id) {
 }
 $('card').addEventListener('click', () => $('card').classList.add('off'));
 function openJournal(newId) { if (state !== 'play') return; state = 'journal'; document.exitPointerLock?.(); renderJournal(newId); $('journal').classList.remove('off'); audio.page(); hideLearn(); }
-function closeJournal() { state = 'play'; $('journal').classList.add('off'); $('card').classList.add('off'); audio.page(); resume(); }
+let awakeNote = false;      // after the finale's journal page: tell the player the town is theirs to explore
+function closeJournal() { if (awakeNote) { awakeNote = false; say('Mostar has awakened. You can now explore it freely.', 8); } state = 'play'; $('journal').classList.add('off'); $('card').classList.add('off'); audio.page(); resume(); }
 $('hud').addEventListener('click', () => { if (state === 'play') openJournal(); });
 $('jclose').addEventListener('click', closeJournal);
 $('journal').addEventListener('click', (e) => { if (e.target === $('journal')) closeJournal(); });
@@ -575,7 +608,7 @@ function updateFinale(dt) {
       fin = null; save.finale = true; store(); document.body.classList.remove('cine'); audio.swell(false, 9); audio.setMusic(0.9, true); audio.duckMusic(false);
       camera.fov = S.camera.fov; camera.updateProjectionMatrix(); camSnap = true;
       flight.mode = 'flying'; flight.mousePitch = 0; flight.grace = 0.5; fleur.visible = false;
-      state = 'play'; openJournal('sunce');
+      state = 'play'; awakeNote = true; openJournal('sunce');
     });
   }
 }
@@ -669,6 +702,10 @@ function tick(dt) {
   }
 
   // the sheep bleat now and then, heard only when the bird is close to the meadow
+  if (running && shared.uLife.value > 0.5 && !fin && (clapWait -= dt) < 0) {      // the bridge crowd claps again every so often
+    clapWait = 9 + Math.random() * 9; const g = clamp(1 - flight.pos.distanceTo(crowd) / 45, 0, 1);
+    if (g > 0) { audio.applause(3 + Math.random() * 2, g); people.applaud(); }
+  }
   if (running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - 56.5, flight.pos.z - 55) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 28 && Math.random() < dt * 0.25) audio.baa(1 - sd / 28); }
   freeSingT -= dt;
   bird.root.position.copy(flight.pos);
