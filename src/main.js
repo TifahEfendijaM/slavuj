@@ -571,6 +571,7 @@ const FIN_SHOTS = [
 ];
 function startFinale() {
   state = 'finale'; hideLearn(); toastT = 0; document.body.classList.add('cine'); audio.pickup(); audio.duckMusic(true);
+  const burst = $('burst'); burst.classList.remove('on'); void burst.offsetWidth; burst.classList.add('on');      // a golden burst as it passes through
   const P = [[0, flight.pos.x, flight.pos.y, flight.pos.z], [2, -14, 64, -6], [4.5, -26, 56, 10], [7, -18, 46, 34], [9.5, 2, 38, 48], [12, 14, 30, 36], [14, 10, 25, 16], [15.6, 4.5, 22.5, 6.5],
     [16.6, -2.5, 22, 5], [17.4, -4, 18.5, 9], [18.3, -2, 12.5, 13], [19.6, 6.5, 10, 22], [21.5, 7.5, 11, 40], [23.5, -2, 17, 56], [26, 0, 26, 68], [28, 2, 30, 80]];
   fin = { t: 0, P, curve: new THREE.CatmullRomCurve3(P.map((p) => V(p[1], p[2], p[3]))), ev: new Set(), wind: 0, water: 0 };
