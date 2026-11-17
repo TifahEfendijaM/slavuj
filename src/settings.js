@@ -6,6 +6,7 @@ export default {
     maxSpeed: 34,         // top speed in a dive
     gravity: 16,          // how strongly climbing costs speed and diving gains it
     glideGravity: 6,      // how strongly speed builds when just gliding downhill (no flapping, no diving)
+    diveGravity: 14.75,   // how strongly speed builds in a dive (set so a 70 degree dive speeds up exactly as the old 60 degree one did)
     drag: 0.3,            // how fast extra speed above cruise fades
     glideRecover: 2.5,    // speed regained per second in ordinary flight
     flapClimb: 7,         // height gained per second while flapping hard (Space)
@@ -26,7 +27,7 @@ export default {
     pitchSmooth: 4,
     maxPitchUp: 45,       // degrees
     maxPitchDown: 35,     // degrees (without diving)
-    diveAngle: 60,        // degrees; 90 would be straight down
+    diveAngle: 70,        // degrees; 90 would be straight down
     takeoffSpeed: 9,
     takeoffPitch: 12,      // degrees
     takeoffLift: 6,       // height gained per second right at take-off; it builds up to flapClimb while Space is held

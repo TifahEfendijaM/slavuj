@@ -216,7 +216,7 @@ export class Flight {
     const diff = angDiff(this.camYaw, this.yaw);
     this.yaw += diff * k(f.turnSmooth, dt);
 
-    this.speed -= (this.pitch < 0 && !this.diving ? f.glideGravity : f.gravity) * Math.sin(this.pitch) * dt;      // gliding down builds speed gently; a dive is the fast way
+    this.speed -= (this.pitch < 0 ? (this.diving ? f.diveGravity : f.glideGravity) : f.gravity) * Math.sin(this.pitch) * dt;      // gliding down builds speed gently; a dive is the fast way
     if (this.power) { if (this.speed < f.cruiseSpeed) this.speed += f.flapAccel * dt; }
     else if (this.speed < f.cruiseSpeed && this.pitch <= 0.03) this.speed += f.glideRecover * dt;
     if (this.speed > f.cruiseSpeed) this.speed -= f.drag * (this.speed - f.cruiseSpeed) * dt;
