@@ -18,7 +18,7 @@ export default {
     walkStart: 0.35,      // walking speed when the mouse button is first held
     walkAccel: 0.75,      // how fast walking speeds up into a run, per second
     runSpeed: 2,          // top running speed on the ground
-    hopUp: 0.9,           // highest step it hops up onto while walking
+    hopUp: 1.4,           // highest step it hops up onto while walking (the garden walls are up to 1.3 m)
     hopDown: 1.3,         // deepest drop it hops down; anything deeper and it dives off
     keyTurnRate: 1.8,     // turning speed with A/D or arrow keys
     keyPitchRate: 1.2,    // tilting speed with W/S or arrow keys
