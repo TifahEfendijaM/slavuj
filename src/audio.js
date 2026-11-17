@@ -89,6 +89,7 @@ export function setLife(o) { if ('wind' in o) wind = o.wind; if ('water' in o) w
 
 // ---------- the bird ----------
 export function flap(strength, scale = 1) { if (ctx) noise(now(), 0.12, { f0: 1300, f1: 450, q: 0.7, vol: (0.04 + 0.05 * strength) * S.audio.flap * scale, attack: 0.03 }); }
+export function flutter() { if (!ctx) return; const t = now(); for (let i = 0; i < 9; i++) noise(t + i * 0.05 + Math.random() * 0.03, 0.07, { f0: 2100 + Math.random() * 600, f1: 800, q: 0.8, vol: 0.07 }); }
 export function takeoff() { if (!ctx) return; const t = now(); for (let i = 0; i < 4; i++) noise(t + i * 0.07, 0.09, { f0: 1700, f1: 600, q: 0.7, vol: 0.13 }); }
 export function land() { if (!ctx) return; const t = now(); tone(t, [[0, 150], [0.09, 70]], 0.2, { decay: true, attack: 0.004 }); noise(t, 0.12, { f0: 900, f1: 300, vol: 0.1 }); noise(t + 0.08, 0.1, { f0: 1600, f1: 700, vol: 0.06 }); }
 export function bump() { if (ctx) { const t = now(); tone(t, [[0, 120], [0.12, 60]], 0.22, { decay: true, attack: 0.004 }); noise(t, 0.1, { f0: 500, f1: 200, vol: 0.1 }); } }

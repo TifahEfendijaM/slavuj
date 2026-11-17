@@ -114,6 +114,12 @@
   .lockmsg { font-size: 21px; text-align: center; margin-top: 26px; opacity: .75; }
   #endcard { margin-top: 10px; padding: 6px 14px 8px; text-align: center; font-size: 20px; background: #fff6d6; margin-bottom: 10px; }
   #endcard a { font-family: 'Caveat', cursive; font-size: 34px; font-weight: 700; }
+  .jw:not(.unknown) { cursor: pointer; } .jw:not(.unknown):hover b { color: var(--blue); }
+  #card { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(1.2deg); z-index: 8; background: #fffaf0; padding: 12px 12px 8px; cursor: pointer;
+    box-shadow: 0 14px 34px rgba(59, 53, 47, .45); transition: opacity .2s, transform .2s; text-align: center; }
+  #card.off { transform: translate(-50%, -46%) rotate(1.2deg); }
+  #card img { display: block; width: min(540px, 78vw); aspect-ratio: 3 / 2; object-fit: cover; border: 2px solid var(--ink); border-radius: 4px; background: var(--paper2); }
+  #card b { font-family: 'Caveat', cursive; font-size: 44px; line-height: 1.1; color: var(--blue); } #card span { font-size: 22px; margin-left: 12px; opacity: .8; }
   #jclose { position: absolute; right: 12px; top: 8px; font-size: 18px; background: none; border: 0; cursor: pointer; z-index: 2; }
   @media (max-width: 760px) { .book { grid-template-columns: 1fr; overflow: auto; } .book::after { display: none; } }
 </style>
@@ -138,7 +144,7 @@
     <button id="jclose"><kbd>J</kbd> close</button>
     <div class="page">
       <h2>Feather journal</h2>
-      <div class="small" id="jcount"></div>
+      <div class="small"><span id="jcount"></span> · click a word to see its picture</div>
       <div id="jwords"></div>
     </div>
     <div class="page locked" id="culture">
@@ -151,10 +157,11 @@
     </div>
   </div>
 </div>
+<div id="card" class="wobbly off" title="Click to close"><img id="cardImg" alt=""><div><b></b><span></span></div></div>
 <div id="pause" class="overlay off"><div class="card wobbly">Paused · click to keep flying<table>
       <tr><td>Mouse</td><td>steer</td></tr>
       <tr><td><kbd>Space</kbd></td><td>take off · flap hard to climb</td></tr>
-      <tr><td><kbd>Shift</kbd></td><td>tuck the wings and dive</td></tr>
+      <tr><td>Hold the mouse button</td><td>tuck the wings and dive</td></tr>
       <tr><td><kbd>J</kbd> · <kbd>F</kbd> · <kbd>Esc</kbd></td><td>journal · sing · pause</td></tr>
       <tr><td><kbd>Enter</kbd></td><td>skip a colouring scene</td></tr>
     </table>
@@ -168,7 +175,7 @@
     <table>
       <tr><td>Mouse</td><td>steer</td></tr>
       <tr><td><kbd>Space</kbd></td><td>take off · flap hard to climb</td></tr>
-      <tr><td><kbd>Shift</kbd></td><td>tuck the wings and dive</td></tr>
+      <tr><td>Hold the mouse button</td><td>tuck the wings and dive</td></tr>
       <tr><td><kbd>E</kbd></td><td>open the word list when you land at an orb</td></tr>
       <tr><td><kbd>J</kbd> · <kbd>F</kbd> · <kbd>Esc</kbd></td><td>journal · sing · pause</td></tr>
     </table>

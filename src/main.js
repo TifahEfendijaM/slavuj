@@ -34,6 +34,7 @@ const bird = createBird(); scene.add(bird.root);
 const diver = createDiver(world.diverPos); scene.add(diver.root);
 const people = createPeople(scene, world, rng(41));
 const flight = new Flight(world.colliders, bird);
+people.onScatter = () => audio.flutter();
 
 function resize() {
   const w = innerWidth, h = innerHeight, px = Math.min(devicePixelRatio, 2);
@@ -170,6 +171,10 @@ for (const [id, fn] of [['restart', restartLevel], ['toFinale', skipToFinale]]) 
 }
 if (save.done.length) $('resetWrap').style.display = '';
 canvas.addEventListener('click', () => { if (started && state === 'play') resume(); });
+// holding the mouse button tucks the wings for a dive
+let mouseDown = false;
+canvas.addEventListener('mousedown', (e) => { if (e.button === 0 && started && state === 'play' && !paused && (locked || noLock)) mouseDown = true; });
+addEventListener('mouseup', () => { mouseDown = false; }); addEventListener('blur', () => { mouseDown = false; });
 $('pause').addEventListener('click', resume);
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas;
@@ -199,7 +204,7 @@ addEventListener('keydown', (e) => {
     const n = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code);
     if (n >= 0) pick(n);
   } else if (state === 'journal') {
-    if (['Escape', 'KeyJ', 'Tab', 'Enter'].includes(e.code)) closeJournal();
+    if (!$('card').classList.contains('off')) $('card').classList.add('off'); else if (['Escape', 'KeyJ', 'Tab', 'Enter'].includes(e.code)) closeJournal();
   } else if (e.code === 'Enter') skipScene();
 });
 addEventListener('keyup', (e) => keys.delete(e.code));
@@ -415,7 +420,7 @@ function renderJournal(newId) {
   const list = $('jwords'); list.innerHTML = ''; list.style.gridTemplateRows = `repeat(${Math.ceil(ORDER.length / 2)}, auto)`;
   for (const id of ORDER) {
     const row = document.createElement('div'), w = WORDS[id];
-    if (known.includes(id)) { row.className = 'jw' + (id === newId ? ' new' : ''); row.innerHTML = `<b>${w.word}</b><i>${w.en}</i>`; row.append(sayButton(w.word)); }
+    if (known.includes(id)) { row.className = 'jw' + (id === newId ? ' new' : ''); row.innerHTML = `<b>${w.word}</b><i>${w.en}</i>`; row.append(sayButton(w.word)); row.title = 'Show its picture'; row.addEventListener('click', () => showCard(id)); }
     else { row.className = 'jw unknown'; row.textContent = '· · · · ·'; }
     list.append(row);
   }
@@ -423,8 +428,28 @@ function renderJournal(newId) {
   $('cfacts').innerHTML = CULTURE.facts.map(([h, p]) => `<p><b>${h}</b>${p}</p>`).join('');
   $('culture').classList.toggle('locked', !save.finale); $('endcard').style.display = save.finale ? '' : 'none';
 }
+// a small photo card for a word in the journal: the game's own picture of it, taken from where its colouring scene was filmed
+function snapshot(id) {
+  if (!(canvas.width > 0)) return '';
+  const keep = { p: camera.position.clone(), q: camera.quaternion.clone(), fov: camera.fov }, vis = bird.root.visible;
+  let from, to;
+  if (id === 'sunce') { from = V(30, 30, 50); to = V(-60, 62, -80); }
+  else { const sh = shotsFor(byId[id], null)[0]; from = sh.from.clone().lerp(sh.to, 0.7); to = sh.lookFrom.clone().lerp(sh.lookTo, 0.7); }
+  camera.position.copy(from); camera.lookAt(to); camera.fov = S.cutscene.fov; camera.updateProjectionMatrix(); bird.root.visible = false;
+  renderer.render(scene, camera);
+  const c = document.createElement('canvas'), W = canvas.width, H = canvas.height, cw = Math.min(W, H * 1.5), ch = cw / 1.5; c.width = 540; c.height = 360;
+  c.getContext('2d').drawImage(canvas, (W - cw) / 2, (H - ch) / 2, cw, ch, 0, 0, 540, 360);
+  camera.position.copy(keep.p); camera.quaternion.copy(keep.q); camera.fov = keep.fov; camera.updateProjectionMatrix(); bird.root.visible = vis;
+  return c.toDataURL('image/jpeg', 0.86);
+}
+function showCard(id) {
+  const w = WORDS[id], el = $('card');
+  $('cardImg').src = snapshot(id); el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
+  el.classList.remove('off'); audio.page();
+}
+$('card').addEventListener('click', () => $('card').classList.add('off'));
 function openJournal(newId) { if (state !== 'play') return; state = 'journal'; document.exitPointerLock?.(); renderJournal(newId); $('journal').classList.remove('off'); audio.page(); hideLearn(); }
-function closeJournal() { state = 'play'; $('journal').classList.add('off'); audio.page(); resume(); }
+function closeJournal() { state = 'play'; $('journal').classList.add('off'); $('card').classList.add('off'); audio.page(); resume(); }
 $('hud').addEventListener('click', () => { if (state === 'play') openJournal(); });
 $('jclose').addEventListener('click', closeJournal);
 $('journal').addEventListener('click', (e) => { if (e.target === $('journal')) closeJournal(); });
@@ -550,9 +575,10 @@ function frame() { tick(Math.min(clock.getDelta(), 0.05)); requestAnimationFrame
 function tick(dt) {
   time += dt; shared.uTime.value = time; shared.uFlow.value += dt * shared.uLife.value;
   for (const t of painting) t.uT.value += dt;
+  for (const n in tags) { const t = tags[n]; if (t.fadeLine) { const op = clamp(1 - (t.uT.value - 2.5) / 3, 0, 1); t.fadeLine.visible = op > 0.01; t.fadeLine.material.opacity = op; } }
   inp.turn = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
   inp.tilt = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
-  inp.flap = keys.has('Space'); inp.dive = keys.has('ShiftLeft') || keys.has('ShiftRight');
+  inp.flap = keys.has('Space'); inp.dive = mouseDown;
   // without mouse capture the cursor can run out of room: resting it on the very edge of the window keeps turning
   if (noLock && !locked && innerWidth > 0 && !inp.turn) inp.turn = (mouse.x > innerWidth - 14 ? 1 : mouse.x < 14 ? -1 : 0) * S.flight.edgeTurnRate / S.flight.keyTurnRate;
 
@@ -566,13 +592,11 @@ function tick(dt) {
   }
   flight.events.length = 0; inp.dx = inp.dy = 0; inp.takeoff = false;
   if (fin) updateFinale(dt);
-  diver.update(dt, time); people.update(dt, time, shared.uLife.value);
+  diver.update(dt, time); people.update(dt, time, shared.uLife.value, flight);
   if (shared.uLife.value > 0 && !fin) { // the living town is heard from where the bird is
     const p = flight.pos, low = clamp(1 - (p.y - BANK) / 50, 0.15, 1), near = (x, z, r) => clamp(1 - Math.hypot(p.x - x, p.z - z) / r, 0, 1) * low;
     audio.setLife({ wind: 0.45 + 0.55 * clamp((p.y - BANK) / 40, 0, 1), water: clamp(1 - (Math.abs(p.x) - 8) / 42, 0.08, 1) * clamp(1 - p.y / 70, 0.2, 1), birds: true,
       city: near(42, 0, 60), murmur: Math.max(near(42, 0, 34), near(-7, 0, 22), near(19, 50, 20), near(-28, -4, 16), near(31, 76, 22), near(55, 72, 20)) });
-    const crowd = near(-7.5, 0.7, 60);   // the spectators on the bridge keep clapping and cheering
-    if (crowd > 0.05 && time > nextCheer && started && state === 'play' && !paused) { audio.applause(3.2, 0.5 * crowd); nextCheer = time + 2.4; }
   }
 
   freeSingT -= dt;
@@ -609,7 +633,7 @@ window.__game = { flight, inp, keys, mouse, bird, orbs, byId, world, camera, S, 
   start() { started = true; noLock = true; $('start').classList.add('off'); $('hud').classList.remove('off'); refreshOrbs(false); updateLegend(); showFleur(); },
   view(...a) { dbg = a.length ? a : null; },
   step(seconds, dt = 1 / 60) { for (let t = 0; t < seconds; t += dt) tick(dt); },
-  checkShots, shotsFor, people, skipScene, skipToFinale, restartLevel, closeWords, openWords, pick, startCutscene, orbHere, openJournal, closeJournal, startFinale,
+  checkShots, shotsFor, people, skipScene, snapshot, showCard, skipToFinale, restartLevel, closeWords, openWords, pick, startCutscene, orbHere, openJournal, closeJournal, startFinale,
   finish(id) { const o = byId[id]; for (const t of o.def.tags) paint(t, true); finishOrb(o); },
   unpainted() { const used = new Set(orbs.flatMap((o) => o.def.tags)); return Object.keys(tags).filter((t) => !used.has(t) && !['bird', 'sky', 'sun'].includes(t)); },
 };

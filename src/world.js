@@ -160,7 +160,7 @@ export function buildWorld(scene) {
     b.object(() => {
       for (let j = 0; j < n; j++) {
         const L = 0.7 + R2() * 1.3;
-        A(CONE4, h.point.x - side * 0.1, y + L * 0.38, z + (j - n / 2) * 0.2 + (R2() - 0.5) * 0.2, { tag: 'grass', col: c, bleed: '#5d8a44', solid: false, ink: j === 0, edge: 60, hatch: 0, sway: (v) => 0.06 * Math.max(0, v.y - y) }, R2() * 6, 0, side * (0.25 + R2() * 0.6), [0.07, L, 0.07]);
+        A(CONE4, h.point.x - side * 0.1, y + L * 0.38, z + (j - n / 2) * 0.2 + (R2() - 0.5) * 0.2, { tag: 'grass', col: c, bleed: '#5d8a44', solid: false, ink: j < 2, inkFade: true, edge: 60, hatch: 0, sway: (v) => 0.06 * Math.max(0, v.y - y) }, R2() * 6, 0, side * (0.25 + R2() * 0.6), [0.07, L, 0.07]);
       }
     });
   }
@@ -170,10 +170,10 @@ export function buildWorld(scene) {
     A(TAPER, x + d * 0.6 * s, BANK + 2.4 * s, z, { tag: 'tree', col: '#7a6248', bleed: '#5a4634', edge: 50, wall: true }, R2() * 6, 0, -d * 0.26, [0.42 * s, 5 * s, 0.42 * s]);
     A(ICO, cx, top + 0.3 * s, z, { tag: 'tree', col: g[0], bleed: g[1], hull: true, sway: 0.03 }, R2() * 6, 0, 0, [2.9 * s, 2.1 * s, 2.9 * s]);
     for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2 + R2() * 0.4, over = Math.cos(a) * d > 0.2;      // drooping boughs round the crown
-      A(ICO, cx + Math.cos(a) * 2.1 * s, top - (over ? 1.6 : 1) * s, z + Math.sin(a) * 2.1 * s, { tag: 'tree', col: g[i % 2], bleed: g[1], hull: true, solid: false, sway: 0.05 }, R2() * 6, 0, 0, [1.25 * s, (over ? 2.5 : 1.8) * s, 1.25 * s]); }
+      A(ICO, cx + Math.cos(a) * 2.1 * s, top - (over ? 1.6 : 1) * s, z + Math.sin(a) * 2.1 * s, { tag: 'tree', col: g[i % 2], bleed: g[1], inkFade: true, edge: 24, solid: false, sway: 0.05 }, R2() * 6, 0, 0, [1.25 * s, (over ? 2.5 : 1.8) * s, 1.25 * s]); }
     for (let i = 0; i < 44; i++) {
       const a = (i / 44) * Math.PI * 2 + R2() * 0.2, r = (1.3 + R2() * 1.7) * s, over = Math.cos(a) * d > 0.2, L = (2.2 + R2() * 2 + (over ? 3.4 : 0)) * s;
-      box(0.16 * s, L, 0.05, cx + Math.cos(a) * r, top - 1.2 * s - L / 2, z + Math.sin(a) * r, { tag: 'tree', col: i % 2 ? g[0] : g[1], bleed: g[1], solid: false, ink: i % 7 === 0, hatch: 0.3, sway: (v) => 0.05 * Math.max(0, top - v.y) }, -a + Math.PI / 2);
+      box(0.16 * s, L, 0.05, cx + Math.cos(a) * r, top - 1.2 * s - L / 2, z + Math.sin(a) * r, { tag: 'tree', col: i % 2 ? g[0] : g[1], bleed: g[1], solid: false, ink: i % 4 === 0, inkFade: true, hatch: 0.3, sway: (v) => 0.05 * Math.max(0, top - v.y) }, -a + Math.PI / 2);
     }
     b.block(ICO, mat4(cx, top - 2.8 * s, z, 0, 0, 0, [3.1 * s, 4 * s, 3.1 * s]), { wall: true });   // the curtain of branches is an obstacle too
   });
@@ -449,11 +449,12 @@ export function buildWorld(scene) {
   // ---------- boats ----------
   const boatShape = new THREE.Shape(); boatShape.moveTo(-2.3, 0); boatShape.quadraticCurveTo(-1, 0.85, 1, 0.75); boatShape.quadraticCurveTo(2, 0.5, 2.5, 0); boatShape.quadraticCurveTo(2, -0.5, 1, -0.75); boatShape.quadraticCurveTo(-1, -0.85, -2.3, 0);
   const boatGeo = new THREE.ExtrudeGeometry(boatShape, { depth: 0.55, bevelEnabled: false, curveSegments: 5 }).rotateX(-Math.PI / 2);
-  const boat = (x, z, ry, id, c) => b.object(() => {
-    A(boatGeo, x, 0.02, z, { tag: 'boat', col: c[0], bleed: c[1], pat: PAT.planks, ps: 2, orb: id, edge: 40 }, ry);
-    b.push(mat4(x, 0, z, ry)); for (const sx of [-0.9, 0.5]) box(0.3, 0.1, 1.3, sx, 0.5, 0, { tag: 'boat', col: '#c9a26a', bleed: '#a8804a', solid: false }); b.pop();
+  const boat = (x, z, ry, id, c, tg = 'boat') => b.object(() => {
+    A(boatGeo, x, 0.02, z, { tag: tg, col: c[0], bleed: c[1], pat: PAT.planks, ps: 2, orb: id, edge: 40 }, ry);
+    b.push(mat4(x, 0, z, ry)); for (const sx of [-0.9, 0.5]) box(0.3, 0.1, 1.3, sx, 0.5, 0, { tag: tg, col: '#c9a26a', bleed: '#a8804a', solid: false }); b.pop();
   });
-  boat(-2.3, 15.2, 1.2, 'camac', ['#3f7f9a', '#2f6078']); boat(5.2, 56, 1.4, undefined, ['#b8502f', '#96402a']);
+  boat(-2.3, 15.2, 1.2, 'camac', ['#3f7f9a', '#2f6078']); boat(5.2, 56, 1.4, 'dva', ['#b8502f', '#96402a'], 'boat2');
+  orb('dva', [5.2, 0.5, 56], 3.2, ['boat2'], 'close', 1, { requires: ['camac'], near: { p: [5.2, 0.4, 56], r: 3.6 } });
   orb('camac', [-2.3, 0.5, 15.2], 3.2, ['boat'], 'close', 1, { near: { p: [-5.3, 0.9, 15.2], r: 2.4 } });
 
   // ---------- the cat on a wall (the animal itself is built in people.js) ----------
@@ -492,8 +493,8 @@ export function buildWorld(scene) {
     { kind: 'walk', tag: 'people', x: 41, y: street, z: 0.3, to: [58, -0.3], woman: true }, { kind: 'walk', tag: 'run', x: -57, y: street, z: 0.5, to: [-34, -0.5], speed: 3.3 },
     { kind: 'walk', tag: 'people', x: -39.5, y: street, z: 7, to: [-39.5, 30], dog: true },
     { kind: 'walk', tag: 'people', x: 27, y: street, z: -32.1, to: [27, -36.2], fes: true }, { kind: 'walk', tag: 'people', x: 36.4, y: street, z: -31.6, to: [29.6, -31.6], woman: true, scarf: true },
-    { kind: 'sit', tag: 'sit', x: 18.75, y: BANK + 0.3, z: 49.45, ry: Math.PI / 2 - 0.35, woman: true }, { kind: 'sit', tag: 'sit', x: 18.75, y: BANK + 0.3, z: 50.55, ry: Math.PI / 2 + 0.35 },
-    { kind: 'sit', tag: 'sit', x: 30.4, y: BANK + 0.3, z: -24.15, ry: Math.PI },
+    { kind: 'sit', tag: 'sit', x: 18.5, y: BANK + 0.3, z: 49.45, ry: Math.PI / 2 - 0.3, woman: true }, { kind: 'sit', tag: 'sit', x: 18.5, y: BANK + 0.3, z: 50.55, ry: Math.PI / 2 + 0.3 },
+    { kind: 'sit', tag: 'sit', x: 30.4, y: BANK + 0.3, z: -23.92, ry: Math.PI },
     { kind: 'muezzin', tag: 'muezzin', x: 35.2, y: BANK + 17.3, z: -34.7, ry: 0.9, robe: true },
     { kind: 'girl', tag: 'lovers', x: -28.25, y: BANK + 2.74, z: -6.52, ry: 0, woman: true }, { kind: 'boy', tag: 'lovers', x: -28.25, y: BANK, z: -3.7, ry: Math.PI },
     { kind: 'eat', tag: 'eat', x: -46.3, y: street, z: 14.2, ry: -2.2, woman: true },
@@ -501,6 +502,10 @@ export function buildWorld(scene) {
     { kind: 'raft', tag: 'row', x: -3, y: -0.22, z: -34.05, ry: 0 },
     // a photo on the shore, with the bridge behind
     { kind: 'photo', tag: 'photo', x: -7.3, y: 0.7, z: 12.2, ry: Math.PI }, { kind: 'pose', tag: 'photo', x: -7.8, y: 0.7, z: 8.6, ry: 0.1, woman: true }, { kind: 'pose', tag: 'photo', x: -6.9, y: 0.7, z: 8.5, ry: -0.1 },
+    { kind: 'swimmer', tag: 'swimmer', x: -3.5, y: -0.08, z: 44, to: [-3.5, 54], speed: 0.9 },
+    { kind: 'fisher', tag: 'fisher', x: -5.3, y: 0.7, z: 19.6, ry: Math.PI / 2 },
+    { kind: 'drink', tag: 'drink', x: -58.42, y: BANK + 0.245, z: 8.2, ry: Math.PI / 2 },
+    { kind: 'wait', tag: 'wait', x: 82.7, y: BANK + 0.2, z: 10.4, ry: Math.PI / 2, woman: true },
     // children: football on the pitch, the slide in the playground
     { kind: 'walk', tag: 'kids', x: 26.5, y: street, z: 73.6, to: [35, 78.4], speed: 2.7, sc: kid, ball: 0 }, { kind: 'walk', tag: 'kids', x: 36, y: street, z: 73.8, to: [28, 79.4], speed: 2.4, sc: kid, woman: true, ball: 1 },
     { kind: 'keeper', tag: 'kids', x: 23.5, y: street, z: 76, ry: Math.PI / 2, sc: kid },
@@ -513,6 +518,13 @@ export function buildWorld(scene) {
   orb('voziti', [40.5, BANK + 1.2, -56], 2.4, ['ride'], 'close', BANK + 2.2, { requires: ['bicikl'], near: { p: [41.6, BANK + 0.6, -57.3], r: 3.2 } });
   orb('sjediti', [18.75, BANK + 1, 50], 2.8, ['sit'], 'combo', BANK + 1.9, { near: { p: [20.2, BANK + 0.6, 50], r: 2.6 } });
   orb('fes', [36, BANK + 1.9, -1.95], 1.2, ['fes'], 'close', BANK + 2.2, { near: { p: [36.3, BANK + 0.6, -0.4], r: 2.3 }, at: new Vector3(36, BANK + 2.9, -1.95) });
+  orb('plivati', [-3.5, 0.3, 44.6], 2.6, ['swimmer'], 'close', 0.5, { near: { p: [-3.5, 0.2, 43.2], r: 3.4 }, at: new Vector3(-3.5, 2, 44.8) });
+  orb('ribar', [-5.4, 1.7, 19.6], 2.6, ['fisher'], 'close', 2.8, { near: { p: [-6.6, 1.2, 19.7], r: 2 } });
+  orb('riba', [-1.6, 0.6, 19.9], 1.3, ['fish'], 'close', 0.8, { near: { p: [-2.4, 0.2, 21.4], r: 3 }, at: new Vector3(-1.6, 1.9, 19.9) });
+  orb('golub', [55.5, BANK + 0.3, -12.6], 2.6, ['pigeon'], 'close', BANK + 0.5, { near: { p: [55.5, BANK + 0.5, -12.6], r: 4 }, at: new Vector3(55.5, BANK + 1.9, -12.6) });
+  orb('konj', [73, BANK + 1.2, 37], 3, ['horse'], 'close', BANK + 2.2, { near: { p: [73, BANK + 0.5, 39.2], r: 3 } });
+  orb('ovca', [-58, BANK + 0.6, -76], 2.2, ['sheep'], 'close', BANK + 1.1, { near: { p: [-57, BANK + 0.5, -74.6], r: 2.6 } });
+  orb('tri', [-57.8, BANK + 0.6, -78.6], 4, ['sheep2'], 'close', BANK + 1.1, { requires: ['ovca'], near: { p: [-57, BANK + 0.5, -74.6], r: 5 }, at: new Vector3(-58.4, BANK + 3.2, -79.4) });
   orb('slikati', [-7.3, 1.7, 10.4], 3.6, ['photo'], 'close', 2.8, { near: { p: [-6, 1.2, 10.6], r: 2.6 } });
   orb('ljudi', [-7.5, deckY(-7.5) + 1.2, 0.7], 3, ['people'], 'combo', deckY(-7.5) + 2.3, { near: { p: [-7.5, deckY(-7.5) + 0.6, -0.4], r: 3.2 } });
   orb('asikovanje', [-28.25, BANK + 3, -5.2], 4.2, ['lovers'], 'close', BANK + 6.2, { near: { p: [-28.25, BANK + 0.6, -3], r: 3 }, at: new Vector3(-28.25, BANK + 6.4, -4.6) });
@@ -653,7 +665,7 @@ export function buildWorld(scene) {
     box(3.4, 0.25, 3.4, 52.2, BANK + 0.2, 69.6, { ...Pk, col: '#b9683e', bleed: '#96502e', pat: PAT.planks, ps: 1 }); box(3.0, 0.1, 3.0, 52.2, BANK + 0.31, 69.6, { tag: 'park', col: '#f3e3ae', bleed: '#e0c98a', solid: false, ink: false });
     // a swing, and a low fence along two sides
     const Sw = { tag: 'swing', solid: false, col: '#4f8068', bleed: '#3a6350', edge: 50 };
-    for (const sx of [-1.5, 1.5]) for (const sz of [-0.7, 0.7]) A(CYL, 52.6 + sx, BANK + 1.3, 76.4 + sz * 0.5, Sw, 0, sz * 0.5, 0, [0.06, 2.7, 0.06]);
+    for (const sx of [-1.5, 1.5]) for (const sz of [-0.7, 0.7]) A(CYL, 52.6 + sx, BANK + 1.3, 76.4 + sz * 0.5, Sw, 0, -sz * 0.5, 0, [0.06, 2.7, 0.06]);
     A(CYL, 52.6, BANK + 2.5, 76.4, Sw, 0, 0, Math.PI / 2, [0.06, 3.2, 0.06]);
     for (const dx of [-0.22, 0.22]) A(CYL, 52 + dx, BANK + 1.55, 76.4, { ...Sw, col: '#5a4a40', ink: false }, 0, 0, 0, [0.012, 1.9, 0.012]);
     box(0.55, 0.06, 0.24, 52, BANK + 0.6, 76.4, { ...Sw, col: '#d9453a', bleed: '#b3352d' });
@@ -676,6 +688,67 @@ export function buildWorld(scene) {
   orb('kajak', [-3, 0.4, -34], 3, ['kayak'], 'close', 0.5, { near: { p: [-3, 0.4, -34], r: 3.4 }, at: new Vector3(-3, 1.7, -32.2) });
   orb('veslati', [-3, 0.9, -34], 2.6, ['row'], 'close', 1.7, { requires: ['kajak'], near: { p: [-3, 0.4, -34], r: 3.4 } });
 
+
+  // ---------- a café on the west square: two tables, chairs, Bosnian coffee ----------
+  const G0 = BANK + 0.12;
+  const chair = (cx, cz, ry) => { b.push(mat4(cx, G0, cz, ry)); b.object(() => {
+    const Ch = { tag: 'chair', col: '#8a5a34', bleed: '#5f4028', orb: 'stolica' };
+    box(0.44, 0.05, 0.44, 0, 0.46, 0, { ...Ch, pat: PAT.planks, ps: 6 }); box(0.44, 0.5, 0.04, 0, 0.76, -0.2, { ...Ch, pat: PAT.planks, ps: 6 });
+    for (const lx of [-0.18, 0.18]) for (const lz of [-0.18, 0.18]) box(0.04, 0.46, 0.04, lx, 0.23, lz, { ...Ch, solid: false, ink: false });
+  }); b.pop(); };
+  for (const [tx, tz] of [[-57.6, 8.2], [-57.6, 12.2]]) {
+    b.object(() => {
+      const Tb = { tag: 'table', col: '#f3ecdc', bleed: '#d9cfb8', orb: 'sto', edge: 40 };
+      A(CYL12, tx, G0 + 0.74, tz, Tb, 0, 0, 0, [0.5, 0.06, 0.5]); A(CYL, tx, G0 + 0.37, tz, { ...Tb, col: '#4a4a48', bleed: '#2f2f2e', edge: 50 }, 0, 0, 0, [0.05, 0.74, 0.05]); A(CYL12, tx, G0 + 0.03, tz, { ...Tb, col: '#4a4a48', solid: false }, 0, 0, 0, [0.26, 0.05, 0.26]);
+    });
+    chair(tx - 0.85, tz, Math.PI / 2); chair(tx + 0.85, tz, -Math.PI / 2);
+  }
+  b.object(() => {      // on the first table: a džezva and a small cup
+    const K = { tag: 'coffee', solid: false, edge: 50 }, y = G0 + 0.77;
+    A(new THREE.CylinderGeometry(0.7, 1, 1, 10), -57.45, y + 0.07, 8.3, { ...K, col: '#c98a4a', bleed: '#a8672f' }, 0, 0, 0, [0.06, 0.13, 0.06]); box(0.2, 0.015, 0.015, -57.34, y + 0.12, 8.3, { ...K, col: '#5a3a22', ink: false }, 0, 0, 0.5);
+    A(CYL12, -57.75, y + 0.008, 8.05, { ...K, col: '#f8f4ea', bleed: '#d9d2c2' }, 0, 0, 0, [0.07, 0.012, 0.07]); A(CYL, -57.75, y + 0.04, 8.05, { ...K, col: '#f8f4ea', bleed: '#d9d2c2' }, 0, 0, 0, [0.035, 0.05, 0.035]); A(CYL, -57.75, y + 0.067, 8.05, { ...K, col: '#4a2f1e', ink: false, hatch: 0 }, 0, 0, 0, [0.028, 0.004, 0.028]);
+    A(CYL12, -57.6, y + 0.006, 8.2, { ...K, col: '#c98a4a', bleed: '#a8672f' }, 0, 0, 0, [0.3, 0.012, 0.3]);    // the copper tray
+  });
+  orb('kafa', [-57.6, G0 + 0.85, 8.2], 1.3, ['coffee'], 'close', G0 + 0.9, { near: { p: [-56.7, BANK + 0.6, 7], r: 2 }, at: new Vector3(-57.6, G0 + 1.9, 8.2) });
+  orb('piti', [-58.4, G0 + 1, 8.2], 2, ['drink'], 'close', G0 + 1.6, { requires: ['kafa'], near: { p: [-56.7, BANK + 0.6, 7], r: 2 } });
+  orb('sto', [-57.6, G0 + 0.6, 12.2], 1.6, ['table'], 'combo', G0 + 0.8, { near: { p: [-56.7, BANK + 0.6, 13.4], r: 2 }, at: new Vector3(-57.6, G0 + 1.9, 12.2) });
+  orb('stolica', [-56.75, G0 + 0.5, 12.2], 1.4, ['chair'], 'combo', G0 + 1, { requires: ['sto'], near: { p: [-56.7, BANK + 0.6, 13.4], r: 2 }, at: new Vector3(-56.75, G0 + 2, 12.2) });
+
+  // ---------- the road along the eastern edge: a parked car, a bus at its stop ----------
+  slab(83, 90, -66, 46, { tag: 'street', col: '#8d8e92', bleed: '#74767b' }, BANK + 0.08, 0.06);
+  for (let z = -64; z < 44; z += 6) slab(86.42, 86.58, z, z + 2.6, { tag: 'street', col: '#f2efe6', solid: false, ink: false, hatch: 0 }, BANK + 0.116, 0.012);
+  slab(81.4, 83, 6, 19, { tag: 'street', col: '#d3d1ca', bleed: '#b3b9bb', pat: PAT.blocks, ps: 0.5 }, BANK + 0.1, 0.1);
+  const wheel = (o, x, y, z, r = 0.34) => A(CYL12, x, y, z, { ...o, col: '#3a3632', bleed: '#22201e', solid: false, edge: 40 }, 0, 0, Math.PI / 2, [r, 0.2, r]);
+  b.push(mat4(84.5, BANK + 0.14, -30, 0));
+  b.object(() => {
+    const Cr = { tag: 'car', orb: 'auto' }, N = { tag: 'car', solid: false };
+    box(1.7, 0.6, 4, 0, 0.62, 0, { ...Cr, col: '#d2402f', bleed: '#a82f24', pool: 1 }); box(1.5, 0.55, 2.1, 0, 1.18, -0.2, { ...Cr, col: '#d2402f', bleed: '#a82f24' });
+    for (const sx of [-1, 1]) box(0.04, 0.36, 1.7, sx * 0.76, 1.2, -0.2, { ...N, col: '#7fb0c9', bleed: '#4f86a3', ink: false });
+    box(1.3, 0.36, 0.04, 0, 1.2, 0.86, { ...N, col: '#7fb0c9', bleed: '#4f86a3', ink: false }); box(1.3, 0.36, 0.04, 0, 1.2, -1.26, { ...N, col: '#7fb0c9', bleed: '#4f86a3', ink: false });
+    for (const sx of [-0.55, 0.55]) { box(0.3, 0.14, 0.04, sx, 0.72, 2.01, { ...N, col: '#f8ecc6', ink: false, hatch: 0 }); box(0.3, 0.12, 0.04, sx, 0.72, -2.01, { ...N, col: '#8f2420', ink: false, hatch: 0 }); }
+    for (const sx of [-0.86, 0.86]) for (const sz of [-1.25, 1.3]) wheel({ tag: 'car' }, sx, 0.34, sz);
+  });
+  b.pop();
+  orb('auto', [84.5, BANK + 0.9, -30], 3.2, ['car'], 'close', BANK + 1.6);
+  b.push(mat4(87.7, BANK + 0.14, 12.5, 0));
+  b.object(() => {
+    const Bs = { tag: 'bus', orb: 'autobus' }, N = { tag: 'bus', solid: false };
+    box(2.4, 2.4, 8.4, 0, 1.6, 0, { ...Bs, col: '#f2c230', bleed: '#d9a625', pool: 1 }); box(2.44, 0.35, 8.44, 0, 0.95, 0, { ...N, col: '#3f6f9a', bleed: '#2f5578', ink: false });
+    for (const sx of [-1, 1]) for (let i = 0; i < 5; i++) box(0.04, 0.8, 1.2, sx * 1.21, 2.1, -3.1 + i * 1.5, { ...N, col: '#7fb0c9', bleed: '#4f86a3' });
+    box(2, 0.9, 0.04, 0, 2.05, 4.21, { ...N, col: '#7fb0c9', bleed: '#4f86a3' }); box(0.04, 1.7, 0.9, -1.21, 1.35, 3.3, { ...N, col: '#34495a' });
+    for (const sx of [-1.15, 1.15]) for (const sz of [-2.7, 2.8]) wheel({ tag: 'bus' }, sx, 0.45, sz, 0.45);
+  });
+  b.pop();
+  orb('autobus', [87.7, BANK + 1.7, 12.5], 5.2, ['bus'], 'close', BANK + 2.9);
+  b.object(() => {     // the shelter of the bus stop
+    const St = { tag: 'street', col: '#5d7b8a', bleed: '#456070' };
+    for (const dz of [-1.6, 1.6]) box(0.1, 2.3, 0.1, 81.9, BANK + 1.3, 12.5 + dz, { ...St, solid: false });
+    box(1.5, 0.1, 3.8, 82.3, BANK + 2.45, 12.5, St); box(0.06, 1.5, 3.3, 81.85, BANK + 1.5, 12.5, { ...St, col: '#a9d0d6', bleed: '#7fb0c9', wall: true });
+    box(0.4, 0.07, 2.2, 82.15, BANK + 0.65, 12.5, { ...St, col: '#8a5a34', bleed: '#5f4028', solid: false });
+    box(0.07, 2.6, 0.07, 82.7, BANK + 1.4, 15.4, { ...St, solid: false }); A(CYL12, 82.7, BANK + 2.8, 15.4, { ...St, col: '#3f6f9a', bleed: '#2f5578', solid: false, edge: 40 }, 0, 0, Math.PI / 2, [0.35, 0.06, 0.35]);
+  });
+  orb('cekati', [82.7, BANK + 1.2, 10.4], 2.4, ['wait'], 'close', BANK + 2.1, { near: { p: [82.3, BANK + 0.6, 9.2], r: 2.4 } });
+
   // ---------- the rock the bird starts on ----------
   A(DODE, -19.5, BANK + 0.45, 47, { tag: 'rock', col: BOULDERS[1][0], bleed: BOULDERS[1][1] }, 0.4, 0, 0, [1.4, 0.8, 1.2]);
 
@@ -684,5 +757,7 @@ export function buildWorld(scene) {
   tag('sky').source = sunPos.clone(); tag('sun').source = sunPos.clone();
   b.finish(scene);
 
-  return { slide: SL, clouds, colliders: b.colliders, orbs, start: new Vector3(-19.5, 0, 47), diverPos, diverBlock, people, cat: { x: 33.5, y: BANK + 1.1, z: 12.45, x0: 31, x1: 36.6 }, catBlock, sunPos, fleur: new Vector3(0, 66, 8) };
+  return { slide: SL, clouds, colliders: b.colliders, orbs, start: new Vector3(-19.5, 0, 47), diverPos, diverBlock, people, cat: { x: 33.5, y: BANK + 1.1, z: 12.45, x0: 31, x1: 36.6 }, catBlock,
+    animals: [{ kind: 'horse', tag: 'horse', x: 73, y: BANK + 0.06, z: 37, ry: -1.2 }, { kind: 'sheep', tag: 'sheep', x: -58, y: BANK + 0.06, z: -76, ry: 0.6 }, { kind: 'sheep', tag: 'sheep2', x: -56.2, y: BANK + 0.06, z: -79.2, ry: 2.4 }, { kind: 'sheep', tag: 'sheep2', x: -60.2, y: BANK + 0.06, z: -80.4, ry: -1.4 }],
+    pigeons: { x: 55.5, y: BANK + 0.12, z: -12.6 }, fish: { x: -1.6, y: 0, z: 19.9 }, sunPos, fleur: new Vector3(0, 66, 8) };
 }

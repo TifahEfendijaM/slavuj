@@ -231,6 +231,7 @@ export function washMat(tagName, o = {}) {
 
 // ---- ink ----
 export const inkMaterial = new LineMaterial({ color: new THREE.Color(S.ink.color), linewidth: S.ink.lineWidth });
+const fadeMats = [];   // outlines that disappear once their tag has been coloured (grass, hanging branches)
 
 const HULL_VERT = /* glsl */`
 attribute vec3 aSeed; attribute vec4 aAni;
@@ -313,14 +314,14 @@ export class Builder {
       const key = geo.uuid + (o.edge ?? 30);
       let e = edgeCache.get(key);
       if (!e) edgeCache.set(key, e = new THREE.EdgesGeometry(geo, o.edge ?? 30).attributes.position);
-      const r = this.r, jit = o.jitter ?? 0.03, j = () => (r() - 0.5) * 2 * jit;
+      const r = this.r, jit = o.jitter ?? 0.03, j = () => (r() - 0.5) * 2 * jit, ink = o.inkFade ? (t.fink ||= []) : this.ink;
       for (let i = 0; i < e.count; i += 2) {
         _a.fromBufferAttribute(e, i).applyMatrix4(W); _b.fromBufferAttribute(e, i + 1).applyMatrix4(W);
         _d.subVectors(_b, _a); const len = _d.length(); if (len < 1e-3) continue;
         const k = len > 0.6 && r() < 0.5 ? 2 : 1;
         for (let s = 0; s < k; s++) {
           const ov = Math.min(len * 0.05, 0.2) * (0.4 + r()) / len;
-          this.ink.push(_a.x - _d.x * ov + j(), _a.y - _d.y * ov + j(), _a.z - _d.z * ov + j(), _b.x + _d.x * ov + j(), _b.y + _d.y * ov + j(), _b.z + _d.z * ov + j());
+          ink.push(_a.x - _d.x * ov + j(), _a.y - _d.y * ov + j(), _a.z - _d.z * ov + j(), _b.x + _d.x * ov + j(), _b.y + _d.y * ov + j(), _b.z + _d.z * ov + j());
         }
       }
     }
@@ -371,6 +372,10 @@ export class Builder {
         const hm = new THREE.Mesh(hg, hullMat(t.hullWidth)); hm.frustumCulled = false; scene.add(hm);
       }
       out[t.name] = mesh;
+      if (t.fink?.length) {
+        const fm = new LineMaterial({ color: new THREE.Color(S.ink.color), linewidth: S.ink.lineWidth, transparent: true }); fadeMats.push(fm);
+        t.fadeLine = new LineSegments2(new LineSegmentsGeometry().setPositions(t.fink), fm); t.fadeLine.frustumCulled = false; scene.add(t.fadeLine); t.fink = null;
+      }
       for (const k of ['pos', 'nor', 'uv', 'col', 'bleed', 'par', 'sway', 'hpos', 'hnor', 'hsway']) t[k] = null;
     }
     const line = new LineSegments2(new LineSegmentsGeometry().setPositions(this.ink), inkMaterial);
@@ -380,5 +385,5 @@ export class Builder {
 }
 
 export function setResolution(w, h, px) {
-  shared.uRes.value.set(w, h); shared.uPx.value = px; inkMaterial.resolution.set(w, h);
+  shared.uRes.value.set(w, h); shared.uPx.value = px; inkMaterial.resolution.set(w, h); for (const m of fadeMats) m.resolution.set(w, h);
 }

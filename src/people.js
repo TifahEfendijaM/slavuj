@@ -57,10 +57,12 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.kind === 'girl' ? '#e0567f' : top0, bottom = pick(BOTTOMS), gown = o.robe || o.woman;
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    else if (o.woman && o.kind !== 'girl') P(G.skirt, pick(TOPS), hips, 0, 0, 0);
-    if ((!gown || o.kind === 'sit') && o.kind !== 'girl' && o.kind !== 'raft') for (const s of [-1, 1]) {
-      const hip = grp(hips, s * 0.09, 0, 0); P(G.thigh, bottom, hip, 0, -0.2, 0);
-      const knee = grp(hip, 0, -0.42, 0); P(G.calf, bottom, knee, 0, -0.2, 0);
+    const seated = ['sit', 'swing', 'drink'].includes(o.kind), skirtC = o.woman && !o.robe && o.kind !== 'girl' ? pick(TOPS) : null;
+    if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
+    const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
+    if ((!gown || seated || (skirtC && sc < 1)) && o.kind !== 'girl' && o.kind !== 'raft') for (const s of [-1, 1]) {
+      const hip = grp(hips, s * 0.09, 0, 0); P(G.thigh, legC, hip, 0, -0.2, 0);
+      const knee = grp(hip, 0, -0.42, 0); P(G.calf, skirtC && seated ? skin : bottom, knee, 0, -0.2, 0);
       const f = P(G.foot, '#3a322c', knee, 0, -0.42, 0.06); f.rotation.x = Math.PI / 2;
       legs.push({ hip, knee });
     }
@@ -76,10 +78,11 @@ export function createPeople(scene, world, R) {
     }
     const arms = [-1, 1].map((s) => { const sh = grp(torso, s * 0.2, 0.56, 0); P(G.uarm, top, sh, 0, -0.135, 0); const el = grp(sh, 0, -0.27, 0); P(G.farm, top, el, 0, -0.14, 0); const hand = P(G.hand, skin, el, 0, -0.3, 0); return { sh, el, hand, s }; });
     const p = { o, root, hips, torso, head, legs, arms, phase: R() * 6, clap: 0, s: 0, dir: 1, P, sc, y0: o.y };
-    const moving = o.kind === 'walk' || o.kind === 'bike' || o.kind === 'keeper';
-    if (o.kind !== 'girl' && o.kind !== 'swing') p.block = block(o.x, o.y + sc, o.z, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), 2 * sc, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), { wall: true, person: true });
+    const moving = o.kind === 'walk' || o.kind === 'bike' || o.kind === 'keeper' || o.kind === 'swimmer';
+    if (o.kind === 'swimmer') p.block = block(o.x, 0.2, o.z, 0.9, 0.8, 2.2, { wall: true, person: true });
+    else if (o.kind !== 'girl' && o.kind !== 'swing') p.block = block(o.x, o.y + sc, o.z, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), 2 * sc, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), { wall: true, person: true });
     if (moving && o.to) { p.from = pos.clone(); p.to = new THREE.Vector3(o.to[0], o.y, o.to[1]); root.rotation.y = Math.atan2(p.to.x - p.from.x, p.to.z - p.from.z); }
-    if (o.kind === 'sit' || o.kind === 'raft') { hips.position.y = 0.5; for (const l of legs) { l.hip.rotation.x = -1.5; l.knee.rotation.x = o.kind === 'raft' ? 0.55 : 1.45; } }
+    if (seated || o.kind === 'raft') { hips.position.y = 0.5; for (const l of legs) { l.hip.rotation.x = -1.5; l.knee.rotation.x = o.kind === 'raft' ? 0.55 : 1.45; } }
     if (o.kind === 'girl') torso.rotation.x = 0.5;
     if (o.kind === 'boy') for (const [dx, dy, c] of [[0, 0.1, '#e0453a'], [0.07, 0.03, '#f2c230'], [-0.07, 0.04, '#f08fb0'], [0, -0.02, '#5a9148']]) P(G.bloom, c, arms[1].el, dx, -0.41 - dy, 0.02);
 
@@ -114,7 +117,7 @@ export function createPeople(scene, world, R) {
       for (const a of arms) { a.sh.rotation.x = -1.05; a.sh.rotation.z = a.s * -0.1; }
     }
     if (o.kind === 'raft') {       // sitting in the kayak (built in world.js) with a double paddle
-      const P = painter('kayak', pos), pd = p.paddle = grp(torso, 0, 0.36, 0.5);
+      const pd = p.paddle = grp(torso, 0, 0.36, 0.5);       // the paddle is coloured with the paddler
       rod(P, pd, [-1.05, 0, 0], [1.05, 0, 0], 0.018, '#3a3632');
       for (const s of [-1, 1]) { const bl = P(G.box, '#e8792e', pd, s * 1.15, 0, 0, '#c85a1e'); bl.scale.set(0.34, 0.2, 0.03); }
       for (const a of arms) { a.sh.rotation.set(-0.85, 0, a.s * 0.3); a.el.rotation.x = -0.7; }
@@ -127,12 +130,58 @@ export function createPeople(scene, world, R) {
       hips.position.y = 0.5; for (const l of legs) { l.hip.rotation.x = -1.5; l.knee.rotation.x = 1.1; }
       for (const a of arms) { a.sh.rotation.set(-2.5, 0, a.s * 0.35); a.el.rotation.x = -0.35; }
     }
+    if (o.kind === 'swimmer') { root.rotation.order = 'YXZ'; root.rotation.x = 1.42; a0pose(arms, -2.9, 0.4); }
+    if (o.kind === 'fisher') {     // a rod out over the water, a line and a float
+      const rodG = p.rod = grp(root, 0.05, 1.02, 0.34);
+      rod(P, rodG, [0, 0, 0], [0, 1.25, 2.3], 0.014, '#6a4a30'); rod(P, rodG, [0, 1.25, 2.3], [0, -1.62, 2.75], 0.004, '#3a3632');
+      p.float = P(G.ball, '#d2302c', rodG, 0, -1.62, 2.75); p.float.scale.setScalar(0.06);
+      for (const a of arms) { a.sh.rotation.set(-0.8, 0, a.s * -0.25); a.el.rotation.x = -0.75; }
+      const hat = P(G.fes, '#c9b48a', head, 0, 0.13, 0, '#a8905a'); hat.scale.set(1.9, 0.5, 1.9);
+    }
+    if (o.kind === 'drink') { p.cup = painter('coffee', pos)(G.fes, '#f8f4ea', arms[1].el, 0, -0.35, 0.04, '#d9d2c2'); p.cup.scale.set(0.38, 0.45, 0.38); p.cup.rotation.x = Math.PI; }
     if (o.dog) p.dogBlock = block(o.x, o.y + 0.4, o.z, 0.5, 0.8, 0.9, { wall: true, person: true });
     if (o.kind === 'keeper') { for (const l of legs) { l.hip.rotation.x = -0.45; l.knee.rotation.x = 0.8; l.hip.rotation.z = 0; } hips.position.y = 0.84; for (const a of arms) a.sh.rotation.z = a.s * 0.95; }
     if (o.kind === 'cheer') { arms[1].sh.rotation.z = 2.5; }
     list.push(p); return p;
   }
+  function a0pose(arms, x0, x1) { arms[0].sh.rotation.x = x0; arms[1].sh.rotation.x = x1; }
   for (const o of world.people) person(o);
+
+  // ---- animals: a horse and sheep on the outer meadows, pigeons on the square, a fish in the river ----
+  const animals = world.animals.map((o) => {
+    const pos = new THREE.Vector3(o.x, o.y, o.z), P = painter(o.tag, pos, 2), root = new THREE.Group(); root.position.copy(pos); root.rotation.y = o.ry; scene.add(root);
+    const E = (col, parent, x, y, z, sx, sy, sz, bleed) => { const m = P(G.catBody, col, parent, x, y, z, bleed); m.scale.set(sx, sy, sz); return m; };
+    const a = { o, root, legs: [] };
+    if (o.kind === 'horse') {
+      const C = '#8a5a34', C2 = '#5f3a20', D = '#2f241c';
+      E(C, root, 0, 1.2, 0, 0.34, 0.38, 0.8, C2);
+      a.neck = grp(root, 0, 1.4, 0.62); E(C, a.neck, 0, 0.32, 0.2, 0.15, 0.42, 0.2, C2).rotation.x = 0.55; E(C, a.neck, 0, 0.68, 0.52, 0.12, 0.14, 0.3, C2).rotation.x = 0.5;
+      for (const s of [-1, 1]) E(C2, a.neck, s * 0.07, 0.86, 0.36, 0.03, 0.08, 0.04); E(D, a.neck, 0, 0.42, 0.06, 0.05, 0.4, 0.1).rotation.x = 0.55;
+      for (const [x, z] of [[0.18, 0.5], [-0.18, 0.5], [0.18, -0.5], [-0.18, -0.5]]) { const g = grp(root, x, 1.0, z); const m = P(G.catLeg, C, g, 0, 0, 0, C2); m.scale.set(1.5, 3.85, 1.5); a.legs.push(g); }
+      a.tail = grp(root, 0, 1.35, -0.76); const t = P(G.catTail, D, a.tail, 0, 0, 0); t.scale.set(1.2, 1.3, 1.2); a.tail.rotation.x = Math.PI - 0.35;
+      a.block = block(o.x, o.y + 1, o.z, 1.7, 2, 1.7, { wall: true, person: true });
+    } else {
+      const W = '#f4f0e4', W2 = '#d6cfbc', D = '#3a342e';
+      for (const [x, y, z, r] of [[0, 0.66, 0, 0.3], [0, 0.7, 0.24, 0.26], [0, 0.68, -0.26, 0.27], [0.14, 0.62, 0.05, 0.22], [-0.14, 0.62, -0.05, 0.22]]) E(W, root, x, y, z, r, r * 0.92, r * 1.15, W2);
+      a.neck = grp(root, 0, 0.74, 0.4); E(D, a.neck, 0, 0.06, 0.14, 0.1, 0.11, 0.16); for (const s of [-1, 1]) E(D, a.neck, s * 0.11, 0.1, 0.08, 0.05, 0.025, 0.035);
+      for (const [x, z] of [[0.13, 0.26], [-0.13, 0.26], [0.13, -0.26], [-0.13, -0.26]]) { const g = grp(root, x, 0.44, z); const m = P(G.catLeg, D, g, 0, 0, 0); m.scale.set(1, 1.7, 1); a.legs.push(g); }
+      a.block = block(o.x, o.y + 0.5, o.z, 1, 1, 1, { wall: true, person: true });
+    }
+    a.phase = R() * 6; return a;
+  });
+  const PG = world.pigeons, pcentre = new THREE.Vector3(PG.x, PG.y, PG.z), pigeons = [];
+  for (let i = 0; i < 8; i++) {
+    const ang = (i / 8) * 6.28 + R(), rad = 0.5 + R() * 1.5, home = new THREE.Vector3(PG.x + Math.cos(ang) * rad, PG.y, PG.z + Math.sin(ang) * rad);
+    const P = painter('pigeon', home, 1.2), g = new THREE.Group(); g.position.copy(home); g.rotation.y = R() * 6.28; scene.add(g);
+    const col = ['#8f9aa6', '#a7aeb5', '#7d8794', '#c9c4bc'][i % 4], b = P(G.catBody, col, g, 0, 0.11, 0, '#6a7480'); b.scale.set(0.07, 0.075, 0.13);
+    const hd = grp(g, 0, 0.2, 0.09); P(G.catBody, '#6f8a84', hd, 0, 0, 0).scale.set(0.045, 0.045, 0.045); const bk = P(G.cone, '#d9a25a', hd, 0, 0, 0.055); bk.scale.set(0.3, 0.3, 0.3); bk.rotation.x = Math.PI / 2;
+    const tl = P(G.box, '#6a7480', g, 0, 0.1, -0.15); tl.scale.set(0.07, 0.015, 0.12);
+    const wings = [-1, 1].map((s) => { const w = grp(g, s * 0.05, 0.14, 0); const m = P(G.box, col, w, s * 0.11, 0, 0, '#6a7480'); m.scale.set(0.22, 0.012, 0.12); w.visible = false; return w; });
+    pigeons.push({ g, hd, wings, home, mode: 'ground', t: 0, phase: R() * 6, r: 3 + R() * 2.5, h: 3 + R() * 2.5, yaw: g.rotation.y });
+  }
+  const FS = world.fish, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), FP = painter('fish', fishHome, 1), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7; scene.add(fish);
+  FP(G.catBody, '#9fb6c2', fish, 0, 0, 0, '#6f8a9a').scale.set(0.05, 0.1, 0.24); { const t = FP(G.ear, '#6f8a9a', fish, 0, 0, -0.27); t.scale.set(0.5, 1.3, 1.6); t.rotation.x = Math.PI / 2; }
+  const birdD = new THREE.Vector3();
 
   // ---- the football ----
   const kickers = list.filter((p) => p.o.ball !== undefined).sort((a, b) => a.o.ball - b.o.ball);
@@ -176,7 +225,7 @@ export function createPeople(scene, world, R) {
   return {
     list, cat, ball,
     applaud() { for (const p of list) if (p.o.kind === 'watch') p.cheer = true; },
-    update(dt, time, life) {
+    update(dt, time, life, bird) {
       const alive = life > 0.5;
       for (const p of list) {
         const t = time * (alive ? 1 : 0) + p.phase, [a0, a1] = p.arms, o = p.o;
@@ -208,6 +257,7 @@ export function createPeople(scene, world, R) {
           }
         } else if (o.kind === 'watch') {
           if (p.cheer && alive) {
+            const want = Math.atan2(0.5 - o.x, 10.5 - o.z); p.root.rotation.y += (want - p.root.rotation.y) * k(3, dt); p.head.rotation.x = 0.4; p.torso.rotation.x = 0.12;      // looking down at the water where he landed
             const f = p.f ||= 2.2 + R() * 1.5, wave = Math.sin(t * 0.31 * f + p.phase * 2) > 0.2, j = Math.max(0, Math.sin(t * f)) ** 2;
             p.root.position.y = p.y0 + j * (wave ? 0.16 : 0.06);
             for (const a of p.arms) {
@@ -215,7 +265,7 @@ export function createPeople(scene, world, R) {
               else { a.sh.rotation.x += (-1.15 - a.sh.rotation.x) * k(8, dt); a.sh.rotation.z = -a.s * (0.3 + 0.16 * Math.sin(t * 6.5 * f)); a.el.rotation.x = -0.6; }                    // clapping
             }
           } else { a0.sh.rotation.x += ((o.look === 0 ? -2.2 : 0) - a0.sh.rotation.x) * k(5, dt); a0.sh.rotation.z = o.look === 0 ? 0.5 : -0.08; a1.sh.rotation.x += (0 - a1.sh.rotation.x) * k(5, dt); a1.sh.rotation.z = 0.08; }
-          p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.25 : 0; p.torso.rotation.y = alive ? Math.sin(t * 0.4) * 0.1 : 0;
+          p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.25 : 0; p.torso.rotation.y = alive && !p.cheer ? Math.sin(t * 0.4) * 0.1 : 0;
         } else if (o.kind === 'sit') {
           a0.sh.rotation.x = -0.55 + (alive ? Math.sin(t * 2.6) * 0.4 : 0); a1.sh.rotation.x = -0.3 + (alive ? Math.sin(t * 1.9 + 1) * 0.25 : 0);
           p.head.rotation.y = alive ? Math.sin(t * 0.9) * 0.4 : 0.2; p.head.rotation.x = alive ? Math.sin(t * 2.1) * 0.08 : 0;
@@ -234,6 +284,26 @@ export function createPeople(scene, world, R) {
         } else if (o.kind === 'photo') {     // lowers the camera to look, lifts it again
           const up = alive ? sm(Math.sin(t * 0.6) * 2 + 1.2) : 1;
           for (const a of p.arms) { a.sh.rotation.x = -0.55 - 0.95 * up; a.el.rotation.x = -1.15 - 0.15 * up; } p.head.rotation.x = 0.12 * up;
+        } else if (o.kind === 'swimmer') {   // front crawl, up and down the river
+          if (alive) {
+            p.s += p.dir * dt * o.speed / p.from.distanceTo(p.to); if (p.s > 1 || p.s < 0) { p.dir *= -1; p.s = Math.min(1, Math.max(0, p.s)); }
+            const want = Math.atan2((p.to.x - p.from.x) * p.dir, (p.to.z - p.from.z) * p.dir); p.root.rotation.y += Math.atan2(Math.sin(want - p.root.rotation.y), Math.cos(want - p.root.rotation.y)) * k(2, dt);
+            p.root.position.lerpVectors(p.from, p.to, p.s).addScaledVector(birdD.set(Math.sin(p.root.rotation.y), 0, Math.cos(p.root.rotation.y)), -0.95);
+            p.block.matrixWorld.setPosition(p.from.x + (p.to.x - p.from.x) * p.s, 0.2, p.from.z + (p.to.z - p.from.z) * p.s);
+            a0.sh.rotation.x = -(t * 3.2) % 6.283; a1.sh.rotation.x = -(t * 3.2 + Math.PI) % 6.283; p.head.rotation.y = Math.sin(t * 3.2) * 0.5;
+          }
+          p.legs.forEach((l, i) => { l.hip.rotation.x = (alive ? Math.sin(t * 9 + i * Math.PI) : i ? 0.2 : -0.2) * 0.3; });
+          p.root.position.y = p.y0 + (alive ? Math.sin(t * 3.2) * 0.02 : 0);
+        } else if (o.kind === 'fisher') {    // waits; now and then lifts the rod a little
+          const tug = alive ? Math.max(0, Math.sin(t * 0.7)) ** 6 : 0;
+          p.rod.rotation.x = -tug * 0.12 + (alive ? Math.sin(t * 1.3) * 0.01 : 0); p.head.rotation.y = alive ? Math.sin(t * 0.3) * 0.2 : 0; p.float.position.y = -1.62 + (alive ? Math.sin(t * 2.2) * 0.03 : 0);
+        } else if (o.kind === 'drink') {     // a sip, then the cup rests by the table again
+          const sip = alive ? sm(Math.sin(t * 0.8) * 3 - 1.6) : 0.5;
+          a1.sh.rotation.set(-0.75 + sip * 0.3, 0, -0.25 * sip); a1.el.rotation.x = -0.9 - sip * 1.35; p.head.rotation.x = -sip * 0.2; a0.sh.rotation.x = -0.6; a0.el.rotation.x = -0.9;
+          p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.3 * (1 - sip) : 0;
+        } else if (o.kind === 'wait') {      // looks down the road, checks her watch, shifts her weight
+          const watch = alive ? sm(Math.sin(t * 0.5) * 3 - 1.8) : 0;
+          a0.sh.rotation.x = -0.9 * watch; a0.el.rotation.x = -1.5 * watch; p.head.rotation.x = 0.35 * watch; p.head.rotation.y = alive ? Math.sin(t * 0.35) * 0.7 * (1 - watch) : 0.5; p.root.rotation.z = alive ? Math.sin(t * 0.6) * 0.03 : 0;
         } else if (o.kind === 'pose') {      // stand close, wave at the camera
           a1.sh.rotation.z = alive ? 2.4 + Math.sin(t * 5) * 0.3 : 2.5; a1.el.rotation.z = alive ? Math.sin(t * 5) * 0.3 : 0; a0.sh.rotation.z = -0.15; p.torso.rotation.z = alive ? Math.sin(t * 0.9) * 0.05 : 0; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.15 : 0;
         } else if (o.kind === 'raft') {      // one blade in, then the other
@@ -267,6 +337,32 @@ export function createPeople(scene, world, R) {
         ball.position.lerpVectors(tmpA, tmpB, h); ball.position.y = ballHome.y + Math.abs(Math.sin(time * 2.3)) * 0.35 * Math.sin(Math.PI * h); ball.rotation.x += dt * 5;
         ballBlock.matrixWorld.setPosition(ball.position.x, ball.position.y, ball.position.z);
       }
+      // the horse and the sheep graze
+      for (const a of animals) {
+        const t = time * (alive ? 1 : 0) + a.phase, down = alive ? sm(Math.sin(t * 0.35) * 2 + 0.6) : 0.3;
+        a.neck.rotation.x = down * (a.o.kind === 'horse' ? 1.15 : 0.8) + (alive ? Math.sin(t * 5) * 0.04 * down : 0);
+        if (a.tail) a.tail.rotation.z = alive ? Math.sin(t * 2.4) * 0.35 : 0.1;
+        a.legs.forEach((l, i) => { l.rotation.x = alive ? Math.sin(t * 0.35 + i) * 0.05 : 0; });
+      }
+      // pigeons peck about; once the town is alive they scatter when the nightingale comes close, circle, and come back
+      const near = bird ? bird.pos.distanceTo(pcentre) : 99, scare = alive && (near < 3 || (near < 5.5 && bird.mode === 'perched'));
+      if (scare && pigeons[0].mode === 'ground') this.onScatter?.();
+      for (const q of pigeons) {
+        const t = time + q.phase;
+        if (q.mode === 'ground') {
+          if (scare) { q.mode = 'fly'; q.t = 0; for (const w of q.wings) w.visible = true; }
+          q.hd.rotation.x = alive ? Math.max(0, Math.sin(t * 2.3)) ** 4 * 1.1 : 0; if (alive) { q.yaw += Math.sin(t * 0.5) * dt * 0.6; q.g.rotation.y = q.yaw; q.g.position.x = q.home.x + Math.sin(t * 0.3) * 0.25; q.g.position.z = q.home.z + Math.cos(t * 0.23) * 0.25; }
+        } else {
+          q.t += dt; const back = near > 7 && q.t > 5 ? (q.back = (q.back || 0) + dt / 2.2) : (q.back = 0), up = sm(q.t / 1.3) * (1 - sm(back));
+          const a = q.t * 1.5 + q.phase, tx = pcentre.x + Math.cos(a) * q.r, tz = pcentre.z + Math.sin(a) * q.r;
+          q.g.position.set(q.home.x + (tx - q.home.x) * up, q.home.y + q.h * up + Math.sin(t * 3) * 0.15 * up, q.home.z + (tz - q.home.z) * up);
+          q.g.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a)); q.hd.rotation.x = 0;
+          q.wings.forEach((w, i) => { w.rotation.z = (i ? 1 : -1) * Math.sin(t * 38) * 0.9; });
+          if (back >= 1) { q.mode = 'ground'; q.back = 0; for (const w of q.wings) w.visible = false; q.g.position.copy(q.home); }
+        }
+      }
+      // the fish jumps now and then
+      if (alive) { const u = (time % 5.5) / 1.1; fish.visible = u < 1; if (u < 1) { fish.position.set(fishHome.x + (u - 0.5) * 1.3, Math.sin(Math.PI * u) * 0.95 - 0.12, fishHome.z); fish.rotation.set(-1.1 + u * 2.2, Math.PI / 2, 0, 'YXZ'); } }
       // the cat sits until the town wakes, then strolls along its wall with pauses
       const c = catS;
       if (alive) { c.rest -= dt; if (c.rest < 0) { c.x += c.dir * dt * 0.9; if (c.x > C.x1 || c.x < C.x0) { c.dir *= -1; c.rest = 1.5 + R() * 3; c.x = Math.min(C.x1, Math.max(C.x0, c.x)); } else if (R() < dt * 0.12) c.rest = 1 + R() * 2.5; } }
