@@ -39,7 +39,7 @@
     Record each Bosnian word once, clearly and naturally, one speaker for all of them.
     Saved recordings go straight into <code>assets/audio/words/</code> and the game uses them instead of the browser voice.<br>
     <span class="keys"><kbd>Space</kbd> start / stop recording · <kbd>P</kbd> play it back · <kbd>Enter</kbd> save and go to the next word · <kbd>↑</kbd><kbd>↓</kbd> choose a word</span><br>
-    Silence at the start and end is cut off by itself, and the volume is evened out.
+    Silence and the key clicks at the start and end are cut off by itself, and the volume is evened out. Wait a moment after pressing Space before you speak.
   </p>
   <div class="bar">
     <button class="mic" id="micBtn">Turn on the microphone</button>
@@ -142,11 +142,22 @@ async function toggleRec() {
 // cut the silence at both ends, even out the volume, fade the edges, and drop to 24 kHz to keep files small
 function clean(parts, rate) {
   let n = 0; for (const p of parts) n += p.length; if (!n) return null;
-  const a = new Float32Array(n); let o = 0; for (const p of parts) { a.set(p, o); o += p.length; }
+  const full = new Float32Array(n); let o = 0; for (const p of parts) { full.set(p, o); o += p.length; }
+  // the key presses: Space is heard just after recording starts and just before it stops, so those moments go
+  const c0 = Math.round(rate * 0.2), c1 = Math.round(rate * 0.3), a = n > c0 + c1 + rate * 0.2 ? full.subarray(c0, n - c1) : full;
   let pk = 0; for (const v of a) pk = Math.max(pk, Math.abs(v)); if (pk < 0.004) return null;      // (a quiet microphone is fine: the volume is evened out)
-  const th = pk * 0.06, win = Math.round(rate * 0.01); let s = 0, e = a.length - 1;
-  const loud = (i) => { let m = 0; for (let k = i; k < Math.min(a.length, i + win); k++) m = Math.max(m, Math.abs(a[k])); return m > th; };
-  while (s < a.length && !loud(s)) s += win; while (e > s && !loud(Math.max(0, e - win))) e -= win;
+  // the sound in 10 ms steps, grouped into stretches of sound (pauses under 0.15 s do not split a word)
+  const win = Math.round(rate * 0.01), W = Math.ceil(a.length / win), env = new Float32Array(W);
+  for (let w = 0; w < W; w++) { let m = 0; for (let k = w * win; k < Math.min(a.length, (w + 1) * win); k++) m = Math.max(m, Math.abs(a[k])); env[w] = m; }
+  const th = pk * 0.06, segs = [];
+  for (let w = 0; w < W; w++) if (env[w] > th) { const last = segs[segs.length - 1]; if (last && w - last[1] <= 15) last[1] = w; else segs.push([w, w]); }
+  // a click left at either end is a short burst on its own: drop it (a spoken word lasts longer)
+  const short = (sg) => sg[1] - sg[0] < 10;
+  while (segs.length > 1 && short(segs[0])) segs.shift();
+  while (segs.length > 1 && short(segs[segs.length - 1])) segs.pop();
+  if (!segs.length) return null;
+  let s = segs[0][0] * win, e = Math.min(a.length, (segs[segs.length - 1][1] + 1) * win);
+  pk = 0; for (let k = s; k < e; k++) pk = Math.max(pk, Math.abs(a[k])); if (pk < 0.004) return null;
   s = Math.max(0, s - Math.round(rate * 0.12)); e = Math.min(a.length, e + Math.round(rate * 0.18));
   const step = rate / 24000, len = Math.floor((e - s) / step), out = new Float32Array(len), g = 0.89 / pk, fade = Math.round(24000 * 0.012);
   for (let i = 0; i < len; i++) { const x = s + i * step, i0 = Math.floor(x), f = x - i0; out[i] = ((a[i0] ?? 0) * (1 - f) + (a[i0 + 1] ?? 0) * f) * g; }
