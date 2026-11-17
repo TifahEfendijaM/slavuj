@@ -73,7 +73,7 @@ export class Flight {
     const f = S.flight, sc = S.bird.scale;
     if (this.hop) {
       const h = this.hop; h.t += dt; const u = Math.min(1, h.t / h.dur);
-      this.pos.lerpVectors(h.from, h.to, u); this.pos.y += Math.sin(Math.PI * u) * h.arc;
+      this.pos.lerpVectors(h.from, h.to, h.ease ? 1 - (1 - u) * (1 - u) : u); this.pos.y += Math.sin(Math.PI * u) * h.arc;
       if (u >= 1) { this.hop = null; this.landedOn = h.obj; this.settle(h.point); }
       return;
     }
@@ -112,7 +112,13 @@ export class Flight {
   land(hit) {
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
     this.landedOn = hit.object; this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
+    // stand where the bird actually is (the surface right under it), not where a feeler ray touched,
+    // and glide the last few centimetres there instead of jumping
+    const from = this.pos.clone(), under = this.cast(_o.copy(from).setY(from.y + 0.3), DOWN, this.perchH + 1.2);
+    if (under && this.landable(under) && Math.abs(under.point.y - hit.point.y) < 0.6) hit = under;
     this.settle(hit.point); this.events.push('land');
+    const d = this.pos.distanceTo(from);
+    if (d > 0.03) { this.hop = { from, to: this.pos.clone(), point: hit.point.clone(), obj: hit.object, t: 0, dur: clamp(d * 0.5, 0.07, 0.2), arc: 0, ease: true }; this.pos.copy(from); }
   }
 
   update(dt, inp) {

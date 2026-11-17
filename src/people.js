@@ -30,7 +30,8 @@ export function createPeople(scene, world, R) {
   const timing = (tagName, pos) => {
     const src = tag(tagName).source, d = src ? pos.distanceTo(src) : 0;
     tag(tagName).subs.push({ box: new THREE.Box3().setFromCenterAndSize(pos.clone().setY(pos.y + 1), new THREE.Vector3(1, 2, 1)), ranges: [], hranges: [] });
-    return d < 5 ? { delay: 0, dur: 3.2 } : { delay: 2.6 + Math.min(d, 150) / 150 * 2.5, dur: 2.2 };
+    const tm = d < 5 ? { delay: 0, dur: 3.2 } : { delay: 2.6 + Math.min(d, 150) / 150 * 2.5, dur: 2.2 };
+    tag(tagName).end = Math.max(tag(tagName).end || 0, tm.delay + tm.dur); return tm;
   };
   const block = (x, y, z, w, h, d, data) => {
     const c = new THREE.Mesh(G.box, BLOCK); c.matrixAutoUpdate = false; c.matrix.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(w, h, d));
@@ -192,8 +193,10 @@ export function createPeople(scene, world, R) {
   const birdD = new THREE.Vector3();
 
   // ---- smoke from a chimney: still curls in the sketch, then it rises and drifts ----
-  const SM = world.smoke, SMP = painter('smoke', new THREE.Vector3(SM.x, SM.y + 1.6, SM.z), 3.6);
-  const puffs = Array.from({ length: 9 }, (_, i) => SMP(G.ball, i % 2 ? '#e2dfd8' : '#d0ccc4', scene, 0, 0, 0, '#b4b0a8'));
+  const smokes = world.smoke.map((SM, k) => {
+    const SMP = painter('smoke', new THREE.Vector3(SM.x, SM.y + 1.6, SM.z), 3.6);
+    return { SM, k, puffs: Array.from({ length: 9 }, (_, i) => SMP(G.ball, i % 2 ? '#e2dfd8' : '#d0ccc4', scene, 0, 0, 0, '#b4b0a8')) };
+  });
   // ---- the traffic light by the road: red until the town wakes, then it cycles ----
   const TL = world.light, tlp = new THREE.Vector3(TL.x, TL.y, TL.z), TLP = painter('light', tlp, 2.6), tlg = new THREE.Group(); tlg.position.copy(tlp); scene.add(tlg);
   rod(TLP, tlg, [0, 0, 0], [0, 3, 0], 0.06, '#3a3e42');
@@ -384,8 +387,8 @@ export function createPeople(scene, world, R) {
       }
       // smoke and the traffic light
       const st = alive ? time : 0;
-      puffs.forEach((m, i) => {
-        const f = (i / puffs.length + st * 0.1) % 1, sz = (0.18 + f * 0.75) * Math.min(1, (1 - f) / 0.25);
+      for (const { SM, k, puffs } of smokes) puffs.forEach((m, i) => {
+        const f = (i / puffs.length + st * 0.1 + k * 0.37) % 1, sz = (0.18 + f * 0.75) * Math.min(1, (1 - f) / 0.25);
         m.position.set(SM.x + f * 1.7 + Math.sin(f * 5 + i) * 0.18, SM.y + 0.3 + f * 4.2, SM.z + Math.cos(f * 4 + i * 1.3) * 0.15); m.scale.setScalar(sz); m.visible = sz > 0.02;
       });
       const lc = alive ? time % 10 : 9, light = lc < 4.5 ? 2 : lc < 5.8 ? 1 : 0;
@@ -398,7 +401,7 @@ export function createPeople(scene, world, R) {
           a.rest -= dt;
           if (a.rest < 0) {
             const d = birdD.subVectors(a.to, a.root.position); d.y = 0; const len = d.length();
-            if (len < 0.15) { a.rest = 4 + R() * 7; const ang = R() * 6.28, r = 1 + R() * (horse ? 4 : 2.5); a.to.set(a.home.x + Math.cos(ang) * r, a.home.y, a.home.z + Math.sin(ang) * r); }
+            if (len < 0.15) { a.rest = 4 + R() * 7; const ang = R() * 6.28, r = 1 + R() * (a.o.roam ?? (horse ? 4 : 2.5)); a.to.set(a.home.x + Math.cos(ang) * r, a.home.y, a.home.z + Math.sin(ang) * r); }
             else { moving = true; const want = Math.atan2(d.x, d.z); a.root.rotation.y += Math.atan2(Math.sin(want - a.root.rotation.y), Math.cos(want - a.root.rotation.y)) * k(3, dt); a.root.position.addScaledVector(d.normalize(), Math.min(len, sp * dt)); a.block.matrixWorld.setPosition(a.root.position.x, a.root.position.y + (horse ? 1 : 0.5), a.root.position.z); }
           }
         }

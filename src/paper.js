@@ -359,6 +359,7 @@ export class Builder {
           seed[i * 3] = sd.x; seed[i * 3 + 1] = sd.y; seed[i * 3 + 2] = sd.z;
           ani[i * 4] = radius; ani[i * 4 + 1] = delay; ani[i * 4 + 2] = dur; ani[i * 4 + 3] = t.sway[i];
         }
+        t.end = Math.max(t.end || 0, delay + dur);      // seconds after painting starts until the last of it is coloured
         for (const [v0, cnt] of s.hranges) for (let i = v0; i < v0 + cnt; i++) {
           hseed[i * 3] = sd.x; hseed[i * 3 + 1] = sd.y; hseed[i * 3 + 2] = sd.z; hani[i * 4 + 3] = t.hsway[i];
         }

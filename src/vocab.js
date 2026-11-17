@@ -2,8 +2,8 @@
 // shown above the list, and the answer choices (the correct word must be among them).
 const Q = 'Which word is it?';
 export const WORDS = {
+  krov:    { word: 'krov',    en: 'roof',     q: 'What is the nightingale standing on?', choices: ['krov', 'zid', 'vrata'] },
   kuca:    { word: 'kuća',    en: 'house',    q: Q, choices: ['most', 'kuća', 'rijeka'] },
-  krov:    { word: 'krov',    en: 'roof',     q: 'The top of a house. Which word is it?', choices: ['krov', 'zid', 'vrata'] },
   visoka:  { word: 'visoka',  en: 'tall',     q: 'Which word describes this house?', choices: ['mala', 'okrugla', 'visoka'] },
   mala:    { word: 'mala',    en: 'small',    q: 'Which word describes this house?', choices: ['velika', 'mala', 'visoka'] },
   dimnjak: { word: 'dimnjak', en: 'chimney',  q: 'Which part of the house is it?', choices: ['krov', 'dimnjak', 'prozor', 'vrata'] },
@@ -25,7 +25,7 @@ export const WORDS = {
   obala:   { word: 'obala',   en: 'shore',    q: Q, choices: ['krov', 'obala', 'ulica'] },
   stepenice: { word: 'stepenice', en: 'stairs', q: Q, choices: ['stepenice', 'zid', 'klupa'] },
   stijena: { word: 'stijena', en: 'rock',     q: Q, choices: ['stijena', 'oblak', 'drvo'] },
-  trava:   { word: 'trava',   en: 'grass',    q: Q, choices: ['drvo', 'cvijet', 'trava'] },
+  trava:   { word: 'trava',   en: 'grass',    q: 'What do these sheep eat?', choices: ['drvo', 'cvijet', 'trava'] },
   kaldrma: { word: 'kaldrma', en: 'cobbled street', q: 'The old streets are paved with these round stones. Which word is it?', choices: ['kaldrma', 'trava', 'rijeka'] },
   cesta:   { word: 'cesta',   en: 'road',     q: 'Cars and buses drive on it. Which word is it?', choices: ['rijeka', 'cesta', 'obala'] },
   semafor: { word: 'semafor', en: 'traffic light', q: Q, choices: ['lampa', 'semafor', 'sat'] },

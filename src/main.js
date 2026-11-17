@@ -55,6 +55,9 @@ const store = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } c
 const painting = new Set();
 // journal photos: one frame grabbed from each word's own colouring scene, stored beside the save
 const PICS = KEY + '-pics';
+// photos from a full play-through that ship with the game: shown for any word whose scene the player
+// skipped or never saw (skip to the finale). The player's own photo always wins.
+const BUNDLED = Object.fromEntries(Object.entries(import.meta.glob('../assets/photos/*.jpg', { eager: true, query: '?url', import: 'default' })).map(([p, u]) => [p.split('/').pop().slice(0, -4), u]));
 let pics = {}, snapId = null;
 try { if (!fresh) pics = JSON.parse(localStorage.getItem(PICS) || '{}'); } catch (e) { /* no storage */ }
 function keepPic(id, data) { if (!data) return; pics[id] = data; try { localStorage.setItem(PICS, JSON.stringify(pics)); } catch (e) { /* storage full: the photo still shows this session */ } }
@@ -92,7 +95,8 @@ function orbVisual() {
 const orbs = world.orbs.map((def) => ({ def, id: def.id, w: WORDS[def.id], vis: orbVisual(), alive: false, done: save.done.includes(def.id), struck: new Set(), grow: 0 }));
 const byId = Object.fromEntries(orbs.map((o) => [o.id, o]));
 for (const o of orbs) { o.vis.position.copy(o.def.at); if (o.done) for (const t of o.def.tags) paint(t, true); }
-const available = (o) => !o.done && (o.def.stage === 0 || (byId.kuca.done && (o.def.requires || []).every((r) => byId[r].done) &&
+const FIRST = orbs.find((o) => o.def.stage === 0);     // the one word to learn before the others appear
+const available = (o) => !o.done && (o.def.stage === 0 || (FIRST.done && (o.def.requires || []).every((r) => byId[r].done) &&
   (o.def.stage === 1 || orbs.every((x) => x.done || x.def.stage === 2))));
 function refreshOrbs(announce) {
   let n = 0;
@@ -140,7 +144,7 @@ const inp = { dx: 0, dy: 0, turn: 0, tilt: 0, flap: false, dive: false, takeoff:
 const keys = new Set(), mouse = { x: innerWidth / 2, y: innerHeight / 2 };
 const fx = [];
 
-flight.placeAt(world.start.x, world.start.z, Math.atan2(byId.kuca.def.focus.x - world.start.x, byId.kuca.def.focus.z - world.start.z));
+flight.placeAt(world.start.x, world.start.z, Math.atan2(FIRST.def.focus.x - world.start.x, FIRST.def.focus.z - world.start.z));
 
 // which orb the bird has landed at: the object it stands on, or the nearest one it stands beside
 function orbHere() {
@@ -295,8 +299,26 @@ function ownSphere(o) {
 const sideOf = (f) => (Math.abs(f.x) < 14 ? 0 : f.x < 0 ? Math.PI / 2 : -Math.PI / 2);     // look from the river side
 // is any part of the thing (its middle, its sides, its top) hidden from this camera position?
 const _r = V(0, 0, 0), _u = V(0, 1, 0), _t = V(0, 0, 0);
+// rays only see the outside of things, so a camera standing inside a house sees "nothing in the way"
+const _inv = new Map(), _lp = V(0, 0, 0), _bb = new THREE.Box3();
+function inside(p, pad = 0.35) {
+  for (const c of world.colliders) {
+    const g = c.geometry; g.boundingBox || g.computeBoundingBox();
+    if (c.userData.water) continue;
+    let m = c.userData.person ? null : _inv.get(c);
+    if (!m) {
+      m = c.matrixWorld.clone().invert();
+      if (_bb.copy(g.boundingBox).applyMatrix4(c.matrixWorld).getSize(_lp).length() > 40) m.big = true;     // the cliffs, the ground: their box is mostly air
+      if (!c.userData.person) _inv.set(c, m);
+    }
+    if (m.big) continue;
+    _lp.copy(p).applyMatrix4(m); const sc = c.matrixWorld.getMaxScaleOnAxis() || 1;
+    if (_bb.copy(g.boundingBox).expandByScalar(pad / sc).containsPoint(_lp)) return true;
+  }
+  return false;
+}
 function covered(from, c, r) {
-  if (blocked(from, c, r)) return true;
+  if (inside(from) || blocked(from, c, r)) return true;
   _r.subVectors(c, from).cross(_u).normalize(); const k2 = r * 0.6;
   for (const [a, b] of [[1, 0], [-1, 0], [0, 1]]) { _t.copy(c).addScaledVector(_r, a * k2); _t.y += b * k2; if (blocked(from, _t, r * 0.75)) return true; }
   return false;
@@ -310,7 +332,7 @@ function closeShot(o, bird, dur) {
     if (hid(from)) continue;
     for (const turn of [0.4, -0.4, 0.15, -0.15]) {
       const to = c.clone().addScaledVector(dirOf(a + turn, el + 0.05), dist * 0.96);
-      if (!hid(to)) return { from, to, lookFrom: c, lookTo: c, dur, r, c };
+      if (!hid(to) && [0.25, 0.5, 0.75].every((e) => !hid(from.clone().lerp(to, e)))) return { from, to, lookFrom: c, lookTo: c, dur, r, c };     // clear the whole way, not only at its ends
     }
   }
   return { from: c.clone().addScaledVector(dirOf(base, 1.2), dist), to: c.clone().addScaledVector(dirOf(base + 0.3, 1.2), dist * 0.96), lookFrom: c, lookTo: c, dur, r, c };
@@ -352,7 +374,7 @@ function checkShots() {
   for (const o of orbs) {
     const d = o.def, probs = [], h = flight.cast(d.at.clone(), D, 80);
     const bird = h && flight.landable(h) ? h.point.clone().setY(h.point.y + 0.5) : d.near ? V(...d.near.p) : null;
-    for (const s of shotsFor(o, bird)) for (const e of [0, 1]) {
+    for (const s of shotsFor(o, bird)) for (const e of [0, 0.25, 0.5, 0.75, 1]) {
       cam.position.lerpVectors(s.from, s.to, e); cam.lookAt(s.lookFrom.clone().lerp(s.lookTo, e)); cam.updateMatrixWorld();
       if (s.wide) { if (s.pts) { const n = s.pts.filter(inFrame).length; if (n < Math.min(s.pts.length, 2) || n / s.pts.length < 0.6) probs.push(`wide ${e}: only ${n}/${s.pts.length} in frame`); } continue; }
       const right = V(1, 0, 0).applyQuaternion(cam.quaternion), up = V(0, 1, 0).applyQuaternion(cam.quaternion);
@@ -374,7 +396,7 @@ async function fadeCut(fn) { $('fade').classList.add('on'); await sleep(230); fn
 function skipScene() {
   if (state === 'cutscene' && cut && !cut.ending) {
     cut.started = true; for (const t of cut.o.def.tags) paint(t, true); if (cut.o.id === 'sat') hands.visible = true;
-    if (!cut.snapped) { cut.snapped = true; keepPic(cut.o.id, snapshot(cut.o.id)); }
+    cut.snapped = true;
     cut.o.vis.visible = false; cut.t = cut.dur; audio.stopSong(); singTok++; singing = false;
   } else if (state === 'finale' && fin && !fin.ending && fin.t < 25.5) {
     for (const n of ['sing', 'sky', 'photo', 'birds', 'city', 'murmur', 'jump']) fin.ev.add(n);
@@ -410,7 +432,7 @@ function updateCutscene(dt) {
   u.wisp.scale.setScalar(2.6 + sw * 9); u.wisp.material.opacity = Math.sin(Math.PI * Math.min(1, r * 1.05)) * 0.9; u.wisp.material.rotation = r * 1.2;
   if (r >= 1) o.vis.visible = false;
   if (!c.started && c.t >= S.cutscene.paintDelay) { c.started = true; for (const t of o.def.tags) paint(t); audio.paintWash(4.5); if (o.id === 'sat') hands.visible = true; }
-  if (!c.snapped && c.t >= Math.min(S.cutscene.paintDelay + 4, c.shots[0].dur - 0.25)) { c.snapped = true; snapId = o.id; }
+  if (!c.snapped && c.t >= snapTime(o, c.dur)) { c.snapped = true; snapId = o.id; }
   if (c.t >= c.dur && !c.ending) {
     c.ending = true;
     fadeCut(() => {
@@ -420,12 +442,15 @@ function updateCutscene(dt) {
     });
   }
 }
+// the journal photo is taken once everything this word colours has finished colouring
+const paintEnd = (o) => Math.max(0, ...o.def.tags.map((t) => tag(t).end || 4.6));      // (the clock hands and the diver colour on their own, within 4.6 s)
+const snapTime = (o, dur) => Math.min(S.cutscene.paintDelay + paintEnd(o) + 0.4, dur - 0.2);
 function finishOrb(o) {
   o.done = true; o.alive = false; scene.remove(o.vis); if (o.id === 'sat') hands.visible = true;
   if (!save.done.includes(o.id)) save.done.push(o.id); store();
   showLearn(o.w); renderJournal(o.id);
   const n = refreshOrbs(true);
-  if (o.id === 'kuca' && n) say('New orbs have appeared all over Mostar. Find them in any order.', 7);
+  if (o === FIRST && n) say('New orbs have appeared all over Mostar. Find them in any order.', 7);
   else if (n && byId.most.alive && !byId.most.done && orbs.filter((x) => x.alive).length === 1) say('Only Stari Most is left. Its orb is waiting on the bridge.', 7);
   else if (n) say('A new orb has appeared nearby.', 5);
   showFleur();
@@ -468,7 +493,7 @@ function snapshot(id) {
 }
 function showCard(id) {
   const w = WORDS[id], el = $('card');
-  $('cardImg').src = pics[id] || snapshot(id); el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
+  $('cardImg').src = pics[id] || BUNDLED[id] || snapshot(id); el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
   el.classList.remove('off'); audio.page();
 }
 $('card').addEventListener('click', () => $('card').classList.add('off'));
@@ -595,7 +620,7 @@ function updateHint() {
   if (flight.mode === 'swim') return hint((orbHere() ? '<kbd>E</kbd> open the word list · ' : '') + 'hold the mouse button to paddle · <kbd>Space</kbd> take off');
   if (flight.mode === 'perched') {
     if (orbHere()) return hint('<kbd>E</kbd> open the word list');
-    return hint('<kbd>Space</kbd> take off' + (!byId.kuca.done ? ' · fly to the glowing orb and land on the house' : ' · hold the mouse button to walk'));
+    return hint('<kbd>Space</kbd> take off' + (!FIRST.done ? ' · fly to the glowing orb and land on the roof' : ' · hold the mouse button to walk'));
   }
   hint('');
 }
@@ -631,7 +656,7 @@ function tick(dt) {
   }
 
   // the sheep bleat now and then, heard only when the bird is close to the meadow
-  if (running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x + 58, flight.pos.z + 78) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 28 && Math.random() < dt * 0.25) audio.baa(1 - sd / 28); }
+  if (running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - 56.5, flight.pos.z - 55) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 28 && Math.random() < dt * 0.25) audio.baa(1 - sd / 28); }
   freeSingT -= dt;
   bird.root.position.copy(flight.pos);
   bird.root.rotation.set(-flight.pitch, flight.yaw, flight.roll);
