@@ -111,6 +111,10 @@ export class Flight {
       this.splashPower = 0.25; this.mode = 'swim'; this.waterY = g.point.y; this.speed = this.walk * 0.5; this.walk = 0; this.feet = null; this.landedOn = null;
       this.pos.addScaledVector(fw, 0.25); this.pos.y = this.waterY + 0.14 * sc; this.events.push('splash'); return 'left';
     }
+    if (g && !g.object.userData.wall && !g.object.userData.water) {     // the edge of a step: its sloping front face, not ground; step down past it
+      const far = at(step + reach + 0.12);
+      if (far && this.landable(far) && Math.abs(far.point.y - gy) <= f.hopUp) { hopTo(far); return; }
+    }
     if (g && (g.object.userData.wall || gy - g.point.y < 0.3)) { this.walk = 0; return; }
     // nothing to stand on within reach: off it goes, wings tucked, for as long as the button is held
     this.mode = 'flying'; this.landedOn = null; this.feet = null; this.walk = 0; this.pitch = -0.35; this.mousePitch = -0.25; this.speed = Math.max(f.minSpeed, 6.5);

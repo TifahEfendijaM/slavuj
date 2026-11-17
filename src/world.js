@@ -219,7 +219,7 @@ export function buildWorld(scene) {
   }
   function cypress(x, z, s = 1) {
     b.object(() => {
-      A(CYL, x, BANK + 0.5, z, { tag: 'tree', col: '#6a4a30', solid: false, ink: false }, 0, 0, 0, [0.16 * s, 1, 0.16 * s]);
+      A(CYL, x, BANK + 0.5, z, { tag: 'tree', col: '#6a4a30', ink: false }, 0, 0, 0, [0.16 * s, 1, 0.16 * s]);
       A(CYPRESS, x, BANK + 0.8 + 3.6 * s, z, { tag: 'tree', col: pick(['#2f6146', '#35684e', '#2a5a40']), bleed: '#1f4a36', hull: true, wall: true, sway: (v) => 0.02 * (v.y - BANK) }, R() * 6, 0, 0, [0.95 * s, 3.6 * s, 0.95 * s]);
     });
   }
@@ -274,7 +274,7 @@ export function buildWorld(scene) {
         box(ww, wh, 0.1, 0, 0, 0.02, { ...Wn, col: open ? '#54463c' : '#6a93ad', bleed: open ? '#3c322b' : '#44708f' });
         for (const sg of [-1, 1]) box(ww * 0.25, wh, 0.07, sg * ww * 0.63, 0, 0.04, { ...Wn, col: trim, bleed: trim, pat: PAT.planks, ps: 3 });
         box(ww * 1.55, 0.14, big ? 1.1 : 0.34, 0, -wh / 2 - 0.07, big ? 0.55 : 0.17, { tag: 'window', col: '#d8cdb6', bleed: '#bfb092', solid: !!big, orb: big ? o.windowOrb : undefined });
-        if (fl) { box(ww * 0.95, 0.22, 0.3, 0, -wh / 2 + 0.11, 0.33, { tag: 'flower', col: '#b9683e', bleed: '#96502e', solid: false }); flowers(0, -wh / 2 + 0.32, 0.33, ww * 0.8); }
+        if (fl) { box(ww * 0.95, 0.22, 0.3, 0, -wh / 2 + 0.11, 0.33, { tag: 'flower', col: '#b9683e', bleed: '#96502e' }); flowers(0, -wh / 2 + 0.32, 0.33, ww * 0.8); }
         b.pop();
       };
       const uy = sh + (h - sh) * 0.52, fl = o.flowers ?? R() < 0.5;
@@ -340,10 +340,10 @@ export function buildWorld(scene) {
       box(3.7, 1.9, 0.1, 0, 1.75, 2.22, { ...Sh, col: '#5a4030', bleed: '#3a2a20', pool: 1, solid: false });
       box(3.9, 0.14, 1.0, 0, 0.85, 2.7, { ...Sh, col: '#8a5a34', bleed: '#5f4028', pat: PAT.planks, ps: 5 });
       box(4.7, 0.08, 1.9, 0, 2.75, 3.1, { ...Sh, col: aw, bleed: aw, pool: 1, orb: o.awningOrb ?? o.orb }, 0, 0.2);
-      for (const sx of [-2.2, 2.2]) A(CYL, sx, 1.3, 3.9, { ...Sh, col: '#6a4a30', solid: false, edge: 50 }, 0, 0, 0, [0.06, 2.6, 0.06]);
+      for (const sx of [-2.2, 2.2]) A(CYL, sx, 1.3, 3.9, { ...Sh, col: '#6a4a30', edge: 50 }, 0, 0, 0, [0.06, 2.6, 0.06]);
       const n = o.carpets ?? (R() < 0.7 ? 2 : 1);
       for (let i = 0; i < n; i++) { const k = pick(KILIMS); box(1.1, 1.7, 0.05, (i - (n - 1) / 2) * 1.7, 1.6, 3.95, { tag: 'carpet', col: k[0], bleed: k[1], pat: PAT.kilim, ps: 7, hatch: 0.3, sway: (v) => 0.05 * Math.max(0, BANK + 2.5 - v.y) }); }
-      for (let i = 0; i < 3; i++) A(POT, -1.2 + i * 1.2, 1.1, 2.75, { ...Sh, col: '#c98a4a', bleed: '#a8672f', solid: false, edge: 50 }, 0, 0, 0, [0.16, 0.36, 0.16]);
+      for (let i = 0; i < 3; i++) A(POT, -1.2 + i * 1.2, 1.1, 2.75, { ...Sh, col: '#c98a4a', bleed: '#a8672f', edge: 50 }, 0, 0, 0, [0.16, 0.36, 0.16]);
     });
     b.pop();
   }
@@ -386,7 +386,7 @@ export function buildWorld(scene) {
     box(10, 7, 10, 27, BANK + 3.5, -42, { ...Mq, col: s[0], bleed: s[1], pat: PAT.blocks, ps: 0.45, pool: 1 });
     A(CYL, 27, BANK + 7.6, -42, { ...Mq, col: s[0], bleed: s[1], edge: 40 }, Math.PI / 8, 0, 0, [5.1, 1.3, 5.1]);
     A(HEMI, 27, BANK + 8.2, -42, { ...Mq, col: lead[0], bleed: lead[1], hull: true }, 0, 0, 0, 4.6);
-    A(CONE8, 27, BANK + 13.3, -42, { ...Mq, col: '#c9a23a', solid: false, edge: 60 }, 0, 0, 0, [0.14, 1.3, 0.14]);
+    A(CONE8, 27, BANK + 13.3, -42, { ...Mq, col: '#c9a23a', edge: 60 }, 0, 0, 0, [0.14, 1.3, 0.14]);
     box(10.4, 0.4, 3.8, 27, BANK + 4.4, -35.1, { ...Mq, col: s[1], bleed: s[1] });
     for (const dx of [-3.3, 0, 3.3]) A(HEMI, 27 + dx, BANK + 4.6, -35.1, { ...Mq, col: lead[0], bleed: lead[1], hull: true }, 0, 0, 0, 1.45);
     for (const dx of [-4.9, -1.65, 1.65, 4.9]) A(CYL, 27 + dx, BANK + 2.1, -33.5, { ...Mq, col: s[0], edge: 50 }, 0, 0, 0, [0.24, 4.2, 0.24]);
@@ -409,7 +409,7 @@ export function buildWorld(scene) {
     A(CYL, 24, BANK + 0.78, -28, { tag: 'fountain', col: C.river, bleed: C.riverDeep, solid: false, ink: false, hatch: 0 }, 0, 0, 0, [1.55, 0.06, 1.55]);
     A(CYL, 24, BANK + 1.2, -28, { ...F, col: '#ddd3bd', edge: 50 }, 0, 0, 0, [0.28, 1.6, 0.28]);
     A(new THREE.CylinderGeometry(1, 0.4, 1, 8), 24, BANK + 2.15, -28, { ...F, col: '#d0c4a8', bleed: '#b8a888', edge: 40 }, 0, 0, 0, [0.85, 0.35, 0.85]);
-    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; A(CYL, 24 + Math.cos(a) * 2.2, BANK + 1.6, -28 + Math.sin(a) * 2.2, { tag: 'fountain', col: '#7a5636', solid: false, edge: 60 }, 0, 0, 0, [0.09, 3.2, 0.09]); }
+    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; A(CYL, 24 + Math.cos(a) * 2.2, BANK + 1.6, -28 + Math.sin(a) * 2.2, { tag: 'fountain', orb: 'cesma', col: '#7a5636', edge: 60 }, 0, 0, 0, [0.09, 3.2, 0.09]); }
     A(new THREE.ConeGeometry(1, 1, 6), 24, BANK + 3.85, -28, { ...F, col: SLABS[3][0], bleed: SLABS[3][1] }, 0, 0, 0, [2.9, 1.3, 2.9]);
   });
   orb('dzamija', [27, BANK + 6, -41], 10, ['mosque'], 'close', BANK + 14, { requires: ['munara'], front: 0 });
@@ -455,8 +455,8 @@ export function buildWorld(scene) {
   const boatGeo = new THREE.ExtrudeGeometry(boatShape, { depth: 0.55, bevelEnabled: false, curveSegments: 5 }).rotateX(-Math.PI / 2);
   const boat = (x, z, ry, id, c, tg = 'boat') => b.object(() => {
     A(boatGeo, x, 0.02, z, { tag: tg, col: c[0], bleed: c[1], pat: PAT.planks, ps: 2, orb: id, edge: 40 }, ry);
-    A(boatGeo, x, 0.46, z, { tag: tg, col: '#c8372d', bleed: '#9c2a22', solid: false, edge: 40, hull: false }, ry, 0, 0, [1.04, 0.26, 1.07]);     // a red gunwale
-    b.push(mat4(x, 0, z, ry)); for (const sx of [-0.9, 0.5]) box(0.3, 0.1, 1.3, sx, 0.5, 0, { tag: tg, col: '#c8372d', bleed: '#9c2a22', solid: false }); b.pop();
+    A(boatGeo, x, 0.46, z, { tag: tg, col: '#c8372d', bleed: '#9c2a22', edge: 40, hull: false }, ry, 0, 0, [1.04, 0.26, 1.07]);     // a red gunwale
+    b.push(mat4(x, 0, z, ry)); for (const sx of [-0.9, 0.5]) box(0.3, 0.1, 1.3, sx, 0.5, 0, { tag: tg, col: '#c8372d', bleed: '#9c2a22' }); b.pop();
   });
 
   boat(-3.75, 15.2, Math.PI / 2, 'camac', ['#2f6fb0', '#234f86']);
@@ -479,7 +479,7 @@ export function buildWorld(scene) {
   rail.moveTo(-17, 12.4); rail.lineTo(0, 18); rail.lineTo(17, 12.4); rail.lineTo(17, 13.3); rail.lineTo(0, 18.9); rail.lineTo(-17, 13.3); rail.closePath();
   const railGeo = new THREE.ExtrudeGeometry(rail, { depth: 0.32, bevelEnabled: false });
   A(railGeo, 0, 0, -2, BR); A(railGeo, 0, 0, 1.68, BR);
-  for (let i = -5; i <= 5; i++) if (i) box(0.5, 0.12, 3.4, i * 3, 18 - Math.abs(i * 3) * 0.329 + 0.02, 0, { ...BR, pat: 0, solid: false }, 0, 0, -Math.sign(i) * 0.318);
+  for (let i = -5; i <= 5; i++) if (i) box(0.5, 0.12, 3.4, i * 3, 18 - Math.abs(i * 3) * 0.329 + 0.02, 0, { ...BR, pat: 0 }, 0, 0, -Math.sign(i) * 0.318);
   const crook = new THREE.Shape();
   crook.moveTo(-5.5, 12); crook.lineTo(0, 13.3); crook.lineTo(5.5, 12); crook.lineTo(5.5, 7); crook.lineTo(3.6, 7); crook.absarc(0, 7, 3.6, 0, Math.PI, false); crook.lineTo(-5.5, 7); crook.closePath();
   A(new THREE.ExtrudeGeometry(crook, { depth: 4.6, bevelEnabled: false, curveSegments: 16 }).translate(0, 0, -2.3), -39.5, 0, 37, BR2, -Math.PI / 2);
@@ -567,7 +567,7 @@ export function buildWorld(scene) {
     for (const sx of [-1, 1]) for (let fl = 0; fl < 3; fl++) box(1.3, 1.4, 0.1, sx * (W / 2 + 0.17), 2.5 + fl * 2.75, 0, { ...T, col: '#7fb0c9', bleed: '#4f86a3' }, sx * Math.PI / 2);
     box(2.4, 2.5, 0.14, 0, 1.25, fz + 0.03, { ...T, col: '#a9d0d6', bleed: '#6fa6b3', pool: 1 });
     box(3.6, 0.3, 1.7, 0, 0.15, fz + 0.85, { ...H, col: '#c4beb4', bleed: '#a29c94' });
-    box(3.9, 0.14, 1.6, 0, 2.95, fz + 0.75, { ...T, col: '#7fb3b0', bleed: '#5d9794' });
+    box(3.9, 0.14, 1.6, 0, 2.95, fz + 0.75, { ...H, col: '#7fb3b0', bleed: '#5d9794' });
     box(6.6, 1.25, 0.14, 0, 4.12, fz + 0.1, { ...T, col: '#2f6f73', bleed: '#235357' });
     { const pts = [[-2.9, 0], [-1.5, 0], [-1.15, 0.28], [-0.75, -0.38], [-0.3, 0.46], [0.1, -0.22], [0.4, 0], [1.2, 0], [1.5, 0.2], [1.8, 0], [2.9, 0]];   // a heartbeat line
       for (let i = 0; i < pts.length - 1; i++) { const [x1, y1] = pts[i], [x2, y2] = pts[i + 1]; box(Math.hypot(x2 - x1, y2 - y1) + 0.07, 0.09, 0.07, (x1 + x2) / 2, 4.12 + (y1 + y2) / 2, fz + 0.2, { ...T, col: '#f8f4e6', bleed: '#e6efe9', ink: false, hatch: 0 }, 0, 0, Math.atan2(y2 - y1, x2 - x1)); } }
@@ -627,7 +627,7 @@ export function buildWorld(scene) {
   // ---------- the ice cream cart on the west square ----------
   b.push(mat4(-47.3, BANK + 0.12, 15.7, 0.4));
   b.object(() => {
-    const I = { tag: 'icecream' }, N = { tag: 'icecream', solid: false };
+    const I = { tag: 'icecream' }, N = { tag: 'icecream' };
     box(1.7, 0.9, 0.95, 0, 0.85, 0, { ...I, col: '#f6efe2', bleed: '#f3b7c6', pool: 1 }); box(1.84, 0.1, 1.08, 0, 1.34, 0, { ...I, col: '#e58aa5', bleed: '#c96a88' });
     for (const sx of [-0.55, 0.55]) for (const sz of [-0.52, 0.52]) A(CYL12, sx, 0.38, sz, { ...N, col: '#4a4a48', bleed: '#2f2f2e', edge: 40 }, 0, Math.PI / 2, 0, [0.38, 0.08, 0.38]);
     A(CYL, -0.62, 2.25, 0, { ...N, col: '#6a4a30', edge: 50 }, 0, 0, 0, [0.04, 1.75, 0.04]);
@@ -654,12 +654,12 @@ export function buildWorld(scene) {
       [37.4, 39.56, 73.6, 73.74], [37.4, 39.56, 78.26, 78.4], [37.4, 37.54, 73.6, 78.4]]) slab(x0, x1, z0, z1, Ln, BANK + 0.128, 0.012);
     A(new THREE.RingGeometry(1.5, 1.64, 28).rotateX(-Math.PI / 2), 31, BANK + 0.135, 76, Ln);
     for (const gx of [22.37, 39.63]) {
-      const Gl = { tag: 'pitch', col: '#f6f1e6', bleed: '#d9d2c2', solid: false, edge: 50 };
+      const Gl = { tag: 'pitch', col: '#f6f1e6', bleed: '#d9d2c2', edge: 50 };
       for (const gz of [74.6, 77.4]) A(CYL, gx, BANK + 0.85, gz, Gl, 0, 0, 0, [0.06, 1.5, 0.06]);
       A(CYL, gx, BANK + 1.6, 76, Gl, 0, Math.PI / 2, 0, [0.06, 2.92, 0.06]);
       const sg = Math.sign(gx - 31), Nt = { tag: 'pitch', col: '#fbf8ef', bleed: '#cfd6d8', pat: PAT.cobble, ps: 5, hatch: 0.6 };
       box(0.05, 1.62, 2.8, gx + sg * 0.33, BANK + 0.82, 76, { ...Nt, wall: true }, 0, 0, sg * 0.42);                    // from the bar back down to the ground
-      for (const gz of [74.6, 77.4]) A(triGeo([0, 0, 0], [0, 1.5, 0], [sg * 0.66, 0, 0]), gx, BANK + 0.1, gz, { ...Nt, solid: false });   // the side nets
+      for (const gz of [74.6, 77.4]) A(triGeo([0, 0, 0], [0, 1.5, 0], [sg * 0.66, 0, 0]), gx, BANK + 0.1, gz, { ...Nt, wall: true });   // the side nets
       box(0.06, 0.06, 2.8, gx + sg * 0.66, BANK + 0.13, 76, { ...Gl, edge: undefined });
       b.block(BOX, mat4(gx + sg * 0.3, BANK + 0.85, 76, 0, 0, 0, [0.8, 1.7, 3]), { wall: true });
     }
@@ -698,7 +698,7 @@ export function buildWorld(scene) {
   // the kayak on the river: it floats low in the water and the bird can land on it (the paddler is built in people.js)
   b.object(() => {
     A(ICO2, -3, 0.07, -34, { tag: 'kayak', col: '#e8b62e', bleed: '#d0851e', hull: true, orb: 'kajak' }, 0, 0, 0, [0.42, 0.27, 2.3]);
-    A(new THREE.TorusGeometry(0.31, 0.05, 6, 14).rotateX(Math.PI / 2), -3, 0.33, -34.05, { tag: 'kayak', col: '#3a3632', bleed: '#22201e', solid: false, edge: 60 });
+    A(new THREE.TorusGeometry(0.31, 0.05, 6, 14).rotateX(Math.PI / 2), -3, 0.33, -34.05, { tag: 'kayak', orb: 'kajak', col: '#3a3632', bleed: '#22201e', edge: 60 });
     for (const dz of [-1.3, 1.3]) box(0.5, 0.03, 0.12, -3, 0.31, -34 + dz, { tag: 'kayak', col: '#b8452c', solid: false, ink: false });
   });
   tag('kayak').hullWidth = 1.4;
@@ -722,7 +722,7 @@ export function buildWorld(scene) {
     chair(tx - 0.85, tz, Math.PI / 2, tc, cid); chair(tx + 0.85, tz, -Math.PI / 2, tc, cid);
   }
   b.object(() => {      // on the first table: a džezva and a small cup
-    const K = { tag: 'coffee', solid: false, edge: 50 }, y = G0 + 0.77;
+    const K = { tag: 'coffee', edge: 50 }, y = G0 + 0.77;
     A(new THREE.CylinderGeometry(0.7, 1, 1, 10), -57.45, y + 0.07, 8.3, { ...K, col: '#c98a4a', bleed: '#a8672f' }, 0, 0, 0, [0.06, 0.13, 0.06]); box(0.2, 0.015, 0.015, -57.34, y + 0.12, 8.3, { ...K, col: '#5a3a22', ink: false }, 0, 0, 0.5);
     A(CYL12, -57.93, y + 0.008, 8.07, { ...K, col: '#f8f4ea', bleed: '#d9d2c2' }, 0, 0, 0, [0.07, 0.012, 0.07]);     // the saucer; the cup itself is in the guest's hand (people.js)
     A(CYL12, -57.6, y + 0.006, 8.2, { ...K, col: '#c98a4a', bleed: '#a8672f' }, 0, 0, 0, [0.3, 0.012, 0.3]);    // the copper tray
@@ -737,7 +737,7 @@ export function buildWorld(scene) {
   slab(83, 90, -66, 46, { tag: 'road', col: '#8d8e92', bleed: '#74767b', orb: 'cesta' }, BANK + 0.08, 0.06);
   for (let z = -64; z < 44; z += 6) slab(86.42, 86.58, z, z + 2.6, { tag: 'road', col: '#f2efe6', solid: false, ink: false, hatch: 0 }, BANK + 0.116, 0.012);
   slab(81.4, 83, 6, 19, { tag: 'stop', col: '#d3d1ca', bleed: '#b3b9bb', pat: PAT.blocks, ps: 0.5 }, BANK + 0.1, 0.1);
-  const wheel = (o, x, y, z, r = 0.34) => A(CYL12, x, y, z, { ...o, col: '#3a3632', bleed: '#22201e', solid: false, edge: 40 }, 0, 0, Math.PI / 2, [r, 0.2, r]);
+  const wheel = (o, x, y, z, r = 0.34) => A(CYL12, x, y, z, { ...o, col: '#3a3632', bleed: '#22201e', edge: 40 }, 0, 0, Math.PI / 2, [r, 0.2, r]);
   b.push(mat4(84.5, BANK + 0.14, -30, 0));
   b.object(() => {
     const Cr = { tag: 'car', orb: 'auto' }, N = { tag: 'car', solid: false };
@@ -761,10 +761,10 @@ export function buildWorld(scene) {
   orb('autobus', [87.7, BANK + 1.7, 12.5], 5.2, ['bus'], 'close', BANK + 2.9, { front: -Math.PI / 4 });
   b.object(() => {     // the shelter of the bus stop
     const St = { tag: 'stop', col: '#5d7b8a', bleed: '#456070', orb: 'stanica' };
-    for (const dz of [-1.6, 1.6]) box(0.1, 2.3, 0.1, 81.9, BANK + 1.3, 12.5 + dz, { ...St, solid: false });
+    for (const dz of [-1.6, 1.6]) box(0.1, 2.3, 0.1, 81.9, BANK + 1.3, 12.5 + dz, St);
     box(1.5, 0.1, 3.8, 82.3, BANK + 2.45, 12.5, St); box(0.06, 1.5, 3.3, 81.85, BANK + 1.5, 12.5, { ...St, col: '#a9d0d6', bleed: '#7fb0c9', wall: true });
-    box(0.4, 0.07, 2.2, 82.15, BANK + 0.65, 12.5, { ...St, col: '#8a5a34', bleed: '#5f4028', solid: false });
-    box(0.07, 2.6, 0.07, 82.7, BANK + 1.4, 15.4, { ...St, solid: false }); A(CYL12, 82.7, BANK + 2.8, 15.4, { ...St, col: '#3f6f9a', bleed: '#2f5578', solid: false, edge: 40 }, 0, 0, Math.PI / 2, [0.35, 0.06, 0.35]);
+    box(0.4, 0.07, 2.2, 82.15, BANK + 0.65, 12.5, { ...St, col: '#8a5a34', bleed: '#5f4028' });
+    box(0.07, 2.6, 0.07, 82.7, BANK + 1.4, 15.4, St); A(CYL12, 82.7, BANK + 2.8, 15.4, { ...St, col: '#3f6f9a', bleed: '#2f5578', edge: 40 }, 0, 0, Math.PI / 2, [0.35, 0.06, 0.35]);
   });
   orb('cekati', [82.7, BANK + 1.2, 10.4], 2.4, ['wait'], 'close', BANK + 2.1, { near: { p: [82.3, BANK + 0.6, 9.2], r: 2.4 } });
   orb('stanica', [82.3, BANK + 1.4, 12.5], 3, ['stop'], 'close', BANK + 2.5, { front: Math.PI / 2 });
@@ -775,14 +775,14 @@ export function buildWorld(scene) {
   b.object(() => {
     const wx = 51, wz = 48, W = { tag: 'well', orb: 'bunar' };
     A(new THREE.CylinderGeometry(1, 1, 1, 14, 1, true), wx, BANK + 0.45, wz, { ...W, col: '#bcafa2', bleed: '#978a7c', pat: PAT.blocks, ps: 0.6, edge: 40 }, 0, 0, 0, [0.95, 0.9, 0.95]);
-    A(new THREE.TorusGeometry(0.95, 0.09, 6, 18).rotateX(Math.PI / 2), wx, BANK + 0.92, wz, { tag: 'well', col: '#a89a8c', bleed: '#857868', solid: false, edge: 60 });
+    A(new THREE.TorusGeometry(0.95, 0.09, 6, 18).rotateX(Math.PI / 2), wx, BANK + 0.92, wz, { ...W, col: '#a89a8c', bleed: '#857868', edge: 60 });
     A(CYL12, wx, BANK + 0.6, wz, { ...W, col: '#2f5a66', bleed: '#22434d', wall: true, ink: false, hatch: 0 }, 0, 0, 0, [0.9, 0.02, 0.9]);   // dark water far down
     for (const sx of [-0.88, 0.88]) box(0.14, 2.1, 0.14, wx + sx, BANK + 1.05, wz, { ...W, col: '#7a5636', bleed: '#5f4028' });
     A(roofGeo(1.5, 2.3, 0.6, 2.3, true), wx, BANK + 2.1, wz, { ...W, col: TILES[3][0], bleed: TILES[3][1], pat: PAT.roof, ps: 1.5 }, Math.PI / 2);
-    A(CYL, wx, BANK + 1.55, wz, { ...W, col: '#6a4a30', solid: false, edge: 50 }, 0, 0, Math.PI / 2, [0.05, 1.76, 0.05]);
-    box(0.05, 0.3, 0.05, wx + 1.0, BANK + 1.42, wz, { tag: 'well', col: '#6a4a30', solid: false }); box(0.05, 0.05, 0.2, wx + 1.0, BANK + 1.28, wz + 0.08, { tag: 'well', col: '#6a4a30', solid: false });
+    A(CYL, wx, BANK + 1.55, wz, { ...W, col: '#6a4a30', edge: 50 }, 0, 0, Math.PI / 2, [0.05, 1.76, 0.05]);
+    box(0.05, 0.3, 0.05, wx + 1.0, BANK + 1.42, wz, { ...W, col: '#6a4a30' }); box(0.05, 0.05, 0.2, wx + 1.0, BANK + 1.28, wz + 0.08, { ...W, col: '#6a4a30' });
     A(CYL, wx, BANK + 1.36, wz, { tag: 'well', col: '#c9b48a', solid: false, ink: false }, 0, 0, 0, [0.012, 0.38, 0.012]);
-    A(new THREE.CylinderGeometry(1, 0.8, 1, 10), wx, BANK + 1.07, wz, { tag: 'well', col: '#8a6a4a', bleed: '#6a4a30', solid: false, edge: 40 }, 0, 0, 0, [0.14, 0.2, 0.14]);
+    A(new THREE.CylinderGeometry(1, 0.8, 1, 10), wx, BANK + 1.07, wz, { ...W, col: '#8a6a4a', bleed: '#6a4a30', edge: 40 }, 0, 0, 0, [0.14, 0.2, 0.14]);
   });
   orb('bunar', [51, BANK + 1, 48], 2.6, ['well'], 'close', BANK + 2.7);
 
