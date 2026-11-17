@@ -138,18 +138,12 @@ export class Flight {
   land(hit) {
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
     this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
-    // touched by a feeler reaching ahead of the body: land under the body as it is when that feeler touches,
-    // not out where the feeler's tip was (that was a jump of up to half a metre)
-    if (hit.dir) {
-      const R0 = S.flight.bodyRadius, d = hit.dir; _d.set(d.x, 0, d.z).normalize();
-      _o.copy(this.pos).addScaledVector(_d, Math.max(0, hit.distance - R0)); _o.y = Math.max(this.pos.y, hit.point.y) + 0.5;
-      const top = _o.y, ok = (h) => h && this.landable(h) && Math.abs(h.point.y - hit.point.y) < 0.8;
-      let h = this.cast(_o, DOWN, 1.6);
-      if (!ok(h)) {      // the body is just past an edge: the nearest spot on the surface towards where it was touched
-        const from = _o.clone(), to = hit.point.clone().setY(top);
-        for (let u = 0.1; u <= 1.001 && !ok(h); u += 0.1) h = this.cast(_o.lerpVectors(from, to, u), DOWN, 1.6);
-      }
-      if (ok(h)) hit = h;
+    // it stands exactly where it touched. A touch by a feeler off to the side is moved back onto its own line, so it
+    // never lands beside where it was flying
+    if (hit.side) {
+      const f = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), l = new THREE.Vector3(f.z, 0, -f.x);
+      _o.copy(hit.point).addScaledVector(l, -hit.side); _o.y += 0.4;
+      const h = this.cast(_o, DOWN, 0.8); if (h && this.landable(h)) hit = h;
     }
     this.landedOn = hit.object; this.settle(hit.point); this.events.push('land');
   }
@@ -258,9 +252,12 @@ export class Flight {
     // ---- straight ahead ----
     const step = this.vel.length() * dt, dir = this.vel.clone().normalize();
     let ahead = this.cast(this.pos, dir, step + R0);
-    for (const sd of [-0.75, 0.75]) { const h = this.cast(_o.copy(this.pos).addScaledVector(left, sd * R0), dir, step + R0); if (h && !h.object.userData.water && (!ahead || h.distance < ahead.distance)) ahead = h; }
-    if (ahead && !ahead.object.userData.water) {
-      if (this.landable(ahead) && this.grace <= 0) { ahead.dir = dir; return this.land(ahead); }
+    for (const sd of [-0.75, 0.75]) { const h = this.cast(_o.copy(this.pos).addScaledVector(left, sd * R0), dir, step + R0); if (h && !h.object.userData.water && (!ahead || h.distance < ahead.distance)) { ahead = h; h.side = sd * R0; } }
+    // a surface it can stand on, ahead: it lands only once the touch is within this frame's flight (and right at its
+    // breast), exactly where it touches; until then it simply keeps flying towards it
+    const reachable = ahead && !ahead.object.userData.water && this.landable(ahead) && this.grace <= 0;
+    if (reachable && ahead.distance <= step + R0 * 0.6) return this.land(ahead);
+    if (ahead && !ahead.object.userData.water && !reachable) {
       const n = new THREE.Vector3(ahead.n.x, 0, ahead.n.z);
       if (n.lengthSq() < 0.01) n.copy(fwd).negate(); n.normalize();
       const fl = new THREE.Vector3(dir.x, 0, dir.z); fl.addScaledVector(n, -fl.dot(n));
