@@ -12,7 +12,13 @@ export default {
     cruiseSink: 0.15,     // height lost per second in ordinary flight (without Space)
     mouseSens: 0.0022,    // mouse steering sensitivity (when the browser can capture the mouse)
     edgeTurnRate: 1.4,    // without mouse capture: turning speed while the cursor rests at the screen edge
-    swimSpeed: 1.8,       // paddling speed on the water
+    swimMax: 3,           // top paddling speed on the water (hold the mouse button; it builds up)
+    swimAccel: 1.1,       // how fast paddling speeds up, per second
+    walkStart: 0.35,      // walking speed when the mouse button is first held
+    walkAccel: 0.75,      // how fast walking speeds up into a run, per second
+    runSpeed: 2,          // top running speed on the ground
+    hopUp: 0.9,           // highest step it hops up onto while walking
+    hopDown: 1.3,         // deepest drop it hops down; anything deeper and it dives off
     keyTurnRate: 1.8,     // turning speed with A/D or arrow keys
     keyPitchRate: 1.2,    // tilting speed with W/S or arrow keys
     turnSmooth: 6,        // how quickly the bird follows the steering

@@ -50,6 +50,17 @@ let save = { done: [], finale: false };
 try { if (!fresh) save = { ...save, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { /* no storage */ }
 const store = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* no storage */ } };
 const painting = new Set();
+// journal photos: one frame grabbed from each word's own colouring scene, stored beside the save
+const PICS = KEY + '-pics';
+let pics = {}, snapId = null;
+try { if (!fresh) pics = JSON.parse(localStorage.getItem(PICS) || '{}'); } catch (e) { /* no storage */ }
+function keepPic(id, data) { if (!data) return; pics[id] = data; try { localStorage.setItem(PICS, JSON.stringify(pics)); } catch (e) { /* storage full: the photo still shows this session */ } }
+function grabFrame() {
+  const c = document.createElement('canvas'), W = canvas.width, H = canvas.height; if (!(W > 0 && H > 0)) return '';
+  const cw = Math.min(W, H * 1.5), ch = cw / 1.5; c.width = 420; c.height = 280;
+  c.getContext('2d').drawImage(canvas, (W - cw) / 2, (H - ch) / 2, cw, ch, 0, 0, 420, 280);
+  return c.toDataURL('image/jpeg', 0.74);
+}
 const paint = (name, instant) => { const t = tag(name); t.painted = true; if (instant) t.uT.value = 1e5; else { t.uT.value = 0; painting.add(t); } };
 
 // ---------- orbs ----------
@@ -156,7 +167,7 @@ $('start').addEventListener('click', (e) => {
   if (save.finale) audio.setLife({ wind: 1, water: 1, birds: true, city: true });
 });
 function reload() { if (!fresh) return location.reload(); params.delete('fresh'); const q = params.toString(); location.href = location.pathname + (q ? '?' + q : ''); }
-function restartLevel() { try { localStorage.removeItem(KEY); } catch (e) { /* */ } reload(); }
+function restartLevel() { try { localStorage.removeItem(KEY); localStorage.removeItem(PICS); } catch (e) { /* */ } reload(); }
 // for testing: everything coloured and every word collected, only the fleur-de-lis and the finale left
 function skipToFinale() { save = { done: orbs.map((o) => o.id), finale: false }; store(); reload(); }
 $('reset').addEventListener('click', restartLevel);
@@ -279,10 +290,18 @@ function ownSphere(o) {
   return s && s.radius < d.size * 2.2 && s.radius > d.size * 0.35 ? s : new THREE.Sphere(d.focus.clone(), d.size);
 }
 const sideOf = (f) => (Math.abs(f.x) < 14 ? 0 : f.x < 0 ? Math.PI / 2 : -Math.PI / 2);     // look from the river side
+// is any part of the thing (its middle, its sides, its top) hidden from this camera position?
+const _r = V(0, 0, 0), _u = V(0, 1, 0), _t = V(0, 0, 0);
+function covered(from, c, r) {
+  if (blocked(from, c, r)) return true;
+  _r.subVectors(c, from).cross(_u).normalize(); const k2 = r * 0.6;
+  for (const [a, b] of [[1, 0], [-1, 0], [0, 1]]) { _t.copy(c).addScaledVector(_r, a * k2); _t.y += b * k2; if (blocked(from, _t, r * 0.75)) return true; }
+  return false;
+}
 function closeShot(o, bird, dur) {
   const sp = ownSphere(o), c = sp.center.clone(); let r = sp.radius;
   if (bird) { const d = bird.distanceTo(c) + 0.9; if (d > r) { const nr = (r + d) / 2; c.add(bird.clone().sub(c).setLength(nr - r)); r = nr; } }
-  const dist = fitDist(r * 1.1), base = sideOf(o.def.focus), hid = (p) => blocked(p, c, r) || (bird && blocked(p, bird, 0.7));
+  const dist = fitDist(r * 1.1), base = sideOf(o.def.focus), hid = (p) => covered(p, c, r) || (bird && blocked(p, bird, 0.7));
   for (const el of [0.3, 0.5, 0.75, 1.05]) for (const off of [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9, Math.PI, 2.5, -2.5]) {
     const a = base + off, from = c.clone().addScaledVector(dirOf(a, el), dist);
     if (hid(from)) continue;
@@ -336,7 +355,7 @@ function checkShots() {
       const right = V(1, 0, 0).applyQuaternion(cam.quaternion), up = V(0, 1, 0).applyQuaternion(cam.quaternion);
       for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!inFrame(s.c.clone().addScaledVector(right, a * s.r).addScaledVector(up, b * s.r))) probs.push(`close ${e}: object cut off`);
       if (bird && !inFrame(bird)) probs.push(`close ${e}: bird cut off`);
-      if (blocked(cam.position, s.c, s.r)) probs.push(`close ${e}: view blocked`);
+      if (covered(cam.position, s.c, s.r)) probs.push(`close ${e}: view blocked`);
       if (bird && blocked(cam.position, bird, 0.7)) probs.push(`close ${e}: bird hidden`);
       if (cam.position.y < 0.6) probs.push('camera under water');
     }
@@ -351,10 +370,11 @@ async function fadeCut(fn) { $('fade').classList.add('on'); await sleep(230); fn
 // Enter ends a colouring scene or the finale at once; everything it would have done is simply done
 function skipScene() {
   if (state === 'cutscene' && cut && !cut.ending) {
-    cut.started = true; for (const t of cut.o.def.tags) paint(t, true);
+    cut.started = true; for (const t of cut.o.def.tags) paint(t, true); if (cut.o.id === 'sat') hands.visible = true;
+    if (!cut.snapped) { cut.snapped = true; keepPic(cut.o.id, snapshot(cut.o.id)); }
     cut.o.vis.visible = false; cut.t = cut.dur; audio.stopSong(); singTok++; singing = false;
   } else if (state === 'finale' && fin && !fin.ending && fin.t < 25.5) {
-    for (const n of ['sing', 'sky', 'birds', 'city', 'murmur', 'jump']) fin.ev.add(n);
+    for (const n of ['sing', 'sky', 'photo', 'birds', 'city', 'murmur', 'jump']) fin.ev.add(n);
     fin.t = 26; audio.stopSong(); singing = false; audio.setLife({ wind: 1, water: 1, birds: true, city: true, murmur: 0.5 }); applyAlive();
   }
 }
@@ -386,7 +406,8 @@ function updateCutscene(dt) {
   u.halo.scale.setScalar(2.6 + sw * 5); u.halo.material.opacity = 1 - sw;
   u.wisp.scale.setScalar(2.6 + sw * 9); u.wisp.material.opacity = Math.sin(Math.PI * Math.min(1, r * 1.05)) * 0.9; u.wisp.material.rotation = r * 1.2;
   if (r >= 1) o.vis.visible = false;
-  if (!c.started && c.t >= S.cutscene.paintDelay) { c.started = true; for (const t of o.def.tags) paint(t); audio.paintWash(4.5); }
+  if (!c.started && c.t >= S.cutscene.paintDelay) { c.started = true; for (const t of o.def.tags) paint(t); audio.paintWash(4.5); if (o.id === 'sat') hands.visible = true; }
+  if (!c.snapped && c.t >= Math.min(S.cutscene.paintDelay + 4, c.shots[0].dur - 0.25)) { c.snapped = true; snapId = o.id; }
   if (c.t >= c.dur && !c.ending) {
     c.ending = true;
     fadeCut(() => {
@@ -429,6 +450,7 @@ function renderJournal(newId) {
   $('culture').classList.toggle('locked', !save.finale); $('endcard').style.display = save.finale ? '' : 'none';
 }
 // a small photo card for a word in the journal: the game's own picture of it, taken from where its colouring scene was filmed
+// fallback when a word has no stored photo (its scene was skipped): the same camera, taken now
 function snapshot(id) {
   if (!(canvas.width > 0)) return '';
   const keep = { p: camera.position.clone(), q: camera.quaternion.clone(), fov: camera.fov }, vis = bird.root.visible;
@@ -437,14 +459,13 @@ function snapshot(id) {
   else { const sh = shotsFor(byId[id], null)[0]; from = sh.from.clone().lerp(sh.to, 0.7); to = sh.lookFrom.clone().lerp(sh.lookTo, 0.7); }
   camera.position.copy(from); camera.lookAt(to); camera.fov = S.cutscene.fov; camera.updateProjectionMatrix(); bird.root.visible = false;
   renderer.render(scene, camera);
-  const c = document.createElement('canvas'), W = canvas.width, H = canvas.height, cw = Math.min(W, H * 1.5), ch = cw / 1.5; c.width = 540; c.height = 360;
-  c.getContext('2d').drawImage(canvas, (W - cw) / 2, (H - ch) / 2, cw, ch, 0, 0, 540, 360);
+  const data = grabFrame();
   camera.position.copy(keep.p); camera.quaternion.copy(keep.q); camera.fov = keep.fov; camera.updateProjectionMatrix(); bird.root.visible = vis;
-  return c.toDataURL('image/jpeg', 0.86);
+  return data;
 }
 function showCard(id) {
   const w = WORDS[id], el = $('card');
-  $('cardImg').src = snapshot(id); el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
+  $('cardImg').src = pics[id] || snapshot(id); el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
   el.classList.remove('off'); audio.page();
 }
 $('card').addEventListener('click', () => $('card').classList.add('off'));
@@ -487,6 +508,7 @@ function updateFinale(dt) {
   const once = (name, at, fn) => { if (t >= at && !f.ev.has(name)) { f.ev.add(name); fn(); } };
   once('sing', 0.4, () => { singing = true; audio.speak('sunce').then(() => { singing = false; }); });
   once('sky', 1.2, () => { paint('sky'); paint('sun'); audio.swell(true, 7); audio.paintWash(6); });
+  once('photo', 8, () => { snapId = 'sunce'; });
   once('birds', 11, () => audio.setLife({ birds: true })); once('city', 12.5, () => audio.setLife({ city: true }));
   once('murmur', 12.5, () => audio.setLife({ murmur: 0.5 }));
   once('jump', 15, () => { diver.jump(); wake(); singing = true; audio.song('sunce', 7.3, 1).then(() => { singing = false; }); });   // the whole melody, once
@@ -566,10 +588,10 @@ function updateHint() {
   $('pause').classList.toggle('off', !(started && paused && state === 'play'));
   if (!started || state !== 'play' || paused) return hint('');
   if (toastT > 0) return hint(toast);
-  if (flight.mode === 'swim') return hint((orbHere() ? '<kbd>E</kbd> open the word list · ' : '') + '<kbd>W</kbd> paddle · <kbd>Space</kbd> take off');
+  if (flight.mode === 'swim') return hint((orbHere() ? '<kbd>E</kbd> open the word list · ' : '') + 'hold the mouse button to paddle · <kbd>Space</kbd> take off');
   if (flight.mode === 'perched') {
     if (orbHere()) return hint('<kbd>E</kbd> open the word list');
-    return hint('<kbd>Space</kbd> take off' + (!byId.kuca.done ? ' · fly to the glowing orb and land on the house' : ''));
+    return hint('<kbd>Space</kbd> take off' + (!byId.kuca.done ? ' · fly to the glowing orb and land on the house' : ' · hold the mouse button to walk'));
   }
   hint('');
 }
@@ -607,7 +629,7 @@ function tick(dt) {
   freeSingT -= dt;
   bird.root.position.copy(flight.pos);
   bird.root.rotation.set(-flight.pitch, flight.yaw, flight.roll);
-  bird.update(dt, { paddle: flight.paddle, mode: flight.mode === 'perched' || flight.mode === 'swim' ? flight.mode : 'flying', power: flight.power, diving: flight.diving, speed: flight.speed, flare: flight.flare, turn: flight.roll,
+  bird.update(dt, { walk: flight.walk / S.flight.runSpeed, hop: !!flight.hop, paddle: flight.paddle, mode: flight.mode === 'perched' || flight.mode === 'swim' ? flight.mode : 'flying', power: flight.power, diving: flight.diving, speed: flight.speed, flare: flight.flare, turn: flight.roll,
     clearL: flight.clearL, clearR: flight.clearR, sing: singing || freeSingT > 0, feet: flight.feet, yaw: flight.yaw });
   if (bird.downstroke) { if (running || fin) audio.flap(bird.downstroke, fin ? S.audio.finaleFlap : 1); bird.downstroke = 0; }
   audio.setRush(flight.speed, flight.mode === 'flying' && running, dt);
@@ -628,6 +650,7 @@ function tick(dt) {
   if (dbg) { camera.position.set(dbg[0], dbg[1], dbg[2]); camera.lookAt(dbg[3], dbg[4], dbg[5]); }
   updateHint(); $('skip').classList.toggle('off', !((cut && !cut.ending) || (fin && !fin.ending && fin.t < 25.5)));
   renderer.render(scene, camera);
+  if (snapId) { keepPic(snapId, grabFrame()); snapId = null; }
 }
 audio.setMusic(0.2 + 0.6 * (save.done.length / orbs.length), save.finale);
 updateLegend(); frame();

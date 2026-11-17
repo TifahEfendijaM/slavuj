@@ -33,6 +33,7 @@ function roofGeo(w, d, rh, rl, open = false) {
 
 // a rocky cliff face sloping from the bank edge down into the river, between z0 and z1
 export const cliffX = (y) => 13.25 - 4.7 * (12.02 - y) / 13.2;      // how far from the river's middle the cliff is at height y
+function triGeo(a, b, c) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([...a, ...b, ...c], 3)); g.computeVertexNormals(); return g; }
 function cliffGeo(side, z0, z1, R) {
   const rows = Math.max(2, Math.round((z1 - z0) / 4)), K = 6, P = [], pos = [];
   for (let i = 0; i <= rows; i++) {
@@ -151,31 +152,26 @@ export function buildWorld(scene) {
     A(DODE, x, x < -5 && z > 5 && z < 21 ? 0.85 : 0.2, z, { tag: 'rock', col: BOULDERS[c][0], bleed: BOULDERS[c][1] }, R2() * 6, 0, 0, [1.6 * sc, 0.8 * sc, 1.3 * sc]);
   // long grass growing out of the cliff faces (placed exactly on the rock)
   const cray = new THREE.Raycaster(), YEL = ['#b5bd62', '#9cb866', '#7fa64f', '#a8b45a', '#6f9a48'];
-  for (const side of [-1, 1]) for (let i = 0; i < 300; i++) {
+  for (const side of [-1, 1]) for (let i = 0; i < 640; i++) {
     const z = -138 + R2() * 276, y = 0.5 + R2() * 11;
     if (Math.abs(z) < 4.5 || (side < 0 && z > 20.5 && z < 44.5)) continue;
     cray.set(new Vector3(0, y, z), new Vector3(side, 0, 0)); cray.far = 20;
     const h = cray.intersectObjects(cliffs, false)[0]; if (!h) continue;
-    const n = 4 + Math.floor(R2() * 4), c = YEL[Math.floor(R2() * YEL.length)];
+    const n = 4 + Math.floor(R2() * 5), c = YEL[Math.floor(R2() * YEL.length)];
+    if (i % 6 === 0) for (let j = 0; j < 3; j++) A(ICO0, h.point.x - side * 0.25, y + 0.3 + j * 0.25, z + (j - 1) * 0.35, { tag: 'flower', col: FLOWERS[Math.floor(R2() * FLOWERS.length)], hull: true, hatch: 0, solid: false }, R2() * 6, 0, 0, 0.16);
     b.object(() => {
       for (let j = 0; j < n; j++) {
-        const L = 0.7 + R2() * 1.3;
+        const L = 0.9 + R2() * 1.7;
         A(CONE4, h.point.x - side * 0.1, y + L * 0.38, z + (j - n / 2) * 0.2 + (R2() - 0.5) * 0.2, { tag: 'grass', col: c, bleed: '#5d8a44', solid: false, ink: j < 2, inkFade: true, edge: 60, hatch: 0, sway: (v) => 0.06 * Math.max(0, v.y - y) }, R2() * 6, 0, side * (0.25 + R2() * 0.6), [0.07, L, 0.07]);
       }
     });
   }
   // weeping willows along the edge of the gorge, their branches hanging down over the rock
-  const willow = (x, z, s = 1) => b.object(() => {
-    const d = -Math.sign(x), top = BANK + 5.3 * s, cx = x + d * 1.7 * s, g = [['#8cb862', '#6f9f4f'], ['#7fae58', '#5f9446'], ['#9bbf6a', '#7aa652']][Math.floor(R2() * 3)];
-    A(TAPER, x + d * 0.6 * s, BANK + 2.4 * s, z, { tag: 'tree', col: '#7a6248', bleed: '#5a4634', edge: 50, wall: true }, R2() * 6, 0, -d * 0.26, [0.42 * s, 5 * s, 0.42 * s]);
-    A(ICO, cx, top + 0.3 * s, z, { tag: 'tree', col: g[0], bleed: g[1], hull: true, sway: 0.03 }, R2() * 6, 0, 0, [2.9 * s, 2.1 * s, 2.9 * s]);
-    for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2 + R2() * 0.4, over = Math.cos(a) * d > 0.2;      // drooping boughs round the crown
-      A(ICO, cx + Math.cos(a) * 2.1 * s, top - (over ? 1.6 : 1) * s, z + Math.sin(a) * 2.1 * s, { tag: 'tree', col: g[i % 2], bleed: g[1], inkFade: true, edge: 24, solid: false, sway: 0.05 }, R2() * 6, 0, 0, [1.25 * s, (over ? 2.5 : 1.8) * s, 1.25 * s]); }
-    for (let i = 0; i < 44; i++) {
-      const a = (i / 44) * Math.PI * 2 + R2() * 0.2, r = (1.3 + R2() * 1.7) * s, over = Math.cos(a) * d > 0.2, L = (2.2 + R2() * 2 + (over ? 3.4 : 0)) * s;
-      box(0.16 * s, L, 0.05, cx + Math.cos(a) * r, top - 1.2 * s - L / 2, z + Math.sin(a) * r, { tag: 'tree', col: i % 2 ? g[0] : g[1], bleed: g[1], solid: false, ink: i % 4 === 0, inkFade: true, hatch: 0.3, sway: (v) => 0.05 * Math.max(0, top - v.y) }, -a + Math.PI / 2);
-    }
-    b.block(ICO, mat4(cx, top - 2.8 * s, z, 0, 0, 0, [3.1 * s, 4 * s, 3.1 * s]), { wall: true });   // the curtain of branches is an obstacle too
+  const willow = (x, z, s = 1) => b.object(() => {     // ordinary trees now, of the same size and greens
+    const d = -Math.sign(x), top = BANK + 5.3 * s, cx = x + d * 0.5 * s, g = [['#8cb862', '#6f9f4f'], ['#7fae58', '#5f9446'], ['#9bbf6a', '#7aa652']][Math.floor(R2() * 3)];
+    A(TAPER, x + d * 0.2 * s, BANK + 2.4 * s, z, { tag: 'tree', col: '#7a6248', bleed: '#5a4634', edge: 50, wall: true }, R2() * 6, 0, -d * 0.08, [0.42 * s, 5 * s, 0.42 * s]);
+    for (const [px, py, pz, r] of [[0, 0.5, 0, 2.8], [-1.9, -0.5, 0.7, 2], [1.8, -0.3, -0.5, 2.1], [0.3, -0.6, 1.9, 1.9], [-0.4, -0.5, -1.9, 1.9]])
+      A(ICO, cx + px * s, top + py * s, z + pz * s, { tag: 'tree', col: g[0], bleed: g[1], hull: true, sway: (v) => 0.03 * Math.max(0, v.y - top + 2) }, R2() * 6, 0, 0, [r * s, r * s * 0.82, r * s]);
   });
   for (const z of [-112, -86, -62, -42, 24, 46, 72, 98, 120]) willow(14.4, z, 0.9 + R2() * 0.25);
   for (const z of [-114, -90, -66, -44, -24, 56, 76, 100, 120]) willow(-14.4, z, 0.9 + R2() * 0.25);
@@ -399,7 +395,7 @@ export function buildWorld(scene) {
     box(2.2, 3.4, 2.2, 34, BANK + 1.7, -35.6, { ...Mn, col: s[0], bleed: s[1], pat: PAT.blocks, ps: 0.6 });
     A(CYL, 34, BANK + 10, -35.6, { ...Mn, col: s[0], bleed: s[1], edge: 60 }, 0, 0, 0, [0.9, 13.4, 0.9]);
     A(new THREE.CylinderGeometry(1, 0.55, 1, 10), 34, BANK + 16.9, -35.6, { ...Mn, col: s[1], bleed: s[1], edge: 40 }, 0, 0, 0, [2.2, 0.8, 2.2]);
-    A(new THREE.CylinderGeometry(1, 1, 1, 10, 1, true), 34, BANK + 17.75, -35.6, { tag: 'minaret', col: s[1], edge: 40, wall: true }, 0, 0, 0, [2.15, 0.9, 2.15]);
+    A(new THREE.CylinderGeometry(1, 1, 1, 10, 1, true), 34, BANK + 17.75, -35.6, { tag: 'minaret', col: s[1], edge: 40, hull: false, wall: true }, 0, 0, 0, [2.15, 0.9, 2.15]);
     A(CYL, 34, BANK + 19.5, -35.6, { ...Mn, col: s[0], bleed: s[1], edge: 60 }, 0, 0, 0, [0.78, 4.4, 0.78]);
     A(CONE8, 34, BANK + 24.2, -35.6, { ...Mn, col: '#8e979c', bleed: '#737d86', wall: true, edge: 20 }, 0, 0, 0, [1, 5, 1]);
   });
@@ -442,6 +438,11 @@ export function buildWorld(scene) {
     for (const dz of [-0.3, 0.3]) flowers(-48.5, BANK + 0.82, 6 + dz, 2.2, 7);
   });
   orb('cvijet', [-48.5, BANK + 0.8, 6], 2.6, ['flower'], 'combo', BANK + 1.2, { near: { p: [-48.5, BANK + 0.6, 6], r: 2.6 } });
+  for (const [x, z] of [[-33, 44], [-60, 50], [-66, 60], [-45.5, 58], [-18, 70], [-64, -22], [-69.5, -20], [25, 50], [30, 60], [36, 55], [45, 40], [58, 40], [50, 56], [70, 20], [72, -40], [68, -58], [24, -72],
+    [-25, -75], [-45, -75], [60, 64], [20, 67.5], [33, -45], [21, -34], [66, 34], [-70, 48], [-30, 74], [74, -4]]) b.object(() => {
+    for (let i = 0; i < 9; i++) { const a = R2() * 6.28, r = R2() * 1.8; A(ICO0, x + Math.cos(a) * r, BANK + 0.24, z + Math.sin(a) * r, { tag: 'flower', col: FLOWERS[Math.floor(R2() * FLOWERS.length)], hull: true, hatch: 0, solid: false }, R2() * 6, 0, 0, 0.15 + R2() * 0.1); }
+    for (let i = 0; i < 3; i++) A(ICO, x + (R2() - 0.5) * 2.4, BANK + 0.16, z + (R2() - 0.5) * 2.4, { tag: 'flower', col: '#6f9f45', bleed: '#55883c', hull: true, solid: false }, R2() * 6, 0, 0, [0.3, 0.16, 0.3]);
+  });
   for (const [x, z, n] of [[-22, 30, 6], [-26, 29, 5], [28, 55, 6], [33, 52, 5], [-55, 58, 6], [-64, -18, 5], [20, -27, 5], [34, -45, 5], [-20, 48, 5]]) b.object(() => {
     for (let i = 0; i < n; i++) A(ICO0, x + rr(-1.4, 1.4), BANK + 0.22, z + rr(-1.4, 1.4), { tag: 'flower', col: pick(FLOWERS), hull: true, hatch: 0, solid: false }, R() * 6, 0, 0, rr(0.16, 0.24));
   });
@@ -451,11 +452,14 @@ export function buildWorld(scene) {
   const boatGeo = new THREE.ExtrudeGeometry(boatShape, { depth: 0.55, bevelEnabled: false, curveSegments: 5 }).rotateX(-Math.PI / 2);
   const boat = (x, z, ry, id, c, tg = 'boat') => b.object(() => {
     A(boatGeo, x, 0.02, z, { tag: tg, col: c[0], bleed: c[1], pat: PAT.planks, ps: 2, orb: id, edge: 40 }, ry);
-    b.push(mat4(x, 0, z, ry)); for (const sx of [-0.9, 0.5]) box(0.3, 0.1, 1.3, sx, 0.5, 0, { tag: tg, col: '#c9a26a', bleed: '#a8804a', solid: false }); b.pop();
+    A(boatGeo, x, 0.46, z, { tag: tg, col: '#c8372d', bleed: '#9c2a22', solid: false, edge: 40, hull: false }, ry, 0, 0, [1.04, 0.26, 1.07]);     // a red gunwale
+    b.push(mat4(x, 0, z, ry)); for (const sx of [-0.9, 0.5]) box(0.3, 0.1, 1.3, sx, 0.5, 0, { tag: tg, col: '#c8372d', bleed: '#9c2a22', solid: false }); b.pop();
   });
-  boat(-2.3, 15.2, 1.2, 'camac', ['#3f7f9a', '#2f6078']); boat(5.2, 56, 1.4, 'dva', ['#b8502f', '#96402a'], 'boat2');
-  orb('dva', [5.2, 0.5, 56], 3.2, ['boat2'], 'close', 1, { requires: ['camac'], near: { p: [5.2, 0.4, 56], r: 3.6 } });
-  orb('camac', [-2.3, 0.5, 15.2], 3.2, ['boat'], 'close', 1, { near: { p: [-5.3, 0.9, 15.2], r: 2.4 } });
+
+  boat(-3.75, 15.2, Math.PI / 2, 'camac', ['#2f6fb0', '#234f86']);
+  A(CYL, -5.05, 1.1, 17.4, { tag: 'boat', col: '#7a5636', bleed: '#5f4028', edge: 50 }, 0, 0, 0, [0.07, 0.8, 0.07]);                              // the mooring post
+  box(1.5, 0.035, 0.035, -4.35, 0.95, 17.4, { tag: 'boat', col: '#c9b48a', bleed: '#a8905a', solid: false, ink: false }, 0, 0, -0.55);      // and the rope
+  orb('camac', [-3.75, 0.5, 15.2], 3.2, ['boat'], 'close', 1, { near: { p: [-5.4, 0.9, 15.2], r: 2.4 } });
 
   // ---------- the cat on a wall (the animal itself is built in people.js) ----------
   const catBlock = b.block(BOX, mat4(33.5, BANK + 1.5, 12.45, 0, 0, 0, [1.1, 0.8, 0.5]), { orb: 'macka', wall: true });
@@ -502,9 +506,10 @@ export function buildWorld(scene) {
     { kind: 'raft', tag: 'row', x: -3, y: -0.22, z: -34.05, ry: 0 },
     // a photo on the shore, with the bridge behind
     { kind: 'photo', tag: 'photo', x: -7.3, y: 0.7, z: 12.2, ry: Math.PI }, { kind: 'pose', tag: 'photo', x: -7.8, y: 0.7, z: 8.6, ry: 0.1, woman: true }, { kind: 'pose', tag: 'photo', x: -6.9, y: 0.7, z: 8.5, ry: -0.1 },
-    { kind: 'swimmer', tag: 'swimmer', x: -3.5, y: -0.08, z: 44, to: [-3.5, 54], speed: 0.9 },
+    { kind: 'swimmer', tag: 'swimmer', x: -3.5, y: -0.08, z: 44, to: [-3.5, 54], speed: 0.9, trunks: true },
     { kind: 'fisher', tag: 'fisher', x: -5.3, y: 0.7, z: 19.6, ry: Math.PI / 2 },
     { kind: 'drink', tag: 'drink', x: -58.42, y: BANK + 0.245, z: 8.2, ry: Math.PI / 2 },
+    { kind: 'argue', tag: 'argue', x: -58.42, y: BANK + 0.245, z: 12.2, ry: Math.PI / 2 }, { kind: 'argue', tag: 'argue', x: -56.78, y: BANK + 0.245, z: 12.2, ry: -Math.PI / 2, woman: true },
     { kind: 'wait', tag: 'wait', x: 82.7, y: BANK + 0.2, z: 10.4, ry: Math.PI / 2, woman: true },
     // children: football on the pitch, the slide in the playground
     { kind: 'walk', tag: 'kids', x: 26.5, y: street, z: 73.6, to: [35, 78.4], speed: 2.7, sc: kid, ball: 0 }, { kind: 'walk', tag: 'kids', x: 36, y: street, z: 73.8, to: [28, 79.4], speed: 2.4, sc: kid, woman: true, ball: 1 },
@@ -520,7 +525,7 @@ export function buildWorld(scene) {
   orb('fes', [36, BANK + 1.9, -1.95], 1.2, ['fes'], 'close', BANK + 2.2, { near: { p: [36.3, BANK + 0.6, -0.4], r: 2.3 }, at: new Vector3(36, BANK + 2.9, -1.95) });
   orb('plivati', [-3.5, 0.3, 44.6], 2.6, ['swimmer'], 'close', 0.5, { near: { p: [-3.5, 0.2, 43.2], r: 3.4 }, at: new Vector3(-3.5, 2, 44.8) });
   orb('ribar', [-5.4, 1.7, 19.6], 2.6, ['fisher'], 'close', 2.8, { near: { p: [-6.6, 1.2, 19.7], r: 2 } });
-  orb('riba', [-1.6, 0.6, 19.9], 1.3, ['fish'], 'close', 0.8, { near: { p: [-2.4, 0.2, 21.4], r: 3 }, at: new Vector3(-1.6, 1.9, 19.9) });
+  orb('riba', [2.8, 0.6, 14], 1.3, ['fish'], 'close', 0.8, { near: { p: [2.8, 0.2, 15.8], r: 3 }, at: new Vector3(2.8, 1.9, 14) });
   orb('golub', [55.5, BANK + 0.3, -12.6], 2.6, ['pigeon'], 'close', BANK + 0.5, { near: { p: [55.5, BANK + 0.5, -12.6], r: 4 }, at: new Vector3(55.5, BANK + 1.9, -12.6) });
   orb('konj', [73, BANK + 1.2, 37], 3, ['horse'], 'close', BANK + 2.2, { near: { p: [73, BANK + 0.5, 39.2], r: 3 } });
   orb('ovca', [-58, BANK + 0.6, -76], 2.2, ['sheep'], 'close', BANK + 1.1, { near: { p: [-57, BANK + 0.5, -74.6], r: 2.6 } });
@@ -644,7 +649,11 @@ export function buildWorld(scene) {
       const Gl = { tag: 'pitch', col: '#f6f1e6', bleed: '#d9d2c2', solid: false, edge: 50 };
       for (const gz of [74.6, 77.4]) A(CYL, gx, BANK + 0.85, gz, Gl, 0, 0, 0, [0.06, 1.5, 0.06]);
       A(CYL, gx, BANK + 1.6, 76, Gl, 0, Math.PI / 2, 0, [0.06, 2.92, 0.06]);
-      box(0.05, 1.5, 2.8, gx + Math.sign(gx - 31) * 0.7, BANK + 0.8, 76, { tag: 'pitch', col: '#f6f1e6', bleed: '#cfd6d8', wall: true, hatch: 1 }, 0, 0, Math.sign(gx - 31) * -0.42); b.block(BOX, mat4(gx, BANK + 0.85, 76, 0, 0, 0, [0.3, 1.7, 3]), { wall: true });
+      const sg = Math.sign(gx - 31), Nt = { tag: 'pitch', col: '#fbf8ef', bleed: '#cfd6d8', pat: PAT.cobble, ps: 5, hatch: 0.6 };
+      box(0.05, 1.62, 2.8, gx + sg * 0.33, BANK + 0.82, 76, { ...Nt, wall: true }, 0, 0, sg * 0.42);                    // from the bar back down to the ground
+      for (const gz of [74.6, 77.4]) A(triGeo([0, 0, 0], [0, 1.5, 0], [sg * 0.66, 0, 0]), gx, BANK + 0.1, gz, { ...Nt, solid: false });   // the side nets
+      box(0.06, 0.06, 2.8, gx + sg * 0.66, BANK + 0.13, 76, { ...Gl, edge: undefined });
+      b.block(BOX, mat4(gx + sg * 0.3, BANK + 0.85, 76, 0, 0, 0, [0.8, 1.7, 3]), { wall: true });
     }
   });
   orb('lopta', [31.2, BANK + 0.3, 76.2], 1.6, ['ball'], 'close', BANK + 0.5, { near: { p: [31.2, BANK + 0.4, 77.2], r: 2.6 }, at: new Vector3(31.2, BANK + 1.5, 76.2) });
@@ -656,8 +665,8 @@ export function buildWorld(scene) {
     box(1.3, 0.12, 1.2, 0, 1.9, 0, { ...Sd, col: '#e9b83a', bleed: '#c9942a' });
     for (const [lx, lz] of [[-0.58, -0.52], [-0.58, 0.52], [0.58, -0.52], [0.58, 0.52]]) A(CYL, lx, 1.4, lz, { tag: 'slide', col: '#3f6f9a', bleed: '#2f5578', solid: false, edge: 50 }, 0, 0, 0, [0.06, 2.8, 0.06]);
     for (const lz of [-0.56, 0.56]) box(1.3, 0.07, 0.07, 0, 2.75, lz, { tag: 'slide', col: '#3f6f9a', solid: false });
-    box(4.44, 0.08, 0.9, -2.72, 1.14, 0, { ...Sd, col: '#d9453a', bleed: '#b3352d' }, 0, 0, 0.357);
-    for (const lz of [-0.47, 0.47]) box(4.44, 0.34, 0.07, -2.72, 1.3, lz, { tag: 'slide', col: '#b3352d', solid: false }, 0, 0, 0.357);
+    box(5.25, 0.08, 0.9, -3.1, 0.985, 0, { ...Sd, col: '#d9453a', bleed: '#b3352d' }, 0, 0, 0.357);
+    for (const lz of [-0.47, 0.47]) box(5.25, 0.34, 0.07, -3.1, 1.145, lz, { tag: 'slide', col: '#b3352d', solid: false }, 0, 0, 0.357);
     for (const lz of [-0.4, 0.4]) box(0.08, 2.15, 0.08, 1.12, 0.95, lz, { tag: 'slide', col: '#3f6f9a', solid: false }, 0, 0, 0.44);
     for (let i = 0; i < 5; i++) box(0.07, 0.07, 0.8, 1.52 - i * 0.18, 0.3 + i * 0.37, 0, { tag: 'slide', col: '#e9b83a', solid: false });
     b.pop();
@@ -692,13 +701,13 @@ export function buildWorld(scene) {
   // ---------- a café on the west square: two tables, chairs, Bosnian coffee ----------
   const G0 = BANK + 0.12;
   const chair = (cx, cz, ry) => { b.push(mat4(cx, G0, cz, ry)); b.object(() => {
-    const Ch = { tag: 'chair', col: '#8a5a34', bleed: '#5f4028', orb: 'stolica' };
+    const Ch = { tag: 'chair', col: '#8a5a34', bleed: '#5f4028', orb: 'svadjanje' };
     box(0.44, 0.05, 0.44, 0, 0.46, 0, { ...Ch, pat: PAT.planks, ps: 6 }); box(0.44, 0.5, 0.04, 0, 0.76, -0.2, { ...Ch, pat: PAT.planks, ps: 6 });
     for (const lx of [-0.18, 0.18]) for (const lz of [-0.18, 0.18]) box(0.04, 0.46, 0.04, lx, 0.23, lz, { ...Ch, solid: false, ink: false });
   }); b.pop(); };
   for (const [tx, tz] of [[-57.6, 8.2], [-57.6, 12.2]]) {
     b.object(() => {
-      const Tb = { tag: 'table', col: '#f3ecdc', bleed: '#d9cfb8', orb: 'sto', edge: 40 };
+      const Tb = { tag: 'table', col: '#f3ecdc', bleed: '#d9cfb8', orb: 'svadjanje', edge: 40 };
       A(CYL12, tx, G0 + 0.74, tz, Tb, 0, 0, 0, [0.5, 0.06, 0.5]); A(CYL, tx, G0 + 0.37, tz, { ...Tb, col: '#4a4a48', bleed: '#2f2f2e', edge: 50 }, 0, 0, 0, [0.05, 0.74, 0.05]); A(CYL12, tx, G0 + 0.03, tz, { ...Tb, col: '#4a4a48', solid: false }, 0, 0, 0, [0.26, 0.05, 0.26]);
     });
     chair(tx - 0.85, tz, Math.PI / 2); chair(tx + 0.85, tz, -Math.PI / 2);
@@ -706,13 +715,13 @@ export function buildWorld(scene) {
   b.object(() => {      // on the first table: a džezva and a small cup
     const K = { tag: 'coffee', solid: false, edge: 50 }, y = G0 + 0.77;
     A(new THREE.CylinderGeometry(0.7, 1, 1, 10), -57.45, y + 0.07, 8.3, { ...K, col: '#c98a4a', bleed: '#a8672f' }, 0, 0, 0, [0.06, 0.13, 0.06]); box(0.2, 0.015, 0.015, -57.34, y + 0.12, 8.3, { ...K, col: '#5a3a22', ink: false }, 0, 0, 0.5);
-    A(CYL12, -57.75, y + 0.008, 8.05, { ...K, col: '#f8f4ea', bleed: '#d9d2c2' }, 0, 0, 0, [0.07, 0.012, 0.07]); A(CYL, -57.75, y + 0.04, 8.05, { ...K, col: '#f8f4ea', bleed: '#d9d2c2' }, 0, 0, 0, [0.035, 0.05, 0.035]); A(CYL, -57.75, y + 0.067, 8.05, { ...K, col: '#4a2f1e', ink: false, hatch: 0 }, 0, 0, 0, [0.028, 0.004, 0.028]);
+    A(CYL12, -57.93, y + 0.008, 8.07, { ...K, col: '#f8f4ea', bleed: '#d9d2c2' }, 0, 0, 0, [0.07, 0.012, 0.07]);     // the saucer; the cup itself is in the guest's hand (people.js)
     A(CYL12, -57.6, y + 0.006, 8.2, { ...K, col: '#c98a4a', bleed: '#a8672f' }, 0, 0, 0, [0.3, 0.012, 0.3]);    // the copper tray
   });
   orb('kafa', [-57.6, G0 + 0.85, 8.2], 1.3, ['coffee'], 'close', G0 + 0.9, { near: { p: [-56.7, BANK + 0.6, 7], r: 2 }, at: new Vector3(-57.6, G0 + 1.9, 8.2) });
   orb('piti', [-58.4, G0 + 1, 8.2], 2, ['drink'], 'close', G0 + 1.6, { requires: ['kafa'], near: { p: [-56.7, BANK + 0.6, 7], r: 2 } });
-  orb('sto', [-57.6, G0 + 0.6, 12.2], 1.6, ['table'], 'combo', G0 + 0.8, { near: { p: [-56.7, BANK + 0.6, 13.4], r: 2 }, at: new Vector3(-57.6, G0 + 1.9, 12.2) });
-  orb('stolica', [-56.75, G0 + 0.5, 12.2], 1.4, ['chair'], 'combo', G0 + 1, { requires: ['sto'], near: { p: [-56.7, BANK + 0.6, 13.4], r: 2 }, at: new Vector3(-56.75, G0 + 2, 12.2) });
+
+  orb('svadjanje', [-57.6, G0 + 0.8, 12.2], 2.2, ['argue', 'table', 'chair'], 'close', G0 + 1.7, { near: { p: [-57.6, BANK + 0.6, 13.8], r: 2.2 } });
 
   // ---------- the road along the eastern edge: a parked car, a bus at its stop ----------
   slab(83, 90, -66, 46, { tag: 'street', col: '#8d8e92', bleed: '#74767b' }, BANK + 0.08, 0.06);
@@ -759,5 +768,5 @@ export function buildWorld(scene) {
 
   return { slide: SL, clouds, colliders: b.colliders, orbs, start: new Vector3(-19.5, 0, 47), diverPos, diverBlock, people, cat: { x: 33.5, y: BANK + 1.1, z: 12.45, x0: 31, x1: 36.6 }, catBlock,
     animals: [{ kind: 'horse', tag: 'horse', x: 73, y: BANK + 0.06, z: 37, ry: -1.2 }, { kind: 'sheep', tag: 'sheep', x: -58, y: BANK + 0.06, z: -76, ry: 0.6 }, { kind: 'sheep', tag: 'sheep2', x: -56.2, y: BANK + 0.06, z: -79.2, ry: 2.4 }, { kind: 'sheep', tag: 'sheep2', x: -60.2, y: BANK + 0.06, z: -80.4, ry: -1.4 }],
-    pigeons: { x: 55.5, y: BANK + 0.12, z: -12.6 }, fish: { x: -1.6, y: 0, z: 19.9 }, sunPos, fleur: new Vector3(0, 66, 8) };
+    pigeons: { x: 55.5, y: BANK + 0.12, z: -12.6, fx: 51.6, fz: -14, fh: 9.5 }, fish: { x: 2.8, y: 0, z: 14 }, sunPos, fleur: new Vector3(0, 66, 8) };
 }

@@ -298,6 +298,8 @@ export class Builder {
     const col = _c.set(o.col ?? '#fff'), cr = col.r, cg = col.g, cb = col.b;
     const bl = _c.set(o.bleed ?? o.col ?? '#fff'), br = bl.r, bg = bl.g, bb = bl.b;
     const v0 = t.pos.length / 3;
+    // round shapes (given a high edge angle) have no edges to ink along their sides, so they get an outline as well
+    const hull = o.hull ?? ((o.edge ?? 0) >= 40 && o.ink !== false);
     for (let i = 0; i < n; i++) {
       _v.fromBufferAttribute(P, i).applyMatrix4(W); _n.fromBufferAttribute(Nn, i).applyMatrix3(_nm).normalize();
       t.pos.push(_v.x, _v.y, _v.z); t.nor.push(_n.x, _n.y, _n.z);
@@ -306,10 +308,10 @@ export class Builder {
       t.par.push(o.pool ?? 0, o.pat ?? 0, o.hatch ?? 1, o.ps ?? 1);
       t.sway.push(typeof o.sway === 'function' ? o.sway(_v) : (o.sway ?? 0));
       sub.box.expandByPoint(_v);
-      if (o.hull) { t.hpos.push(_v.x, _v.y, _v.z); t.hnor.push(_n.x, _n.y, _n.z); t.hsway.push(t.sway[t.sway.length - 1]); }
+      if (hull) { t.hpos.push(_v.x, _v.y, _v.z); t.hnor.push(_n.x, _n.y, _n.z); t.hsway.push(t.sway[t.sway.length - 1]); }
     }
     sub.ranges.push([v0, n]);
-    if (o.hull) sub.hranges.push([t.hpos.length / 3 - n, n]);
+    if (hull) sub.hranges.push([t.hpos.length / 3 - n, n]);
     if (o.ink !== false && !o.hull) {
       const key = geo.uuid + (o.edge ?? 30);
       let e = edgeCache.get(key);

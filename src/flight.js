@@ -21,7 +21,7 @@ export class Flight {
     this.mode = 'perched'; this.power = false; this.diving = false; this.flare = 0;
     this.clearL = 1; this.clearR = 1; this.grace = 0; this.landedOn = null; this.feet = null;
     this.events = []; this.bumpCool = 0; this.perchPitch = 0; this.perchRoll = 0;
-    this.waterY = 0; this.swimT = 0; this.drift = 0; this.splashPower = 0; this.paddle = 0;
+    this.walk = 0; this.hop = null; this.groundY = 0; this.waterY = 0; this.swimT = 0; this.drift = 0; this.splashPower = 0; this.paddle = 0;
   }
 
   cast(origin, dir, far) {
@@ -59,7 +59,7 @@ export class Flight {
       const hb = D0 * Math.sqrt(Math.max(0, 1 - (a / az) ** 2 - (b / ax) ** 2));
       y = Math.max(y, gy + 0.05 * sc + hb - (a * tp + b * tr));
     }
-    this.pos.set(p.x, y, p.z);
+    this.pos.set(p.x, y, p.z); this.groundY = p.y;
     this.feet = this.footOffsets.map((o) => {
       _o.copy(this.pos).addScaledVector(l, o.x).addScaledVector(f, o.z);
       const h = this.cast(_o, DOWN, this.perchH + 0.9 * sc);
@@ -67,9 +67,49 @@ export class Flight {
     });
   }
 
+  // On the ground, holding the mouse button walks, then runs. Small steps up and down are hopped;
+  // off a big drop it tips into a dive; into shallow-lying water it hops in and floats.
+  walkStep(dt, inp) {
+    const f = S.flight, sc = S.bird.scale;
+    if (this.hop) {
+      const h = this.hop; h.t += dt; const u = Math.min(1, h.t / h.dur);
+      this.pos.lerpVectors(h.from, h.to, u); this.pos.y += Math.sin(Math.PI * u) * h.arc;
+      if (u >= 1) { this.hop = null; this.landedOn = h.obj; this.settle(h.point); }
+      return;
+    }
+    if (!inp.dive) { this.walk = 0; return; }
+    this.yaw += angDiff(this.camYaw, this.yaw) * k(7, dt);
+    this.walk = this.walk ? Math.min(f.runSpeed, this.walk + f.walkAccel * dt) : f.walkStart;
+    const fw = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), step = this.walk * dt, gy = this.groundY, reach = 0.3 * sc + 0.08;
+    const hopTo = (hit) => { const dy = hit.point.y - gy; this.feet = null; this.hop = { from: this.pos.clone(), to: hit.point.clone().setY(hit.point.y + this.perchH), point: hit.point.clone(), obj: hit.object, t: 0, dur: 0.26 + Math.abs(dy) * 0.14, arc: 0.1 + Math.max(0, dy) * 0.25 + Math.abs(dy) * 0.08 }; };
+    const ahead = this.cast(this.pos, fw, step + reach);
+    if (ahead && !ahead.object.userData.water) {                          // something in the way: hop onto it if it is low enough
+      const top = this.cast(new THREE.Vector3(this.pos.x + fw.x * (ahead.distance + reach), gy + f.hopUp + 0.3, this.pos.z + fw.z * (ahead.distance + reach)), DOWN, f.hopUp + 0.32);
+      if (top && this.landable(top) && top.point.y - gy > 0.04 && top.point.y - gy <= f.hopUp) hopTo(top); else this.walk = 0;
+      return;
+    }
+    const at = (d) => this.cast(new THREE.Vector3(this.pos.x + fw.x * d, gy + 0.4, this.pos.z + fw.z * d), DOWN, 0.4 + f.hopDown);
+    const g = at(step);
+    if (g && this.landable(g)) {
+      const dy = g.point.y - gy;
+      if (Math.abs(dy) < 0.13) { this.landedOn = g.object; this.settle(g.point); }
+      else if (dy > 0) hopTo(g);
+      else { const far = at(step + reach + 0.12); hopTo(far && this.landable(far) && far.point.y - gy < -0.1 ? far : g); }
+      return;
+    }
+    if (g && g.object.userData.water) {                                   // into the water
+      this.splashPower = 0.25; this.mode = 'swim'; this.waterY = g.point.y; this.speed = this.walk * 0.5; this.walk = 0; this.feet = null; this.landedOn = null;
+      this.pos.addScaledVector(fw, 0.25); this.pos.y = this.waterY + 0.14 * sc; this.events.push('splash'); return 'left';
+    }
+    if (g && (g.object.userData.wall || gy - g.point.y < 0.3)) { this.walk = 0; return; }
+    // nothing to stand on within reach: off it goes, wings tucked, for as long as the button is held
+    this.mode = 'flying'; this.landedOn = null; this.feet = null; this.walk = 0; this.pitch = -0.35; this.mousePitch = -0.25; this.speed = Math.max(f.minSpeed, 6.5);
+    this.lift = 0; this.grace = 0.25; this.airT = 1; this.pos.addScaledVector(fw, 0.3); this.pos.y += 0.05; this.events.push('takeoff'); return 'left';
+  }
+
   land(hit) {
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
-    this.landedOn = hit.object; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
+    this.landedOn = hit.object; this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
     this.settle(hit.point); this.events.push('land');
   }
 
@@ -81,7 +121,9 @@ export class Flight {
     if (this.mode === 'perched') {
       this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - (inp.tilt - (ptr ? ptr.y : 0)) * f.keyPitchRate * dt, -0.25, 1.1);
       this.pitch += (this.perchPitch - this.pitch) * k(10, dt); this.roll += (this.perchRoll - this.roll) * k(10, dt);
+      if (!inp.takeoff && this.walkStep(dt, inp) === 'left') return;      // walked off a height, or into the water
       if (inp.takeoff) {
+        this.hop = null; this.walk = 0;
         this.mode = 'flying'; this.landedOn = null; this.yaw = this.camYaw; this.feet = null;
         this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.02;
         this.speed = f.takeoffSpeed; this.lift = f.takeoffLift; this.grace = 0.45; this.airT = 0; this.pos.y += 0.1; this.events.push('takeoff');
@@ -94,7 +136,8 @@ export class Flight {
       this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - inp.tilt * 0, -0.1, 1.1);
       this.pitch += -this.pitch * k(8, dt); this.roll += -this.roll * k(8, dt);
       this.yaw += angDiff(this.camYaw, this.yaw) * k(3, dt);
-      this.speed += (inp.tilt * f.swimSpeed - this.speed) * k(3, dt); this.paddle = Math.min(1, Math.abs(this.speed) / f.swimSpeed);
+      this.speed = inp.dive ? Math.min(f.swimMax, Math.max(this.speed, 0.4) + f.swimAccel * dt) : Math.max(0, this.speed - 2.2 * dt);     // hold the mouse button to paddle, faster the longer it is held
+      this.paddle = Math.min(1, this.speed / f.swimMax);
       const fw = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), move = fw.clone().multiplyScalar(this.speed); move.z += this.drift;
       if (move.lengthSq() > 1e-4) {
         _o.copy(this.pos); _o.y += 0.15;

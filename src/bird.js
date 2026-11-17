@@ -69,6 +69,7 @@ export function createBird() {
     return { hip, shin, foot, s, len: 0.1 };
   });
 
+  let rowPh = 0, walkPh = 0;
   let prevBeat = 0, phase = 0, cyc = 0, open = 0, amp = 0, t = 0, sing = 0, fl = 0, slow = 0, landT = 9, wasPerched = true, bob = 0;
   const q = new THREE.Quaternion(), qb = new THREE.Quaternion(), n = new THREE.Vector3(), v = new THREE.Vector3(), fw = new THREE.Vector3(), sx = new THREE.Vector3(), CYC = 1.45;
   const DOWNV = new THREE.Vector3(0, -1, 0), basis = new THREE.Matrix4();
@@ -83,7 +84,9 @@ export function createBird() {
       const perched = st.mode !== 'flying', swim = st.mode === 'swim';
       if (perched && !wasPerched) landT = 0;
       wasPerched = perched; landT += dt;
-      const settling = perched && landT < 0.3;
+      const settling = perched && (landT < 0.3 || st.hop);
+      const wk = perched && !swim && st.feet ? (st.walk || 0) : 0; if (wk > 0) walkPh += dt * (10 + 16 * wk);
+      rowPh += dt * (2.5 + 9 * (st.paddle || 0));
       fl += ((perched ? 0 : st.flare) - fl) * k(9, dt);
       slow += ((perched ? 0 : clamp((10 - st.speed) / 4, 0, 1)) - slow) * k(5, dt);
 
@@ -112,14 +115,14 @@ export function createBird() {
         w.inner.scale.set(lerp(1, 0.82, F), 1, lerp(1, 0.9, F)); w.inner.rotation.x = -1.15 * F;
         w.outer.scale.set(lerp(1, 0.62, F), 1, lerp(1, 0.8, F));
         w.sh.position.x = w.s * lerp(0.17, 0.14, F);
-        if (pad > 0.01) { const ph = t * 6.5 + (w.s > 0 ? 0 : Math.PI); w.sh.rotation.y += w.s * Math.sin(ph) * 0.34 * pad; w.sh.rotation.z += w.s * (-0.28 + Math.cos(ph) * 0.2) * pad; }   // the wings row a little while it paddles
+        if (pad > 0.01) { const ph = rowPh + (w.s > 0 ? 0 : Math.PI); w.sh.rotation.y += w.s * Math.sin(ph) * 0.34 * pad; w.sh.rotation.z += w.s * (-0.28 + Math.cos(ph) * 0.2) * pad; }   // the wings row a little while it paddles
       }
 
       // the whole body rides up on the burst and dips while the wings are closed
       const bobWant = perched ? 0 : (steady || st.diving ? 0 : Math.sin((cyc / CYC) * Math.PI * 2 - 0.6) * 0.09) - beat * 0.03 * amp;
       bob += (bobWant - bob) * k(8, dt);
       const squash = settling ? -Math.sin((landT / 0.3) * Math.PI) * 0.07 : 0;
-      tilt.position.y = (bob + squash + (swim ? Math.sin(t * 2.4) * 0.02 : 0)) * SC;
+      tilt.position.y = (bob + squash + (swim ? Math.sin(t * 2.4) * 0.02 : 0) + (wk > 0 ? Math.abs(Math.sin(walkPh)) * 0.018 : 0)) * SC;
       tilt.rotation.x = -(0.5 * fl + 0.28 * slow) + (perched ? -0.12 : 0);     // nose up when slow or landing
 
       // tail: fanned and lowered to brake, twisted into turns, cocked when perched
@@ -133,7 +136,7 @@ export function createBird() {
       sing += ((st.sing ? 1 : 0) - sing) * k(12, dt);
       const sb = Math.abs(Math.sin(t * 14));
       jaw.rotation.x = sing * (0.25 + 0.4 * sb);
-      head.rotation.x = -tilt.rotation.x * 0.7 - 0.3 * sing + (perched ? Math.sin(t * 0.9) * 0.05 : 0);
+      head.rotation.x = -tilt.rotation.x * 0.7 - 0.3 * sing + (perched ? Math.sin(t * 0.9) * 0.05 : 0) + (wk > 0 ? Math.sin(walkPh * 2) * 0.1 : 0);
       head.rotation.y = perched && !st.sing ? Math.sin(t * 0.6) * 0.3 : -st.turn * 0.25;
       body.position.y = sing * sb * 0.02;
 
@@ -145,7 +148,9 @@ export function createBird() {
         let len;
         if (stand) {
           const ft = st.feet[i];
-          v.copy(ft.p).addScaledVector(ft.n, 0.013 * SC); body.worldToLocal(v).sub(l.hip.position);
+          v.copy(ft.p).addScaledVector(ft.n, 0.013 * SC);
+          if (wk > 0) { const ph = walkPh + i * Math.PI, sd = Math.sin(ph) * (0.05 + 0.08 * wk) * SC; v.x += Math.sin(st.yaw) * sd; v.z += Math.cos(st.yaw) * sd; v.y += Math.max(0, Math.cos(ph)) * (0.035 + 0.04 * wk) * SC; }     // stepping
+          body.worldToLocal(v).sub(l.hip.position);
           len = clamp(v.length(), 0.03, 0.36);
           l.hip.quaternion.setFromUnitVectors(DOWNV, v.normalize());
           n.copy(ft.n); fw.set(Math.sin(st.yaw), 0, Math.cos(st.yaw)).addScaledVector(n, -Math.sin(st.yaw) * n.x - Math.cos(st.yaw) * n.z).normalize();
@@ -154,7 +159,7 @@ export function createBird() {
           l.len = len;
         } else {
           len = swim ? 0.04 : lerp(0.05, 0.2, fl);
-          l.hip.rotation.set(swim ? 1.2 + Math.sin(t * 7 + i * 3.1) * 0.5 * (st.paddle || 0) : lerp(1.2, -0.5, fl), 0, 0);       // tucked back, reaching forward to land
+          l.hip.rotation.set(swim ? 1.2 + Math.sin(rowPh + i * 3.1) * 0.5 * Math.min(1, (st.paddle || 0) * 3) : lerp(1.2, -0.5, fl), 0, 0);       // tucked back, reaching forward to land
           l.foot.quaternion.slerp(q.identity(), k(10, dt));
           l.len += (len - l.len) * k(12, dt);
         }
