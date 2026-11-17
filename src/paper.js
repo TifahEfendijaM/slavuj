@@ -353,7 +353,7 @@ export class Builder {
         const c = s.box.getCenter(new THREE.Vector3()), rad = Math.max(0.5, s.box.getSize(_v).length() / 2), dist = c.distanceTo(src);
         let sd, radius, delay, dur;
         if (t.mode === 'one') { sd = src; radius = t.radius ?? 160; delay = 0; dur = t.dur ?? 4.6; }
-        else if (dist < rad + 2) { sd = src; radius = rad + dist + 0.5; delay = 0; dur = t.quickNear ? 2.2 : 4.2; }
+        else if (dist < rad + 2) { sd = src; radius = rad + dist + 0.5; delay = 0; dur = 4.2; }
         else { sd = c.clone().addScaledVector(_d.subVectors(src, c).normalize(), rad * 0.9); radius = rad * 2; delay = t.waveDelay + Math.min(dist, 150) / 150 * 2.5; dur = 2.0; }
         for (const [v0, cnt] of s.ranges) for (let i = v0; i < v0 + cnt; i++) {
           seed[i * 3] = sd.x; seed[i * 3 + 1] = sd.y; seed[i * 3 + 2] = sd.z;

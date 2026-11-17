@@ -32,7 +32,7 @@ export function createPeople(scene, world, R) {
   const timing = (tagName, pos) => {
     const src = tag(tagName).source, d = src ? pos.distanceTo(src) : 0;
     tag(tagName).subs.push({ box: new THREE.Box3().setFromCenterAndSize(pos.clone().setY(pos.y + 1), new THREE.Vector3(1, 2, 1)), ranges: [], hranges: [] });
-    const tm = d < 5 ? { delay: 0, dur: tag(tagName).quickNear ? 2.2 : 3.2 } : { delay: 2.6 + Math.min(d, 150) / 150 * 2.5, dur: 2.2 };
+    const tm = d < 5 ? { delay: 0, dur: 3.2 } : { delay: 2.6 + Math.min(d, 150) / 150 * 2.5, dur: 2.2 };
     const T = tag(tagName); T.end = Math.max(T.end || 0, tm.delay + tm.dur); if (!tm.delay) T.nearEnd = Math.max(T.nearEnd || 0, tm.dur); return tm;
   };
   const block = (x, y, z, w, h, d, data) => {

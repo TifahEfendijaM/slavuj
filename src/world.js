@@ -833,8 +833,6 @@ export function buildWorld(scene) {
   A(DODE, -19.5, BANK + 0.45, 47, { tag: 'rock', col: BOULDERS[1][0], bleed: BOULDERS[1][1] }, 0.4, 0, 0, [1.4, 0.8, 1.2]);
 
   // where each tag's colour starts from: the orb that paints it
-  // in a scene with a close look then a wide one, the first object colours quickly enough to be photographed before the cut
-  for (const o of orbs) if (o.shot === 'combo') for (const t of o.tags) tag(t).quickNear = true;
   for (const o of orbs) for (const t of o.tags) tag(t).source = o.focus.clone();
   tag('sky').source = sunPos.clone(); tag('sun').source = sunPos.clone();
   b.finish(scene);
