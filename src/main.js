@@ -406,6 +406,8 @@ function shotsFor(o, bird) {
   if (d.shot === 'bridge') return [{ from: V(8.5, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
   if (d.shot === 'close') return [closeShot(o, bird, C.closeDuration)];
   if (d.shot === 'wide') return [wideShot(o, C.wideDuration)];
+  // the rest is in one other small spot: a second close look there instead of a wide view from above
+  if (d.second) { const s2 = d.second; return [closeShot(o, bird, 4), closeShot({ id: '', def: { ...d, focus: V(...s2.focus), size: s2.size, front: s2.front } }, null, C.wideDuration - 4)]; }
   return [closeShot(o, bird, 4), wideShot(o, C.wideDuration - 4)];
 }
 // used from the console to check every orb's camera without playing through it
@@ -414,15 +416,15 @@ function checkShots() {
   const inFrame = (p) => { const q = p.clone().project(cam); return q.z < 1 && Math.abs(q.x) < 0.96 && Math.abs(q.y) < 0.76; };
   for (const o of orbs) {
     const d = o.def, probs = [], bird = birdSpot(o);
-    for (const s of shotsFor(o, bird)) for (const e of [0, 0.25, 0.5, 0.75, 1]) {
+    for (const [si, s] of shotsFor(o, bird).entries()) for (const e of [0, 0.25, 0.5, 0.75, 1]) {
       cam.position.lerpVectors(s.from, s.to, e); cam.lookAt(s.lookFrom.clone().lerp(s.lookTo, e)); cam.updateMatrixWorld();
       if (inside(cam.position, 0.1)) probs.push(`camera ${e} inside something`);
       if (s.wide) { if (s.pts) { const n = s.pts.filter(inFrame).length; if (n < Math.min(s.pts.length, 2) || n / s.pts.length < 0.6) probs.push(`wide ${e}: only ${n}/${s.pts.length} in frame`); } continue; }
       const right = V(1, 0, 0).applyQuaternion(cam.quaternion), up = V(0, 1, 0).applyQuaternion(cam.quaternion);
       for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!inFrame(s.c.clone().addScaledVector(right, a * s.r).addScaledVector(up, b * s.r))) probs.push(`close ${e}: object cut off`);
-      if (bird && !inFrame(bird)) probs.push(`close ${e}: bird cut off`);
+      if (bird && si === 0 && !inFrame(bird)) probs.push(`close ${e}: bird cut off`);      // (only the first shot is where the bird is)
       if (covered(cam.position, s.c, s.r)) probs.push(`close ${e}: view blocked`);
-      if (bird && blocked(cam.position, bird, 0.7)) probs.push(`close ${e}: bird hidden`);
+      if (bird && si === 0 && blocked(cam.position, bird, 0.7)) probs.push(`close ${e}: bird hidden`);
       if (cam.position.y < 0.6) probs.push('camera under water');
     }
     if (probs.length) out[o.id] = [...new Set(probs)];

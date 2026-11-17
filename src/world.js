@@ -533,7 +533,7 @@ export function buildWorld(scene) {
   orb('trcati', [-57, BANK + 1, 0.5], 2.6, ['run'], 'close', BANK + 2.1, { near: { p: [-57, BANK + 0.6, 1.7], r: 2.6 } });
   orb('bicikl', [40.5, BANK + 0.6, -56], 2.2, ['bike'], 'close', BANK + 1, { near: { p: [41.6, BANK + 0.6, -57.3], r: 3.2 }, at: new Vector3(40.5, BANK + 1.5, -54.8) });
   orb('voziti', [40.5, BANK + 1.2, -56], 2.4, ['ride'], 'close', BANK + 2.2, { requires: ['bicikl'], near: { p: [41.6, BANK + 0.6, -57.3], r: 3.2 } });
-  orb('sjediti', [18.75, BANK + 1, 50], 2.8, ['sit'], 'combo', BANK + 1.9, { near: { p: [20.2, BANK + 0.6, 50], r: 2.6 } });
+  orb('sjediti', [18.75, BANK + 1, 50], 2.8, ['sit'], 'combo', BANK + 1.9, { near: { p: [20.2, BANK + 0.6, 50], r: 2.6 }, second: { focus: [30.4, BANK + 0.9, -23.92], size: 1.6, front: Math.PI } });      // then a close look at the man on the other bench
   orb('fes', [36, BANK + 1.9, -1.95], 1.2, ['fes'], 'close', BANK + 2.2, { near: { p: [36.3, BANK + 0.6, -0.4], r: 2.3 }, at: new Vector3(36, BANK + 2.9, -1.95) });
   orb('plivati', [-3.5, 0.3, 44.6], 2.6, ['swimmer'], 'close', 0.5, { near: { p: [-3.5, 0.2, 43.2], r: 3.4 }, at: new Vector3(-3.5, 2, 44.8) });
   orb('ribar', [-5.4, 1.7, 19.6], 2.6, ['fisher'], 'close', 2.8, { near: { p: [-6.6, 1.2, 19.7], r: 2 } });
@@ -736,7 +736,7 @@ export function buildWorld(scene) {
     A(CYL12, -57.6, y + 0.006, 8.2, { ...K, col: '#c98a4a', bleed: '#a8672f' }, 0, 0, 0, [0.3, 0.012, 0.3]);    // the copper tray
   });
   orb('piti', [-58.1, G0 + 0.9, 8.2], 2.2, ['drink', 'coffee'], 'close', G0 + 1.6, { near: { p: [-58.5, BANK + 0.6, 6.7], r: 1.9 } });
-  orb('stolice', [-56.75, G0 + 0.5, 8.2], 1.5, ['chair'], 'combo', G0 + 1, { near: { p: [-56.3, BANK + 0.6, 8.9], r: 1.7 }, at: new Vector3(-56.75, G0 + 1.9, 8.2) });
+  orb('stolice', [-56.75, G0 + 0.5, 8.2], 1.5, ['chair'], 'close', G0 + 1, { near: { p: [-56.3, BANK + 0.6, 8.9], r: 1.7 }, at: new Vector3(-56.75, G0 + 1.9, 8.2) });
 
   orb('svadjanje', [-57.6, G0 + 0.8, 12.2], 2.2, ['argue'], 'close', G0 + 1.7, { near: { p: [-57.6, BANK + 0.6, 13.8], r: 2.2 } });
 
