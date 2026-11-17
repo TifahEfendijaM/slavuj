@@ -349,10 +349,13 @@ export class Builder {
       const seed = new Float32Array(n * 3), ani = new Float32Array(n * 4), hseed = new Float32Array(t.hpos.length), hani = new Float32Array(t.hpos.length / 3 * 4);
       const all = new THREE.Box3(); for (const s of t.subs) all.union(s.box);
       const src = t.source || all.getCenter(new THREE.Vector3());
+      // holdRest: the piece nearest the orb colours on its own first; everything else waits that long, then spreads from there
+      const own = t.holdRest ? t.subs.reduce((a, s) => (s.box.getCenter(_v).distanceTo(src) < a.d ? { s, d: _v.distanceTo(src) } : a), { s: null, d: 1e9 }).s : null;
       for (const s of t.subs) {
         const c = s.box.getCenter(new THREE.Vector3()), rad = Math.max(0.5, s.box.getSize(_v).length() / 2), dist = c.distanceTo(src);
         let sd, radius, delay, dur;
-        if (t.mode === 'one') { sd = src; radius = t.radius ?? 160; delay = 0; dur = t.dur ?? 4.6; }
+        if (own === s) { sd = src; radius = rad + dist + 0.5; delay = 0; dur = 4.2; }
+        else if (t.mode === 'one') { sd = src; radius = t.radius ?? 160; delay = t.holdRest || 0; dur = t.dur ?? 4.6; }
         else if (dist < rad + 2) { sd = src; radius = rad + dist + 0.5; delay = 0; dur = 4.2; }
         else { sd = c.clone().addScaledVector(_d.subVectors(src, c).normalize(), rad * 0.9); radius = rad * 2; delay = t.waveDelay + Math.min(dist, 150) / 150 * 2.5; dur = 2.0; }
         for (const [v0, cnt] of s.ranges) for (let i = v0; i < v0 + cnt; i++) {
@@ -361,7 +364,8 @@ export class Builder {
         }
         t.end = Math.max(t.end || 0, delay + dur);
         // the first object, the one the orb sits on: when it is fully coloured (a wave over everything reaches it early)
-        if (t.mode === 'one') { if (dist < (t._nearest ?? 1e9)) {      // only the piece nearest the orb; (the shader: dry colour once
+        if (own === s) t.nearEnd = dur;
+        else if (t.mode === 'one' && !own) { if (dist < (t._nearest ?? 1e9)) {      // only the piece nearest the orb; (the shader: dry colour once
           t._nearest = dist;                                               // the front, minus its wet band and ragged edge, has passed)
           const pr = Math.min(1, ((dist + rad) / radius + 1.25) / 2.3); t.nearEnd = (1 - Math.pow(1 - pr, 2 / 3)) * dur; } }
         else if (delay === 0) t.nearEnd = Math.max(t.nearEnd || 0, dur);      // seconds after painting starts until the last of it is coloured

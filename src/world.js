@@ -175,6 +175,7 @@ export function buildWorld(scene) {
   for (const z of [-112, -86, -62, -42, 24, 46, 72, 98, 120]) willow(14.4, z, 0.9 + R2() * 0.25);
   for (const z of [-114, -90, -66, -44, -24, 56, 76, 100, 120]) willow(-14.4, z, 0.9 + R2() * 0.25);
   orb('stijena', [9.7, 5.6, -23.5], 6, ['rock'], 'combo', 7.6);
+  tag('rock').holdRest = 2.9;      // its own rock first; the rest of the rocks and cliffs start just after the cut to the wide shot
   // boulders in the river
   let ri = 0;
   for (const [x, z, s] of [[3, 30, 1.5], [-5, -18, 1.1], [6, -42, 1.3], [-3, 64, 1.2], [6, 50, 0.9], [-6, 86, 1.4], [4, -80, 1.2]])
