@@ -140,12 +140,12 @@ async function toggleRec() {
   takes[rows[cur].id] = take; refresh(); play(); say(`Recorded (${(take.length / take.rate).toFixed(1)} s). P to hear it again, Enter to save it, Space to record again.`);
 }
 // cut the silence at both ends, even out the volume, fade the edges, and drop to 24 kHz to keep files small
-// keep everything except the two Space presses (the first 0.2 s and the last 0.3 s), even out the volume,
+// keep everything except the two Space presses (the first 0.3 s and the last 0.3 s), even out the volume,
 // soften the very edges against clicks, and drop to 24 kHz to keep files small
 function clean(parts, rate) {
   let n = 0; for (const p of parts) n += p.length; if (!n) return null;
   const full = new Float32Array(n); let o = 0; for (const p of parts) { full.set(p, o); o += p.length; }
-  const c0 = Math.round(rate * 0.2), c1 = Math.round(rate * 0.3), a = n > c0 + c1 + rate * 0.2 ? full.subarray(c0, n - c1) : full;
+  const c0 = Math.round(rate * 0.3), c1 = Math.round(rate * 0.3), a = n > c0 + c1 + rate * 0.2 ? full.subarray(c0, n - c1) : full;
   let pk = 0; for (const v of a) pk = Math.max(pk, Math.abs(v)); if (pk < 0.004) return null;
   const step = rate / 24000, len = Math.floor(a.length / step), out = new Float32Array(len), g = 0.89 / pk, fade = Math.round(24000 * 0.01);
   for (let i = 0; i < len; i++) { const x = i * step, i0 = Math.floor(x), f = x - i0; out[i] = ((a[i0] ?? 0) * (1 - f) + (a[i0 + 1] ?? 0) * f) * g; }
