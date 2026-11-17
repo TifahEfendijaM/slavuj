@@ -210,7 +210,7 @@ export function createPeople(scene, world, R) {
     const on = TLP(G.disc, ON[i], tlg, 0, y, z + sd * 0.012); on.scale.set(0.112, 0.112, 0.02); on.visible = i === 0; lamps.push({ on, i });
     TLP(G.box, '#2e3236', tlg, 0, y + 0.13, z + sd * 0.07).scale.set(0.24, 0.02, 0.13);
   }
-  block(TL.x, TL.y + 1.5, TL.z, 0.2, 3, 0.2, { wall: true }); block(TL.x, TL.y + 3.45, TL.z, 0.36, 1.07, 0.34, {});
+  block(TL.x, TL.y + 1.5, TL.z, 0.2, 3, 0.2, { wall: true }); block(TL.x, TL.y + 3.45, TL.z, 0.36, 1.07, 0.34, { orb: 'semafor' });
   // ---- the flag in front of the school: hangs still in the sketch, then waves ----
   const FL = world.flag, flp = new THREE.Vector3(FL.x, FL.y, FL.z), FLP = painter('flag', flp.clone().setY(FL.y + FL.h - 0.7), 2.4), flg = new THREE.Group(); flg.position.copy(flp); scene.add(flg);
   rod(FLP, flg, [0, 0, 0], [0, FL.h + 0.1, 0], 0.06, '#d9d6cf');

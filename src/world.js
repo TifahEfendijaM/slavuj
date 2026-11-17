@@ -193,7 +193,8 @@ export function buildWorld(scene) {
     [-36, -14, 41.2, 76], [-72, -43, 41.2, 76], [-72, -62, -30, -4], [-30, -15, 26.5, 32.5], [22, 37, 46, 64], [64, 78, -68, 66]]) grass(...r);
   R();   // (keeps the older colours as they were)
   grass(40, 62, 36, 60, 'trava');
-  orb('trava', [46, BANK, 54], 8, ['grass'], 'wide', BANK + 1);
+  orb('trava', [46, BANK, 54], 8, ['grass'], 'combo', BANK + 1);
+  tag('grass').holdRest = 2.9;      // the fenced meadow first; the rest of the grass starts just after the cut to the wide shot
   // far hills: Hum to the south-west, the long ridge of Velež to the east
   tag('grass').hullWidth = 1.8;
   for (const [x, z, r, h, c] of [[-250, 210, 110, 78, '#8faa6c'], [-330, 40, 120, 60, '#9db57c'], [-290, -170, 130, 70, '#88a878'], [-120, -330, 120, 55, '#a3b88a'], [80, -350, 140, 66, '#93ad84'],
@@ -281,7 +282,10 @@ export function buildWorld(scene) {
       const uy = sh + (h - sh) * 0.52, fl = o.flowers ?? R() < 0.5;
       if (o.windowOrb) win(w * 0.12, uy, fz, 0, true, false);
       else { win(w * 0.25, uy, fz, 0, false, fl && !o.openWin, o.openWin); if (w > 6.4) win(-w * 0.25, uy, fz, 0, false, fl); }
-      if (sh > 2.2 && w > 6) win(w * 0.25, sh * 0.56, d / 2, 0, false, false);
+      if (sh > 2.2 && w > 6) {      // a ground-floor window, on whichever side keeps clear of the door
+        const clear = (px) => Math.abs(px - dx) > 0.95 / 2 + 1.25 / 2 + 0.25, px = clear(w * 0.25) ? w * 0.25 : clear(-w * 0.25) ? -w * 0.25 : null;
+        if (px !== null) win(px, sh * 0.56, d / 2, 0, false, false);
+      }
       win(fx, uy, 0, Math.PI / 2, false, false); win(-fx, uy, 0, -Math.PI / 2, false, false); win(0, uy, -fz, Math.PI, false, false);
     });
     b.pop();
@@ -329,15 +333,17 @@ export function buildWorld(scene) {
   for (const t of ['house', 'chimney', 'window', 'door', 'tree', 'flower', 'lamp', 'bench', 'wall', 'tower', 'shop', 'carpet', 'cloud', 'roof']) tag(t).waveDelay = 2.6;
   orb('kuca', [47, BANK + 4, 19], 6.5, ['house'], 'combo', hKuca.top);
   { const c = hSmoke.chimTop;      // dim: the smoke rising from this chimney (the puffs are built in people.js)
-    orb('dim', [c.x + 0.6, c.y + 2, c.z], 3.2, ['smoke'], 'close', c.y + 1, { near: { p: [c.x, c.y + 0.2, c.z], r: 1.2 }, at: new Vector3(c.x - 1.7, c.y + 1.4, c.z) }); }
+    orb('dim', [c.x + 0.6, c.y + 2, c.z], 3.2, ['smoke'], 'combo', c.y + 1, { near: { p: [c.x, c.y + 0.2, c.z], r: 1.2 }, at: new Vector3(c.x - 1.7, c.y + 1.4, c.z) }); }
 
   // ---------- Kujundžiluk: the bazaar shops with stone-slab roofs ----------
+  let shopN = 0;
   function shop(x, z, rot, o = {}) {
+    const lift = (shopN++ % 2) * 0.05;      // neighbouring roofs overlap: every other one sits a little higher, so they never flicker
     b.push(mat4(x, BANK, z, rot));
     b.object(() => {
       const st = pick(STONES), sl = pick(SLABS), Sh = { tag: 'shop', orb: o.orb }, aw = pick(['#b8452c', '#d9a23a', '#3f6b4a', '#2f5f7a', '#c9b48a']);
       box(5.2, 3.1, 4.4, 0, 1.55, 0, { ...Sh, col: st[0], bleed: st[1], pat: PAT.blocks, ps: 0.6, pool: 1 });
-      A(roofGeo(5.4, 6.4, 1.1, 2.2), 0, 3.1, 0.35, { ...Sh, tag: 'roof', col: sl[0], bleed: sl[1], pat: PAT.roof, ps: 0.8 }, Math.PI / 2);
+      A(roofGeo(5.4, 6.4, 1.1, 2.2), 0, 3.1 + lift, 0.35, { ...Sh, tag: 'roof', col: sl[0], bleed: sl[1], pat: PAT.roof, ps: 0.8 }, Math.PI / 2);
       box(3.7, 1.9, 0.1, 0, 1.75, 2.22, { ...Sh, col: '#5a4030', bleed: '#3a2a20', pool: 1, solid: false });
       box(3.9, 0.14, 1.0, 0, 0.85, 2.7, { ...Sh, col: '#8a5a34', bleed: '#5f4028', pat: PAT.planks, ps: 5 });
       box(4.7, 0.08, 1.9, 0, 2.75, 3.1, { ...Sh, col: aw, bleed: aw, pool: 1, orb: o.awningOrb ?? o.orb }, 0, 0.2);
@@ -425,7 +431,7 @@ export function buildWorld(scene) {
   wall(15.6, 16.2, 3.2, 62, 1.25, 'zid');
   orb('zid', [15.9, BANK + 0.7, 33], 6, ['wall'], 'combo', BANK + 1.3);
   wall(-16.2, -15.6, 3.2, 20, 1.25); wall(-16.2, -15.6, -60, -9.5, 1.25); wall(15.6, 16.2, -20.5, -9.5, 1.25);
-  wall(30.5, 37, 12.2, 12.7, 1.1); wall(-72, -62, -3.6, -3.1, 1.1); wall(-36.5, -14, 76, 76.5, 1); wall(40, 62, 60.2, 60.7, 0.9);
+  wall(30.5, 37, 12.2, 12.7, 1.1); wall(-72, -62, -3.6, -3.1, 1.1); wall(-36.5, -14, 75.98, 76.48, 1); wall(40, 62, 60.2, 60.7, 0.9);
   for (const [x, z, id] of [[-29.5, 3.4], [-46, -3.3], [-60, 3.2, 'lampa'], [-36.3, 18], [-45.6, -30], [-45.6, -50], [22.5, 3.3], [43.3, -3.3], [62, 3.2], [43.7, -26], [43.7, -48], [21.6, 22], [21.6, 44], [-36.4, 55]]) lamp(x, z, id);
   orb('lampa', [-60, BANK + 3.8, 3.2], 3.5, ['lamp'], 'combo', BANK + 4.7, { near: { p: [-60, BANK + 0.6, 3.2], r: 2.6 } });
   bench(18.6, 34, Math.PI / 2, 'klupa'); bench(18.6, 50, Math.PI / 2); bench(-52, 17.6, Math.PI); bench(-57, 16.5, Math.PI); bench(60, -10, Math.PI); bench(30, -24, Math.PI); bench(-35.5, 60, -Math.PI / 2);
@@ -770,7 +776,7 @@ export function buildWorld(scene) {
   orb('cekati', [82.7, BANK + 1.2, 10.4], 2.4, ['wait'], 'close', BANK + 2.1, { near: { p: [82.3, BANK + 0.6, 9.2], r: 2.4 } });
   orb('stanica', [82.3, BANK + 1.4, 12.5], 3, ['stop'], 'close', BANK + 2.5, { front: Math.PI / 2 });
   orb('cesta', [86.5, BANK + 0.1, -44], 9, ['road'], 'close', BANK + 0.4, { at: new Vector3(86.5, BANK + 2.6, -44) });
-  orb('semafor', [82.4, BANK + 3.4, -2], 1.8, ['light'], 'close', BANK + 4, { near: { p: [82.4, BANK + 4.19, -2], r: 1.2 }, at: new Vector3(81.2, BANK + 4.6, -2) });
+  orb('semafor', [82.4, BANK + 3.4, -2], 1.8, ['light'], 'close', BANK + 4, { near: { p: [82.4, BANK + 0.3, -2], r: 2.2 }, at: new Vector3(81.2, BANK + 4.6, -2) });      // standing beside its post opens it (its head is hard to land on)
 
   // ---------- a well in the middle of the meadow where the horse and the sheep graze ----------
   b.object(() => {
