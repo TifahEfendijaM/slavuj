@@ -92,10 +92,6 @@
   body.cine #legend, body.cine #hint, body.cine #hud, body.cine #reticle, body.cine #learn { opacity: 0; pointer-events: none; }
   #fade { position: fixed; inset: 0; background: var(--paper); opacity: 0; pointer-events: none; transition: opacity .22s; z-index: 9; }
   #fade.on { opacity: 1; }
-  /* the moment the nightingale flies through the golden fleur-de-lis */
-  #burst { position: fixed; inset: 0; pointer-events: none; z-index: 9; opacity: 0; background: radial-gradient(circle at 50% 50%, rgba(255, 246, 214, .95) 0%, rgba(255, 214, 102, .8) 28%, rgba(255, 190, 60, .35) 58%, rgba(255, 190, 60, 0) 80%); }
-  #burst.on { animation: burst 1.25s ease-out forwards; }
-  @keyframes burst { 0% { opacity: 0; transform: scale(.6); } 18% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.35); } }
 
   /* ---- feather journal ---- */
   #journal { z-index: 7; background: rgba(59, 53, 47, .35); }
@@ -190,7 +186,7 @@
   </div>
 </div>
 <button id="skip" class="wobbly off"><kbd>Enter</kbd> skip</button>
-<div id="burst"></div><div id="fade"></div>
+<div id="fade"></div>
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>
