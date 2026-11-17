@@ -621,7 +621,7 @@ function updateHint() {
   if (toastT > 0) return hint(toast);
   if (flight.mode === 'swim') return hint((orbHere() ? '<kbd>E</kbd> open the word list · ' : '') + 'hold the mouse button to paddle · <kbd>Space</kbd> take off');
   if (flight.mode === 'perched') {
-    if (orbHere()) return hint('<kbd>E</kbd> open the word list');
+    if (orbHere()) return hint('<kbd>E</kbd> open the word list · hold the mouse button to walk');
     return hint('<kbd>Space</kbd> take off' + (!FIRST.done ? ' · fly to the glowing orb and land on the roof' : ' · hold the mouse button to walk'));
   }
   hint('');
