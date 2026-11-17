@@ -43,6 +43,7 @@
   </p>
   <div class="bar">
     <button class="mic" id="micBtn">Turn on the microphone</button>
+    <select id="dev" title="Which microphone to record from" style="display:none; font: inherit; font-size: 16px; max-width: 260px; padding: 3px 6px; border: 2px solid var(--ink); border-radius: 9px; background: #fffaf0;"></select>
     <div class="meter"><i id="lvl"></i></div>
     <span class="count" id="count"></span>
   </div>
@@ -96,20 +97,28 @@ const say = (t) => { $('status').textContent = t; };
 // running); the audio engine is only used for the level bar and to decode each take, and is woken on every key press.
 let rec = null, parts = [], analyser = null, lastInfo = '';
 function wake() { if (!ctx) ctx = new AudioContext(); if (ctx.state !== 'running') ctx.resume().catch(() => {}); }
-async function micOn() {
+let srcNode = null;
+async function micOn(deviceId) {
   wake();
-  if (stream) return true;
+  if (stream && !deviceId) return true;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
+    if (stream) { for (const t of stream.getTracks()) t.stop(); srcNode?.disconnect(); }
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: deviceId ? { exact: deviceId } : undefined, echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
   } catch (e) { say('The microphone could not be opened (' + e.name + '): allow it for this site in the browser, and for the browser in macOS Privacy & Security → Microphone.'); return false; }
-  analyser = ctx.createAnalyser(); analyser.fftSize = 1024; ctx.createMediaStreamSource(stream).connect(analyser);
+  if (!analyser) { analyser = ctx.createAnalyser(); analyser.fftSize = 1024; }
+  srcNode = ctx.createMediaStreamSource(stream); srcNode.connect(analyser);
+  // the list of microphones (names are only available once one is allowed); choose another if this one is silent
+  const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput'), sel = $('dev'), using = stream.getAudioTracks()[0]?.getSettings().deviceId;
+  sel.innerHTML = ''; for (const d of devs) { const o = document.createElement('option'); o.value = d.deviceId; o.textContent = d.label || 'Microphone'; o.selected = d.deviceId === using; sel.append(o); }
+  sel.style.display = devs.length ? '' : 'none'; sel.onchange = () => micOn(sel.value);
+  if (deviceId) return true;
   const buf = new Float32Array(analyser.fftSize);
   const meter = () => { analyser.getFloatTimeDomainData(buf); let pk = 0; for (const v of buf) pk = Math.max(pk, Math.abs(v)); $('lvl').style.width = Math.min(100, pk * 140) + '%'; $('lvl').style.background = pk > 0.97 ? 'var(--red)' : 'var(--green)'; requestAnimationFrame(meter); };
   meter();
   const track = stream.getAudioTracks()[0];
   $('micBtn').textContent = 'Microphone on'; say(`Ready (${track ? track.label || 'microphone' : 'no audio track!'}). Press Space to record the highlighted word.`); return true;
 }
-$('micBtn').onclick = micOn;
+$('micBtn').onclick = () => micOn();
 
 async function toggleRec() {
   wake();
@@ -127,7 +136,7 @@ async function toggleRec() {
   const data = audio.getChannelData(0); let pk = 0; for (const v of data) pk = Math.max(pk, Math.abs(v));
   lastInfo = `loudest ${(pk * 100).toFixed(1)}%, ${audio.duration.toFixed(1)} s recorded`;
   const take = clean([data], audio.sampleRate);
-  if (!take) { say(`Nothing was heard (${lastInfo}). Speak closer to the microphone and try again; if the level bar does not move, the browser is not getting any sound.`); return; }
+  if (!take) { say(pk < 0.0005 ? `Only silence came in (${lastInfo}): the browser is getting no sound. Pick another microphone in the list, or allow Brave in macOS System Settings → Privacy & Security → Microphone (then quit and reopen Brave).` : `Too quiet (${lastInfo}). Speak a little closer to the microphone and try again.`); return; }
   takes[rows[cur].id] = take; refresh(); play(); say(`Recorded (${(take.length / take.rate).toFixed(1)} s). P to hear it again, Enter to save it, Space to record again.`);
 }
 // cut the silence at both ends, even out the volume, fade the edges, and drop to 24 kHz to keep files small
