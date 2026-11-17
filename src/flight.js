@@ -70,7 +70,7 @@ export class Flight {
   }
 
   // On the ground, holding the mouse button walks, then runs. Small steps up and down are hopped;
-  // off a big drop it tips into a dive; into shallow-lying water it hops in and floats.
+  // off a big drop it hops up into the air and flies; into shallow-lying water it hops in and floats.
   walkStep(dt, inp) {
     const f = S.flight, sc = S.bird.scale;
     if (this.hop) {
@@ -116,10 +116,10 @@ export class Flight {
       if (far && this.landable(far) && Math.abs(far.point.y - gy) <= f.hopUp) { hopTo(far); return; }
     }
     if (g && (g.object.userData.wall || gy - g.point.y < 0.3)) { this.walk = 0; return; }
-    // nothing to stand on within reach: off it goes. It drops for a moment, wings tucked and nose down, then opens
-    // its wings and flies on (or keeps diving, for as long as the button is held)
-    this.mode = 'flying'; this.landedOn = null; this.feet = null; this.walk = 0; this.pitch = -0.35; this.mousePitch = -0.25; this.speed = f.minSpeed;
-    this.lift = 0; this.grace = 0.25; this.airT = 1; this.drop = 0.45; this.pos.addScaledVector(fw, 0.3); this.pos.y += 0.05; return 'left';
+    // nothing to stand on within reach: off it goes with a small hop up into the air, wings half open, and then it
+    // flaps and flies on (unless it is already diving by then: the button held)
+    this.mode = 'flying'; this.landedOn = null; this.feet = null; this.walk = 0; this.pitch = 0.1; this.mousePitch = 0.1; this.speed = f.minSpeed;
+    this.lift = 2.6; this.grace = 0.3; this.hopOff = 0.3; this.airT = 1; this.pos.addScaledVector(fw, 0.3); this.pos.y += 0.05; return 'left';
   }
 
   // push the bird out of anything that moves (people, animals, the swimmer) and has come up against it
@@ -138,7 +138,7 @@ export class Flight {
 
   land(hit) {
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
-    this.hop = null; this.walk = 0; this.drop = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
+    this.hop = null; this.walk = 0; this.hopOff = this.flapOff = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
     // touched by a feeler reaching ahead of the body: land under the body as it is when that feeler touches,
     // not out where the feeler's tip was (that was a jump of up to half a metre)
     if (hit.dir) {
@@ -165,7 +165,7 @@ export class Flight {
       this.pitch += (this.perchPitch - this.pitch) * k(10, dt); this.roll += (this.perchRoll - this.roll) * k(10, dt);
       if (!inp.takeoff && this.walkStep(dt, inp) === 'left') return;      // walked off a height, or into the water
       if (inp.takeoff) {
-        this.hop = null; this.walk = 0; this.drop = 0;
+        this.hop = null; this.walk = 0; this.hopOff = this.flapOff = 0;
         this.mode = 'flying'; this.landedOn = null; this.yaw = this.camYaw; this.feet = null;
         this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.02;
         this.speed = f.takeoffSpeed; this.lift = f.takeoffLift; this.grace = 0.45; this.airT = 0; this.pos.y += 0.1; this.events.push('takeoff');
@@ -199,10 +199,11 @@ export class Flight {
 
     // ---- flying ----
     this.grace -= dt; this.airT = (this.airT || 0) + dt;
-    const dropping = this.drop > 0;
-    if (dropping) { this.drop -= dt; if (this.drop <= 0) this.events.push('takeoff'); }      // the wings open: the flap is heard
-    this.diving = (inp.dive && this.grace <= 0) || dropping;
-    this.power = (inp.flap || this.grace > 0) && !this.diving;
+    const hopping = this.hopOff > 0;
+    this.diving = inp.dive && this.grace <= 0;
+    if (hopping) { this.hopOff -= dt; if (this.hopOff <= 0 && !this.diving) { this.flapOff = 0.35; this.events.push('takeoff'); } }      // the hop is over: it flaps away (the flap is heard)
+    if (this.flapOff > 0) this.flapOff -= dt;
+    this.power = (inp.flap || (this.grace > 0 && !hopping) || this.flapOff > 0) && !this.diving;
     if (this.diving) this.mousePitch = 0;
     else if (ptr && !inp.tilt) this.mousePitch += (clamp(-ptr.y, -1, 1) * rad(ptr.y > 0 ? f.maxPitchDown : f.maxPitchUp) - this.mousePitch) * k(5, dt);
     else this.mousePitch = clamp(this.mousePitch - inp.dy * f.mouseSens + inp.tilt * f.keyPitchRate * dt, -rad(f.maxPitchDown), rad(f.maxPitchUp));
@@ -229,7 +230,7 @@ export class Flight {
       this.mousePitch += (-0.08 - this.mousePitch) * Math.min(1, 2.5 * dt);
     if (this.speed <= f.minSpeed + 0.4 && !this.power && ptr && this.pitch > -0.08) this.pitch += (-0.08 - this.pitch) * Math.min(1, 4 * dt);
 
-    const liftTarget = this.diving ? 0 : this.power ? f.flapClimb * Math.min(1, 0.28 + this.airT / 1.3) : -f.cruiseSink;   // the climb builds up after take-off
+    const liftTarget = this.diving || hopping ? 0 : this.power ? f.flapClimb * Math.min(1, 0.28 + this.airT / 1.3) : -f.cruiseSink;   // the climb builds up after take-off
     this.lift += (liftTarget - this.lift) * k(5, dt);
     if (this.pos.y > W.ceiling) this.lift = Math.min(this.lift, 0);
 
