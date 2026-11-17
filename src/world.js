@@ -183,9 +183,10 @@ export function buildWorld(scene) {
   orb('rijeka', [2, 0.3, 25], 5, ['river'], 'wide', 0.4, { swim: { p: [2, 0, 25], r: 8 } });
 
   // streets (kaldrma) and squares
-  for (const [x0, x1, z0, z1, id] of [[17, 64, -2.6, 2.6, 'kaldrma'], [38, 43, -64, -2.6], [17, 21, 2.6, 62], [52, 67, -22, -8.5], [-64, -17, -2.6, 2.6], [-42, -37, 2.6, 33.2], [-42, -37, 40.8, 72],
+  for (const [x0, x1, z0, z1, id] of [[17, 64, -2.6, 2.6], [38, 43, -64, -2.6], [17, 21, 2.6, 62], [52, 67, -22, -8.5], [-64, -17, -2.6, 2.6], [-42, -37, 2.6, 33.2], [-42, -37, 40.8, 72, 'kaldrma'],
     [-45, -40, -64, -2.6], [-61, -45, 3, 19], [43, 52, -17, -13]]) slab(x0, x1, z0, z1, { ...STREET, orb: id }, BANK + 0.06, 0.12);
-  orb('kaldrma', [36, BANK, 0], 5, ['street'], 'wide', BANK + 1.2);
+  orb('kaldrma', [-39.5, BANK, 52], 8, ['street'], 'combo', BANK + 1.2);      // a quiet street on the west bank
+  tag('street').holdRest = 2.9;      // that street first; the rest of the cobbles start just after the cut to the wide shot
 
   // grass: the outskirts and a few gardens, each a slightly different green
   const grass = (x0, x1, z0, z1, id) => { const g = pick(GRASS); slab(x0, x1, z0, z1, { tag: 'grass', col: g[0], bleed: g[1], pat: PAT.grass, orb: id }, BANK + 0.03, 0.06); };
