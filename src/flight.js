@@ -62,6 +62,10 @@ export class Flight {
       y = Math.max(y, gy + 0.05 * sc + hb - (a * tp + b * tr));
     }
     this.pos.set(p.x, y, p.z); this.groundY = p.y;
+    if (lean > 0.05) {      // leaning into a steep slope: its breast must not sink into it
+      const C = 0.38 * sc, h = this.cast(this.pos, _d.copy(nrm).negate(), C);
+      if (h) this.pos.addScaledVector(nrm, C - h.distance);
+    }
     this.feet = this.footOffsets.map((o) => {
       _o.copy(this.pos).addScaledVector(l, o.x).addScaledVector(f, o.z);
       const h = this.cast(_o, DOWN, this.perchH + 0.9 * sc);
@@ -135,7 +139,10 @@ export class Flight {
     }
   }
 
+  // is there room above this spot for the bird's body? (not under an overhanging roof or a ledge)
+  roomAt(point) { _o.copy(point); _o.y += 0.03; return !this.cast(_o, UP, 0.42 * S.bird.scale + this.perchH); }
   land(hit) {
+    if (!this.roomAt(hit.point)) return false;          // no room: it does not land here
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
     this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
     // it stands exactly where it touched. A touch by a feeler off to the side is moved back onto its own line, so it
@@ -145,7 +152,13 @@ export class Flight {
       _o.copy(hit.point).addScaledVector(l, -hit.side); _o.y += 0.4;
       const h = this.cast(_o, DOWN, 0.8); if (h && this.landable(h)) hit = h;
     }
+    const from = this.pos.clone();
     this.landedOn = hit.object; this.settle(hit.point); this.events.push('land');
+    // whatever small difference is left between where its body was and where it stands is eased out in a tenth of a
+    // second, its feet already planted, so it never jumps
+    const off = from.sub(this.pos); this.landEase = off.length() > 0.005 && off.length() < 0.4 ? { off, base: this.pos.clone(), t: 0 } : null;
+    if (this.landEase) this.pos.add(off);
+    return true;
   }
 
   update(dt, inp) {
@@ -154,11 +167,16 @@ export class Flight {
     this.bumpCool -= dt;
 
     if (this.mode === 'perched') {
+      if (this.landEase && (inp.dive || inp.takeoff)) { this.pos.copy(this.landEase.base); this.landEase = null; }      // walking or taking off: from where it stands
+      if (this.landEase) {
+        const e = this.landEase; e.t += dt; const u = Math.min(1, e.t / 0.1), w = 1 - u * u * (3 - 2 * u);
+        this.pos.copy(e.base).addScaledVector(e.off, w); if (u >= 1) this.landEase = null;
+      }
       this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - (inp.tilt - (ptr ? ptr.y : 0)) * f.keyPitchRate * dt, -0.25, 1.1);
       this.pitch += (this.perchPitch - this.pitch) * k(10, dt); this.roll += (this.perchRoll - this.roll) * k(10, dt);
       if (!inp.takeoff && this.walkStep(dt, inp) === 'left') return;      // walked off a height, or into the water
       if (inp.takeoff) {
-        this.hop = null; this.walk = 0;
+        this.hop = null; this.walk = 0; if (this.landEase) { this.pos.copy(this.landEase.base); this.landEase = null; }
         this.mode = 'flying'; this.landedOn = null; this.yaw = this.camYaw; this.feet = null;
         this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.02;
         this.speed = f.takeoffSpeed; this.lift = f.takeoffLift; this.grace = 0.45; this.airT = 0; this.pos.y += 0.1; this.events.push('takeoff');
@@ -253,11 +271,17 @@ export class Flight {
     const step = this.vel.length() * dt, dir = this.vel.clone().normalize();
     let ahead = this.cast(this.pos, dir, step + R0);
     for (const sd of [-0.75, 0.75]) { const h = this.cast(_o.copy(this.pos).addScaledVector(left, sd * R0), dir, step + R0); if (h && !h.object.userData.water && (!ahead || h.distance < ahead.distance)) { ahead = h; h.side = sd * R0; } }
-    // a surface it can stand on, ahead: it lands only once the touch is within this frame's flight (and right at its
-    // breast), exactly where it touches; until then it simply keeps flying towards it
+    // its feet, swept along this frame's flight: where they touch a surface it can stand on, it lands, right there
+    if (this.grace <= 0 && step > 0.001) {
+      _o.copy(this.pos); _o.y -= this.perchH;
+      const fh = this.cast(_o, dir, step + 0.02);
+      if (fh && this.landable(fh) && this.land(fh)) return;
+    }
+    // a surface it can stand on, ahead of its breast: it lands only once the touch is within this frame's flight,
+    // exactly where it touches; until then it simply keeps flying towards it
     const reachable = ahead && !ahead.object.userData.water && this.landable(ahead) && this.grace <= 0;
-    if (reachable && ahead.distance <= step + R0 * 0.6) return this.land(ahead);
-    if (ahead && !ahead.object.userData.water && !reachable) {
+    if (reachable && ahead.distance <= step + R0 * 0.6 && this.land(ahead)) return;
+    if (ahead && !ahead.object.userData.water && (!reachable || !this.roomAt(ahead.point))) {      // (no room to stand there: it bumps off)
       const n = new THREE.Vector3(ahead.n.x, 0, ahead.n.z);
       if (n.lengthSq() < 0.01) n.copy(fwd).negate(); n.normalize();
       const fl = new THREE.Vector3(dir.x, 0, dir.z); fl.addScaledVector(n, -fl.dot(n));
@@ -284,7 +308,7 @@ export class Flight {
           this.clearL = this.clearR = 1; this.pos.y = this.waterY + 0.14 * S.bird.scale; this.events.push('splash'); return;
         }
       } else if (this.landable(below)) {
-        if (h <= 0.1 && this.grace <= 0) return this.land(below);
+        if (h <= 0.1 && this.grace <= 0 && this.land(below)) return;
         flare = clamp(1 - (h - 0.1) / 1.9, 0, 1) * clamp(Math.max((-this.vel.y - 0.4) / 1.6, (9 - this.speed) / 2), 0, 1);
       } else if (below.distance < R0) this.pos.addScaledVector(below.n, R0 - below.distance);
     }
