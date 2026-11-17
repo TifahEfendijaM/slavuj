@@ -94,6 +94,12 @@ function orbVisual() {
 }
 const orbs = world.orbs.map((def) => ({ def, id: def.id, w: WORDS[def.id], vis: orbVisual(), alive: false, done: save.done.includes(def.id), struck: new Set(), grow: 0 }));
 const byId = Object.fromEntries(orbs.map((o) => [o.id, o]));
+// people and animals face somewhere: their scenes are filmed from in front of them (the way they face, averaged for a group)
+for (const o of orbs) if (o.def.front === undefined) {
+  const who = [...world.people, ...world.animals].filter((p) => o.def.tags.includes(p.tag)); let fx = 0, fz = 0;
+  for (const p of who) { fx += Math.sin(p.ry || 0); fz += Math.cos(p.ry || 0); }
+  if (who.length && Math.hypot(fx, fz) > who.length * 0.5) o.def.front = Math.atan2(fx, fz);
+}
 for (const o of orbs) { o.vis.position.copy(o.def.at); if (o.done) for (const t of o.def.tags) paint(t, true); }
 const FIRST = orbs.find((o) => o.def.stage === 0);     // the one word to learn before the others appear
 const available = (o) => !o.done && (o.def.stage === 0 || (FIRST.done && (o.def.requires || []).every((r) => byId[r].done) &&
@@ -326,8 +332,11 @@ function covered(from, c, r) {
 function closeShot(o, bird, dur) {
   const sp = ownSphere(o), c = sp.center.clone(); let r = sp.radius;
   if (bird) { const d = bird.distanceTo(c) + 0.9; if (d > r) { const nr = (r + d) / 2; c.add(bird.clone().sub(c).setLength(nr - r)); r = nr; } }
-  const dist = fitDist(r * 1.1), base = sideOf(o.def.focus), hid = (p) => covered(p, c, r) || (bird && blocked(p, bird, 0.7));
-  for (const el of [0.3, 0.5, 0.75, 1.05]) for (const off of [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9, Math.PI, 2.5, -2.5]) {
+  // something with a front (a building's entrance, a face) is filmed from a front three-quarter view; the rest from the river side
+  const front = o.def.front, dist = fitDist(r * 1.1), base = front ?? sideOf(o.def.focus), hid = (p) => covered(p, c, r) || (bird && blocked(p, bird, 0.7));
+  const offs = front !== undefined ? [0.45, -0.45, 0, 0.9, -0.9, 1.35, -1.35, 1.9, -1.9, 2.5, -2.5, Math.PI] : [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9, Math.PI, 2.5, -2.5];
+  const els = [0.3, 0.5, 0.75, 1.05], tries = front !== undefined ? offs.flatMap((off) => els.map((el) => [el, off])) : els.flatMap((el) => offs.map((off) => [el, off]));      // a front: stay near it, rise if needed
+  for (const [el, off] of tries) {
     const a = base + off, from = c.clone().addScaledVector(dirOf(a, el), dist);
     if (hid(from)) continue;
     for (const turn of [0.4, -0.4, 0.15, -0.15]) {

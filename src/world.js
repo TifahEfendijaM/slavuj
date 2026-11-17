@@ -322,9 +322,9 @@ export function buildWorld(scene) {
   const chimP = local(hChim, -8.5 * 0.16, 5.2 + 3.2, 6.5 * 0.18);
   orb('dimnjak', [chimP.x, chimP.y, chimP.z], 3, ['chimney'], 'combo', chimP.y + 0.4);
   const winP = local(hWin, 6.5 * 0.12, 3.9, 3.7);
-  orb('prozor', [winP.x, winP.y, winP.z], 3.5, ['window'], 'combo', winP.y + 1, { near: { p: [winP.x, BANK + 1, winP.z - 2.5], r: 3.2 } });
+  orb('prozor', [winP.x, winP.y, winP.z], 3.5, ['window'], 'combo', winP.y + 1, { near: { p: [winP.x, BANK + 1, winP.z - 2.5], r: 3.2 }, front: Math.PI });
   const doorP = local(hDoor, 0, 1.1, 3.6);
-  orb('vrata', [doorP.x, doorP.y, doorP.z], 3.2, ['door'], 'combo', doorP.y + 1.3, { at: new Vector3(doorP.x + 0.9, BANK + 3, doorP.z), near: { p: [doorP.x + 1.5, BANK + 0.6, doorP.z], r: 3 } });
+  orb('vrata', [doorP.x, doorP.y, doorP.z], 3.2, ['door'], 'combo', doorP.y + 1.3, { at: new Vector3(doorP.x + 0.9, BANK + 3, doorP.z), near: { p: [doorP.x + 1.5, BANK + 0.6, doorP.z], r: 3 }, front: Math.PI / 2 });
   for (const t of ['house', 'chimney', 'window', 'door', 'tree', 'flower', 'lamp', 'bench', 'wall', 'tower', 'shop', 'carpet', 'cloud', 'roof']) tag(t).waveDelay = 2.6;
   orb('kuca', [47, BANK + 4, 19], 6.5, ['house'], 'combo', hKuca.top);
   { const c = hSmoke.chimTop;      // dim: the smoke rising from this chimney (the puffs are built in people.js)
@@ -349,8 +349,8 @@ export function buildWorld(scene) {
   }
   shop(28.5, -5.4, 0, { orb: 'ducan', carpets: 1 }); shop(34.2, -5.4, 0); shop(47, -5.4, 0); shop(26.5, 5.4, Math.PI); shop(32.2, 5.4, Math.PI, { awningOrb: 'cilim', carpets: 2 });
   shop(38, 5.4, Math.PI); shop(43.8, 5.4, Math.PI); shop(49.6, 5.4, Math.PI); shop(55.4, 5.4, Math.PI);
-  orb('ducan', [28.5, BANK + 2, -5.4], 4.5, ['shop'], 'combo', BANK + 4.3);
-  orb('cilim', [32.2, BANK + 1.7, 1.4], 3, ['carpet'], 'combo', BANK + 3.4, { requires: ['ducan'], near: { p: [32.2, BANK + 0.6, 0.6], r: 2.6 } });
+  orb('ducan', [28.5, BANK + 2, -5.4], 4.5, ['shop'], 'combo', BANK + 4.3, { front: 0 });
+  orb('cilim', [32.2, BANK + 1.7, 1.4], 3, ['carpet'], 'combo', BANK + 3.4, { requires: ['ducan'], near: { p: [32.2, BANK + 0.6, 0.6], r: 2.6 }, front: Math.PI });
 
   // ---------- the bridge towers, the clock tower ----------
   b.object(() => { // Halebija, west
@@ -412,7 +412,7 @@ export function buildWorld(scene) {
     for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; A(CYL, 24 + Math.cos(a) * 2.2, BANK + 1.6, -28 + Math.sin(a) * 2.2, { tag: 'fountain', col: '#7a5636', solid: false, edge: 60 }, 0, 0, 0, [0.09, 3.2, 0.09]); }
     A(new THREE.ConeGeometry(1, 1, 6), 24, BANK + 3.85, -28, { ...F, col: SLABS[3][0], bleed: SLABS[3][1] }, 0, 0, 0, [2.9, 1.3, 2.9]);
   });
-  orb('dzamija', [27, BANK + 6, -41], 10, ['mosque'], 'close', BANK + 14, { requires: ['munara'] });
+  orb('dzamija', [27, BANK + 6, -41], 10, ['mosque'], 'close', BANK + 14, { requires: ['munara'], front: 0 });
   orb('munara', [34, BANK + 14, -35.6], 10, ['minaret'], 'close', BANK + 27.2);
   orb('mujezin', [35.2, BANK + 18.4, -34.7], 2.2, ['muezzin'], 'close', BANK + 19.6, { requires: ['munara'], at: new Vector3(36.6, BANK + 20.6, -33.6) });
   orb('cesma', [24, BANK + 2, -28], 4, ['fountain'], 'close', BANK + 4.7);
@@ -576,7 +576,7 @@ export function buildWorld(scene) {
     box(1.55, 0.5, 0.08, 0, 8, fz + 0.14, { ...T, col: '#d2302c', bleed: '#a82420', ink: false }); box(0.5, 1.55, 0.08, 0, 8, fz + 0.15, { ...T, col: '#d2302c', bleed: '#a82420', ink: false });
   });
   b.pop();
-  orb('bolnica', [76.5, BANK + 5.5, -15], 9, ['hospital'], 'close', BANK + 10.8);
+  orb('bolnica', [76.5, BANK + 5.5, -15], 9, ['hospital'], 'close', BANK + 10.8, { front: -Math.PI / 2 });
   b.object(() => {       // bašta: beds of flowers and vegetables behind a low hedge, a path to the door
     const Gd = { tag: 'garden', orb: 'basta' }, N = { tag: 'garden', solid: false };
     slab(67.3, 72.5, -21, -9, { ...Gd, col: '#9cc06c', bleed: '#7fa855', pat: PAT.grass }, BANK + 0.09, 0.06);
@@ -610,6 +610,7 @@ export function buildWorld(scene) {
     box(2.6, 2.7, 0.14, 0, 1.35, fz + 0.03, { ...T, col: '#3f6f5a', bleed: '#2c5040', pat: PAT.planks, ps: 2.2, pool: 1 });
     for (const st of [0, 1]) box(4.2 - st * 0.8, 0.25, 1.6 - st * 0.6, 0, 0.125 + st * 0.25, fz + 0.8 - st * 0.3, { ...H, col: '#c4beb4', bleed: '#a29c94' });
     A(roofGeo(4.2, 1.6, 0.9, 1.6, true), 0, 4.05, fz + 0.7, { ...T, tag: 'roof', col: TILES[1][0], bleed: TILES[1][1], pat: PAT.roof, ps: 1.5 }, 0);
+    A(triGeo([-1.95, 0, 0], [1.95, 0, 0], [0, 0.84, 0]), 0, 4.05, fz + 1.45, { ...T, col: '#fbf7ec', bleed: '#d9d2c2' });      // the canopy's front gable, white like its columns
     for (const sx of [-1.9, 1.9]) A(CYL, sx, 2.05, fz + 1.35, { ...T, col: '#fbf7ec', bleed: '#d9d2c2', edge: 50 }, 0, 0, 0, [0.11, 4.1, 0.11]);
     box(5.4, 1.5, 0.14, 0, 5.75, fz + 0.1, { ...T, col: '#34495a', bleed: '#25333f' });
     sign('ABC', 5.3, fz + 0.2, 0.13, { ...T, col: '#f8ecc6', bleed: '#f2d98a', ink: false, hatch: 0 });
@@ -619,7 +620,7 @@ export function buildWorld(scene) {
   });
   b.pop();
   tag('school').hullWidth = 1.3;
-  orb('skola', [42, BANK + 4.5, 89.2], 10, ['school'], 'close', BANK + 10);
+  orb('skola', [42, BANK + 4.5, 89.2], 10, ['school'], 'close', BANK + 10, { front: Math.PI });
   const flag = { x: 35.6, y: BANK, z: 84.6, h: 7.2 };
   orb('zastava', [flag.x + 1.0, BANK + flag.h - 0.75, flag.z], 2.2, ['flag'], 'close', BANK + flag.h + 0.2, { near: { p: [flag.x + 0.8, BANK + 0.5, flag.z - 0.6], r: 2.2 }, at: new Vector3(flag.x + 1, BANK + flag.h + 1.6, flag.z) });
 
@@ -747,7 +748,7 @@ export function buildWorld(scene) {
     for (const sx of [-0.86, 0.86]) for (const sz of [-1.25, 1.3]) wheel({ tag: 'car' }, sx, 0.34, sz);
   });
   b.pop();
-  orb('auto', [84.5, BANK + 0.9, -30], 3.2, ['car'], 'close', BANK + 1.6);
+  orb('auto', [84.5, BANK + 0.9, -30], 3.2, ['car'], 'close', BANK + 1.6, { front: 0.4 });
   b.push(mat4(87.7, BANK + 0.14, 12.5, 0));
   b.object(() => {
     const Bs = { tag: 'bus', orb: 'autobus' }, N = { tag: 'bus', solid: false };
@@ -757,7 +758,7 @@ export function buildWorld(scene) {
     for (const sx of [-1.15, 1.15]) for (const sz of [-2.7, 2.8]) wheel({ tag: 'bus' }, sx, 0.45, sz, 0.45);
   });
   b.pop();
-  orb('autobus', [87.7, BANK + 1.7, 12.5], 5.2, ['bus'], 'close', BANK + 2.9);
+  orb('autobus', [87.7, BANK + 1.7, 12.5], 5.2, ['bus'], 'close', BANK + 2.9, { front: -Math.PI / 4 });
   b.object(() => {     // the shelter of the bus stop
     const St = { tag: 'stop', col: '#5d7b8a', bleed: '#456070', orb: 'stanica' };
     for (const dz of [-1.6, 1.6]) box(0.1, 2.3, 0.1, 81.9, BANK + 1.3, 12.5 + dz, { ...St, solid: false });
@@ -766,7 +767,7 @@ export function buildWorld(scene) {
     box(0.07, 2.6, 0.07, 82.7, BANK + 1.4, 15.4, { ...St, solid: false }); A(CYL12, 82.7, BANK + 2.8, 15.4, { ...St, col: '#3f6f9a', bleed: '#2f5578', solid: false, edge: 40 }, 0, 0, Math.PI / 2, [0.35, 0.06, 0.35]);
   });
   orb('cekati', [82.7, BANK + 1.2, 10.4], 2.4, ['wait'], 'close', BANK + 2.1, { near: { p: [82.3, BANK + 0.6, 9.2], r: 2.4 } });
-  orb('stanica', [82.3, BANK + 1.4, 12.5], 3, ['stop'], 'close', BANK + 2.5);
+  orb('stanica', [82.3, BANK + 1.4, 12.5], 3, ['stop'], 'close', BANK + 2.5, { front: Math.PI / 2 });
   orb('cesta', [86.5, BANK + 0.1, -44], 9, ['road'], 'close', BANK + 0.4, { at: new Vector3(86.5, BANK + 2.6, -44) });
   orb('semafor', [82.4, BANK + 3.4, -2], 1.8, ['light'], 'close', BANK + 4, { near: { p: [82.4, BANK + 4.19, -2], r: 1.2 }, at: new Vector3(81.2, BANK + 4.6, -2) });
 
