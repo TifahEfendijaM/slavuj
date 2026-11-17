@@ -287,33 +287,33 @@ export function buildWorld(scene) {
     return { ...o, top: BANK + h + rh, chimTop };
   }
 
-  const tut = house({ x: -30, z: 22, rot: 0.6, w: 8, d: 7, h: 5.5, rh: 3, kind: 'tile', wall: WALLS[0], roofC: TILES[0], roofOrb: 'krov', flowers: true });
+  const tut = house({ x: -30, z: 22, rot: 0.6, w: 8, d: 7, h: 5.5, rh: 3, roof: 'gable', kind: 'tile', wall: WALLS[0], roofC: TILES[0], roofOrb: 'krov', flowers: true });
   orbs.push({ id: 'krov', focus: new Vector3(-30, BANK + 6.5, 22), size: 6.5, tags: ['roof'], shot: 'combo', at: new Vector3(-30, tut.top + S.orb.hoverHeight, 22), stage: 0 });
   // west bank
   house({ x: -30, z: -9.5, w: 7, d: 6, h: 6, openWin: true });
   const hChim = house({ x: -53, z: -9.5, w: 8.5, d: 6.5, h: 5.2, bigChimney: true, chimneyOrb: 'dimnjak' });
-  const hSmoke = house({ x: -64.5, z: -10.5, w: 6, d: 6, h: 7, kind: 'tile' });
+  const hSmoke = house({ x: -64.5, z: -10.5, w: 6, d: 6, h: 7, roof: 'gable', kind: 'tile' });
   const hWin = house({ x: -25, z: 9.8, rot: Math.PI, w: 6.5, d: 6, h: 5.8, windowOrb: 'prozor', doorX: 2 });
   house({ x: -50.5, z: -24, rot: Math.PI / 2, w: 7, d: 6, h: 5.5 });
   const hSmoke2 = house({ x: -50.5, z: -39, rot: Math.PI / 2, w: 7.5, d: 6.5, h: 6.4, kind: 'tile' });
   house({ x: -34, z: -22, rot: -Math.PI / 2, w: 7, d: 6, h: 5 });
-  house({ x: -34, z: -37, rot: -Math.PI / 2, w: 7, d: 6.5, h: 6.6 });
+  house({ x: -34, z: -37, rot: -Math.PI / 2, w: 7, d: 6.5, h: 6.6, roof: 'gable' });
   const hTall = house({ x: -50.5, z: -54, rot: Math.PI / 2, w: 5.2, d: 5.2, h: 13, rh: 2.6, tagH: 'tallHouse', orb: 'visoka', kind: 'tile', wall: WALLS[3] });
   const hSmall = house({ x: -34.5, z: -52, rot: -Math.PI / 2, w: 4.2, d: 3.8, h: 2.9, rh: 1.5, tagH: 'smallHouse', orb: 'mala', stone: false, wall: WALLS[4], chimney: false });
   const hDoor = house({ x: -48, z: 26, rot: Math.PI / 2, w: 7, d: 6, h: 5.6, kind: 'tile', doorOrb: 'vrata', doorX: 0 });
   house({ x: -28, z: 52, rot: -0.5, w: 7, d: 6, h: 5.2, kind: 'tile' });
   house({ x: -50, z: 51, rot: Math.PI / 2, w: 7.5, d: 6, h: 6 });
-  const hSmoke4 = house({ x: -49, z: 65, rot: Math.PI / 2, w: 6.5, d: 6, h: 5, kind: 'tile' });
+  const hSmoke4 = house({ x: -49, z: 65, rot: Math.PI / 2, w: 6.5, d: 6, h: 5, roof: 'gable', kind: 'tile' });
   house({ x: -26, z: 67, rot: Math.PI, w: 7, d: 6, h: 5.5 });
   // east bank
   house({ x: 49, z: -27.5, rot: -Math.PI / 2, w: 7, d: 6, h: 5.6 });
   house({ x: 49, z: -41, rot: -Math.PI / 2, w: 7.5, d: 6.5, h: 6.2, kind: 'tile' });
-  house({ x: 49.5, z: -55, rot: -Math.PI / 2, w: 7, d: 6, h: 5 });
+  house({ x: 49.5, z: -55, rot: -Math.PI / 2, w: 7, d: 6, h: 5, roof: 'gable' });
   const hSmoke3 = house({ x: 63, z: -34, rot: 0.3, w: 7, d: 6, h: 6, kind: 'tile' });
   house({ x: 66, z: -52, rot: -0.4, w: 6.5, d: 6, h: 5.4 });
   house({ x: 28.5, z: 17, rot: -Math.PI / 2, w: 7, d: 6, h: 5.8 });
   house({ x: 28.5, z: 29.5, rot: -Math.PI / 2, w: 7.5, d: 6, h: 5.2, kind: 'tile' });
-  house({ x: 29, z: 41, rot: -Math.PI / 2, w: 6.5, d: 6, h: 6.2 });
+  house({ x: 29, z: 41, rot: -Math.PI / 2, w: 6.5, d: 6, h: 6.2, roof: 'gable' });
   const hKuca = house({ x: 47, z: 19, rot: 0, w: 7, d: 6, h: 5.5, orb: 'kuca' });
   house({ x: 60, z: 22, rot: 0.2, w: 7, d: 6.5, h: 6, kind: 'tile' });
   house({ x: 70, z: 6, rot: -Math.PI / 2, w: 7, d: 6, h: 5.4 });
