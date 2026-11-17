@@ -148,7 +148,7 @@ export function buildWorld(scene) {
     if (Math.abs(z) < 5 || (side < 0 && z > 2 && z < 44) || (side > 0 && z > -30 && z < -17)) continue;
     A(DODE, side * (cliffX(y) - 0.2 - R2() * 0.8), y, z, { tag: 'rock', col: st[0], bleed: st[1] }, R2() * 6, 0, 0, [sc * 1.2, sc * 0.85, sc * 1.4]);
   }
-  for (const [x, z, sc, c] of [[-9.3, 7, 0.5, 1], [-8.9, 18.5, 0.45, 3], [-5.6, 19.6, 0.35, 2], [-9.6, 14.5, 0.4, 7], [5, -62, 1.1, 3], [-4, -100, 1.2, 1], [3, 104, 1.3, 2], [-6, 118, 1, 4], [7, 12, 0.8, 7]])
+  for (const [x, z, sc, c] of [[-9.3, 7, 0.5, 1], [-8.9, 18.5, 0.45, 3], [-9.0, 11.2, 0.35, 2], [-9.6, 14.5, 0.4, 7], [5, -62, 1.1, 3], [-4, -100, 1.2, 1], [3, 104, 1.3, 2], [-6, 118, 1, 4], [7, 12, 0.8, 7]])
     A(DODE, x, x < -5 && z > 5 && z < 21 ? 0.85 : 0.2, z, { tag: 'rock', col: BOULDERS[c][0], bleed: BOULDERS[c][1] }, R2() * 6, 0, 0, [1.6 * sc, 0.8 * sc, 1.3 * sc]);
   // long grass growing out of the cliff faces (placed exactly on the rock)
   const cray = new THREE.Raycaster(), YEL = ['#b5bd62', '#9cb866', '#7fa64f', '#a8b45a', '#6f9a48'];
@@ -182,9 +182,9 @@ export function buildWorld(scene) {
   orb('rijeka', [2, 0.3, 25], 5, ['river'], 'wide', 0.4, { swim: { p: [2, 0, 25], r: 8 } });
 
   // streets (kaldrma) and squares
-  for (const [x0, x1, z0, z1, id] of [[17, 64, -2.6, 2.6, 'ulica'], [38, 43, -64, -2.6], [17, 21, 2.6, 62], [52, 67, -22, -8.5], [-64, -17, -2.6, 2.6], [-42, -37, 2.6, 33.2], [-42, -37, 40.8, 72],
+  for (const [x0, x1, z0, z1, id] of [[17, 64, -2.6, 2.6, 'kaldrma'], [38, 43, -64, -2.6], [17, 21, 2.6, 62], [52, 67, -22, -8.5], [-64, -17, -2.6, 2.6], [-42, -37, 2.6, 33.2], [-42, -37, 40.8, 72],
     [-45, -40, -64, -2.6], [-61, -45, 3, 19], [43, 52, -17, -13]]) slab(x0, x1, z0, z1, { ...STREET, orb: id }, BANK + 0.06, 0.12);
-  orb('ulica', [36, BANK, 0], 5, ['street'], 'wide', BANK + 1.2);
+  orb('kaldrma', [36, BANK, 0], 5, ['street'], 'wide', BANK + 1.2);
 
   // grass: the outskirts and a few gardens, each a slightly different green
   const grass = (x0, x1, z0, z1, id) => { const g = pick(GRASS); slab(x0, x1, z0, z1, { tag: 'grass', col: g[0], bleed: g[1], pat: PAT.grass, orb: id }, BANK + 0.03, 0.06); };
@@ -247,6 +247,7 @@ export function buildWorld(scene) {
   // ---------- houses ----------
   function house(o) {
     const { x, z, rot = 0, w, d, h, rh = 2.3, roof = 'hip', kind = 'slab', tagH = 'house' } = o;
+    let chimTop = null;
     const wl = o.wall || pick(WALLS), st = pick(STONES), rc = o.roofC || (kind === 'slab' ? pick(SLABS) : pick(TILES)), trim = pick(TRIMS), dc = pick(DOORS);
     b.push(mat4(x, BANK, z, rot));
     b.object(() => {
@@ -254,12 +255,13 @@ export function buildWorld(scene) {
       if (sh) box(w, sh, d, 0, sh / 2, 0, { ...H, col: st[0], bleed: st[1], pat: PAT.blocks, ps: 0.55, pool: 1 });
       box(w + j, h - sh, d + j, 0, sh + (h - sh) / 2, 0, { ...H, col: wl[0], bleed: wl[1], pool: 1 });
       const fz = d / 2 + j / 2, fx = w / 2 + j / 2, ov = 1.3, long = Math.max(w, d), short = Math.min(w, d), ry = d >= w ? 0 : Math.PI / 2;
-      const hip = roof === 'hip', RO = { ...H, col: rc[0], bleed: rc[1], pat: PAT.roof, ps: kind === 'slab' ? 0.8 : 1.5 };
+      const hip = roof === 'hip', RO = { tag: 'roof', orb: o.roofOrb ?? o.orb, col: rc[0], bleed: rc[1], pat: PAT.roof, ps: kind === 'slab' ? 0.8 : 1.5 };
       A(roofGeo(short + ov, long + ov, rh, hip ? Math.max(0.01, long - short + 0.8) : long + ov, !hip), 0, h, 0, RO, ry);
       if (!hip) A(roofGeo(short + j, long + j, rh * 0.92, long + j), 0, h, 0, { ...H, col: wl[0], bleed: wl[1] }, ry);
       if (o.chimney !== false) {
         const cw = o.bigChimney ? 1.5 : 0.85, cx = ry ? -long * 0.16 : short * 0.2, cz = ry ? short * 0.18 : -long * 0.16, cy = h + rh * 0.5, CH = { tag: 'chimney', orb: o.chimneyOrb };
         const cc = pick([['#c9bda2', '#b0a184'], ['#c98a66', '#a8674a'], ['#d6d0c2', '#b9b2a2']]);
+        chimTop = new Vector3(cx, cy + 2.01, cz).applyMatrix4(mat4(x, BANK, z, rot));
         box(cw, 2.6, cw, cx, cy + 0.5, cz, { ...CH, col: cc[0], bleed: cc[1], pat: PAT.blocks, ps: 1.4, pool: 1 });
         box(cw + 0.4, 0.22, cw + 0.4, cx, cy + 1.9, cz, { ...CH, col: cc[1], bleed: cc[1] });
       }
@@ -282,7 +284,7 @@ export function buildWorld(scene) {
       win(fx, uy, 0, Math.PI / 2, false, false); win(-fx, uy, 0, -Math.PI / 2, false, false); win(0, uy, -fz, Math.PI, false, false);
     });
     b.pop();
-    return { ...o, top: BANK + h + rh };
+    return { ...o, top: BANK + h + rh, chimTop };
   }
 
   const tut = house({ x: -30, z: 22, rot: 0.6, w: 8, d: 7, h: 5.5, rh: 3, roof: 'gable', kind: 'tile', wall: WALLS[0], roofC: TILES[0], orb: 'kuca', flowers: true });
@@ -290,7 +292,7 @@ export function buildWorld(scene) {
   // west bank
   house({ x: -30, z: -9.5, w: 7, d: 6, h: 6, openWin: true });
   const hChim = house({ x: -53, z: -9.5, w: 8.5, d: 6.5, h: 5.2, bigChimney: true, chimneyOrb: 'dimnjak' });
-  house({ x: -64.5, z: -10.5, w: 6, d: 6, h: 7, roof: 'gable', kind: 'tile' });
+  const hSmoke = house({ x: -64.5, z: -10.5, w: 6, d: 6, h: 7, roof: 'gable', kind: 'tile' });
   const hWin = house({ x: -25, z: 9.8, rot: Math.PI, w: 6.5, d: 6, h: 5.8, windowOrb: 'prozor', doorX: 2 });
   house({ x: -50.5, z: -24, rot: Math.PI / 2, w: 7, d: 6, h: 5.5 });
   house({ x: -50.5, z: -39, rot: Math.PI / 2, w: 7.5, d: 6.5, h: 6.4, kind: 'tile' });
@@ -312,7 +314,7 @@ export function buildWorld(scene) {
   house({ x: 28.5, z: 17, rot: -Math.PI / 2, w: 7, d: 6, h: 5.8 });
   house({ x: 28.5, z: 29.5, rot: -Math.PI / 2, w: 7.5, d: 6, h: 5.2, kind: 'tile' });
   house({ x: 29, z: 41, rot: -Math.PI / 2, w: 6.5, d: 6, h: 6.2, roof: 'gable' });
-  house({ x: 47, z: 19, rot: 0, w: 7, d: 6, h: 5.5 });
+  const hRoof = house({ x: 47, z: 19, rot: 0, w: 7, d: 6, h: 5.5, roofOrb: 'krov' });
   house({ x: 60, z: 22, rot: 0.2, w: 7, d: 6.5, h: 6, kind: 'tile' });
   house({ x: 70, z: 6, rot: -Math.PI / 2, w: 7, d: 6, h: 5.4 });
   orb('visoka', [-50.5, BANK + 7, -54], 9, ['tallHouse'], 'close', hTall.top);
@@ -323,7 +325,10 @@ export function buildWorld(scene) {
   orb('prozor', [winP.x, winP.y, winP.z], 3.5, ['window'], 'combo', winP.y + 1, { near: { p: [winP.x, BANK + 1, winP.z - 2.5], r: 3.2 } });
   const doorP = local(hDoor, 0, 1.1, 3.6);
   orb('vrata', [doorP.x, doorP.y, doorP.z], 3.2, ['door'], 'combo', doorP.y + 1.3, { at: new Vector3(doorP.x + 0.9, BANK + 3, doorP.z), near: { p: [doorP.x + 1.5, BANK + 0.6, doorP.z], r: 3 } });
-  for (const t of ['house', 'chimney', 'window', 'door', 'tree', 'flower', 'lamp', 'bench', 'wall', 'tower', 'shop', 'carpet', 'cloud']) tag(t).waveDelay = 2.6;
+  for (const t of ['house', 'chimney', 'window', 'door', 'tree', 'flower', 'lamp', 'bench', 'wall', 'tower', 'shop', 'carpet', 'cloud', 'roof']) tag(t).waveDelay = 2.6;
+  orb('krov', [47, BANK + 6.6, 19], 6, ['roof'], 'combo', hRoof.top);
+  { const c = hSmoke.chimTop;      // dim: the smoke rising from this chimney (the puffs are built in people.js)
+    orb('dim', [c.x + 0.6, c.y + 2, c.z], 3.2, ['smoke'], 'close', c.y + 1, { near: { p: [c.x, c.y + 0.2, c.z], r: 1.2 }, at: new Vector3(c.x - 1.7, c.y + 1.4, c.z) }); }
 
   // ---------- Kujundžiluk: the bazaar shops with stone-slab roofs ----------
   function shop(x, z, rot, o = {}) {
@@ -508,12 +513,13 @@ export function buildWorld(scene) {
     { kind: 'fisher', tag: 'fisher', x: -5.3, y: 0.7, z: 19.6, ry: Math.PI / 2 },
     { kind: 'drink', tag: 'drink', x: -58.42, y: BANK + 0.245, z: 8.2, ry: Math.PI / 2 },
     { kind: 'argue', tag: 'argue', x: -58.42, y: BANK + 0.245, z: 12.2, ry: Math.PI / 2 }, { kind: 'argue', tag: 'argue', x: -56.78, y: BANK + 0.245, z: 12.2, ry: -Math.PI / 2, woman: true },
-    { kind: 'wait', tag: 'wait', x: 82.7, y: BANK + 0.2, z: 10.4, ry: Math.PI / 2, woman: true },
+    { kind: 'wait', tag: 'wait', x: 82.7, y: BANK + 0.15, z: 10.4, ry: Math.PI / 2, woman: true },
     // children: football on the pitch, the slide in the playground
     { kind: 'walk', tag: 'kids', x: 26.5, y: street, z: 73.6, to: [35, 78.4], speed: 2.7, sc: kid, ball: 0 }, { kind: 'walk', tag: 'kids', x: 36, y: street, z: 73.8, to: [28, 79.4], speed: 2.4, sc: kid, woman: true, ball: 1 },
     { kind: 'keeper', tag: 'kids', x: 23.5, y: street, z: 76, ry: Math.PI / 2, sc: kid },
     { kind: 'slide', tag: 'kids', x: SL.x - 0.45, y: SL.y + 1.96, z: SL.z, ry: -Math.PI / 2, sc: kid }, { kind: 'cheer', tag: 'kids', x: SL.x + 2.7, y: SL.y, z: SL.z - 0.9, ry: -1.9, sc: kid, woman: true },
     { kind: 'swing', tag: 'kids', x: 53.2, y: BANK + 2.5, z: 76.4, ry: 0, sc: kid, woman: true },
+    { kind: 'post', tag: 'post', x: -24.46, y: BANK + 0.3, z: 63.35, ry: 0, top: '#2f5578' },
   ];
   orb('pas', [-39, BANK + 0.5, 7.8], 1.6, ['dog'], 'close', BANK + 0.8, { near: { p: [-38.2, BANK + 0.6, 8.2], r: 2.2 }, at: new Vector3(-38.9, BANK + 1.7, 7.9) });
   orb('trcati', [-57, BANK + 1, 0.5], 2.6, ['run'], 'close', BANK + 2.1, { near: { p: [-57, BANK + 0.6, 1.7], r: 2.6 } });
@@ -528,6 +534,7 @@ export function buildWorld(scene) {
   orb('konj', [73, BANK + 1.2, 37], 3, ['horse'], 'close', BANK + 2.2, { near: { p: [73, BANK + 0.5, 39.2], r: 3 } });
   orb('ovca', [-58, BANK + 0.6, -76], 2.2, ['sheep'], 'close', BANK + 1.1, { near: { p: [-57, BANK + 0.5, -74.6], r: 2.6 } });
   orb('tri', [-57.8, BANK + 0.6, -78.6], 4, ['sheep2'], 'close', BANK + 1.1, { requires: ['ovca'], near: { p: [-57, BANK + 0.5, -74.6], r: 5 }, at: new Vector3(-58.4, BANK + 3.2, -79.4) });
+  orb('postar', [-24.46, BANK + 1.3, 63.35], 2.4, ['post'], 'close', BANK + 2.6, { near: { p: [-23, BANK + 0.6, 62.6], r: 2.2 } });
   orb('slikati', [-7.3, 1.7, 10.4], 3.6, ['photo'], 'close', 2.8, { near: { p: [-6, 1.2, 10.6], r: 2.6 } });
   orb('ljudi', [-7.5, deckY(-7.5) + 1.2, 0.7], 3, ['people'], 'combo', deckY(-7.5) + 2.3, { near: { p: [-7.5, deckY(-7.5) + 0.6, -0.4], r: 3.2 } });
   orb('asikovanje', [-28.25, BANK + 3, -5.2], 4.2, ['lovers'], 'close', BANK + 6.2, { near: { p: [-28.25, BANK + 0.6, -3], r: 3 }, at: new Vector3(-28.25, BANK + 6.4, -4.6) });
@@ -723,9 +730,10 @@ export function buildWorld(scene) {
   orb('svadjanje', [-57.6, G0 + 0.8, 12.2], 2.2, ['argue'], 'close', G0 + 1.7, { near: { p: [-57.6, BANK + 0.6, 13.8], r: 2.2 } });
 
   // ---------- the road along the eastern edge: a parked car, a bus at its stop ----------
-  slab(83, 90, -66, 46, { tag: 'street', col: '#8d8e92', bleed: '#74767b' }, BANK + 0.08, 0.06);
-  for (let z = -64; z < 44; z += 6) slab(86.42, 86.58, z, z + 2.6, { tag: 'street', col: '#f2efe6', solid: false, ink: false, hatch: 0 }, BANK + 0.116, 0.012);
-  slab(81.4, 83, 6, 19, { tag: 'street', col: '#d3d1ca', bleed: '#b3b9bb', pat: PAT.blocks, ps: 0.5 }, BANK + 0.1, 0.1);
+  tag('road').mode = 'one'; tag('road').radius = 130;
+  slab(83, 90, -66, 46, { tag: 'road', col: '#8d8e92', bleed: '#74767b', orb: 'cesta' }, BANK + 0.08, 0.06);
+  for (let z = -64; z < 44; z += 6) slab(86.42, 86.58, z, z + 2.6, { tag: 'road', col: '#f2efe6', solid: false, ink: false, hatch: 0 }, BANK + 0.116, 0.012);
+  slab(81.4, 83, 6, 19, { tag: 'stop', col: '#d3d1ca', bleed: '#b3b9bb', pat: PAT.blocks, ps: 0.5 }, BANK + 0.1, 0.1);
   const wheel = (o, x, y, z, r = 0.34) => A(CYL12, x, y, z, { ...o, col: '#3a3632', bleed: '#22201e', solid: false, edge: 40 }, 0, 0, Math.PI / 2, [r, 0.2, r]);
   b.push(mat4(84.5, BANK + 0.14, -30, 0));
   b.object(() => {
@@ -749,13 +757,57 @@ export function buildWorld(scene) {
   b.pop();
   orb('autobus', [87.7, BANK + 1.7, 12.5], 5.2, ['bus'], 'close', BANK + 2.9);
   b.object(() => {     // the shelter of the bus stop
-    const St = { tag: 'street', col: '#5d7b8a', bleed: '#456070' };
+    const St = { tag: 'stop', col: '#5d7b8a', bleed: '#456070', orb: 'stanica' };
     for (const dz of [-1.6, 1.6]) box(0.1, 2.3, 0.1, 81.9, BANK + 1.3, 12.5 + dz, { ...St, solid: false });
     box(1.5, 0.1, 3.8, 82.3, BANK + 2.45, 12.5, St); box(0.06, 1.5, 3.3, 81.85, BANK + 1.5, 12.5, { ...St, col: '#a9d0d6', bleed: '#7fb0c9', wall: true });
     box(0.4, 0.07, 2.2, 82.15, BANK + 0.65, 12.5, { ...St, col: '#8a5a34', bleed: '#5f4028', solid: false });
     box(0.07, 2.6, 0.07, 82.7, BANK + 1.4, 15.4, { ...St, solid: false }); A(CYL12, 82.7, BANK + 2.8, 15.4, { ...St, col: '#3f6f9a', bleed: '#2f5578', solid: false, edge: 40 }, 0, 0, Math.PI / 2, [0.35, 0.06, 0.35]);
   });
   orb('cekati', [82.7, BANK + 1.2, 10.4], 2.4, ['wait'], 'close', BANK + 2.1, { near: { p: [82.3, BANK + 0.6, 9.2], r: 2.4 } });
+  orb('stanica', [82.3, BANK + 1.4, 12.5], 3, ['stop'], 'close', BANK + 2.5);
+  orb('cesta', [86.5, BANK + 0.1, -44], 9, ['road'], 'close', BANK + 0.4, { at: new Vector3(86.5, BANK + 2.6, -44) });
+  orb('semafor', [82.4, BANK + 3.4, -2], 1.8, ['light'], 'close', BANK + 4, { near: { p: [82.4, BANK + 4.19, -2], r: 1.2 }, at: new Vector3(81.2, BANK + 4.6, -2) });
+
+  // ---------- a well in the garden west of the square ----------
+  b.object(() => {
+    const wx = -67, wz = -24, W = { tag: 'well', orb: 'bunar' };
+    A(new THREE.CylinderGeometry(1, 1, 1, 14, 1, true), wx, BANK + 0.45, wz, { ...W, col: '#bcafa2', bleed: '#978a7c', pat: PAT.blocks, ps: 0.6, edge: 40 }, 0, 0, 0, [0.95, 0.9, 0.95]);
+    A(new THREE.TorusGeometry(0.95, 0.09, 6, 18).rotateX(Math.PI / 2), wx, BANK + 0.92, wz, { tag: 'well', col: '#a89a8c', bleed: '#857868', solid: false, edge: 60 });
+    A(CYL12, wx, BANK + 0.6, wz, { ...W, col: '#2f5a66', bleed: '#22434d', wall: true, ink: false, hatch: 0 }, 0, 0, 0, [0.9, 0.02, 0.9]);   // dark water far down
+    for (const sx of [-0.88, 0.88]) box(0.14, 2.1, 0.14, wx + sx, BANK + 1.05, wz, { ...W, col: '#7a5636', bleed: '#5f4028' });
+    A(roofGeo(1.5, 2.3, 0.6, 2.3, true), wx, BANK + 2.1, wz, { ...W, col: TILES[3][0], bleed: TILES[3][1], pat: PAT.roof, ps: 1.5 }, Math.PI / 2);
+    A(CYL, wx, BANK + 1.55, wz, { ...W, col: '#6a4a30', solid: false, edge: 50 }, 0, 0, Math.PI / 2, [0.05, 1.76, 0.05]);
+    box(0.05, 0.3, 0.05, wx + 1.0, BANK + 1.42, wz, { tag: 'well', col: '#6a4a30', solid: false }); box(0.05, 0.05, 0.2, wx + 1.0, BANK + 1.28, wz + 0.08, { tag: 'well', col: '#6a4a30', solid: false });
+    A(CYL, wx, BANK + 1.36, wz, { tag: 'well', col: '#c9b48a', solid: false, ink: false }, 0, 0, 0, [0.012, 0.38, 0.012]);
+    A(new THREE.CylinderGeometry(1, 0.8, 1, 10), wx, BANK + 1.07, wz, { tag: 'well', col: '#8a6a4a', bleed: '#6a4a30', solid: false, edge: 40 }, 0, 0, 0, [0.14, 0.2, 0.14]);
+  });
+  orb('bunar', [-67, BANK + 1, -24], 2.6, ['well'], 'close', BANK + 2.7);
+
+  // ---------- laundry on a line between two houses ----------
+  b.object(() => {
+    const lx = -49.4, Y = BANK + 3.6, z0 = -27.65, z1 = -35.1, zm = (z0 + z1) / 2, half = (z0 - z1) / 2, sag = 0.25;
+    const yAt = (z) => Y - sag * (1 - ((z - zm) / half) ** 2);
+    for (const [za, zb] of [[z0, zm], [zm, z1]]) {
+      const ya = yAt(za), yb = yAt(zb), L = Math.hypot(zb - za, yb - ya);
+      box(0.05, 0.05, L, lx, (ya + yb) / 2, (za + zb) / 2, { tag: 'laundry', col: '#e6dfd0', bleed: '#cbc2ad', orb: 'ves', ink: false }, 0, Math.atan2(ya - yb, za - zb));
+    }
+    for (const z of [z0 - 0.04, z1 + 0.04]) box(0.1, 0.1, 0.12, lx, Y, z, { tag: 'laundry', col: '#4a4a48', solid: false });
+    const CL = ['#d2302c', '#f2c230', '#3f6f9a', '#f6f1e6', '#4f8068', '#e0567f', '#8a5a8a', '#f08fb0'];
+    const items = [['shirt', 0.62], ['sock', 0.14], ['sock', 0.14], ['towel', 0.6], ['trousers', 0.5], ['shirt', 0.58], ['dress', 0.5], ['towel', 0.7], ['sock', 0.14]];
+    let z = z0 - 0.45, n = 0;
+    for (const [kind, wd] of items) {
+      const zc = z - wd / 2, top = yAt(zc) - 0.02, col = CL[n++ % CL.length], C = { tag: 'laundry', col, bleed: col, solid: false, hatch: 0.6, sway: (v) => 0.08 * Math.max(0, Y - v.y) };
+      if (kind === 'shirt') { box(0.03, 0.62, wd, lx, top - 0.31, zc, C); for (const s of [-1, 1]) box(0.03, 0.26, 0.2, lx, top - 0.13, zc + s * (wd / 2 + 0.08), C, 0, s * 0.5); }
+      else if (kind === 'sock') box(0.03, 0.3, wd, lx, top - 0.15, zc, C);
+      else if (kind === 'towel') box(0.03, 0.85, wd, lx, top - 0.42, zc, { ...C, pat: PAT.kilim, ps: 4 });
+      else if (kind === 'trousers') for (const s of [-1, 1]) box(0.03, 0.8, wd * 0.42, lx, top - 0.4, zc + s * wd * 0.25, { ...C, col: '#3d5066', bleed: '#2d3d50' });
+      else { box(0.03, 0.2, wd * 0.7, lx, top - 0.1, zc, C); A(triGeo([0, 0, -wd * 0.35], [0, 0, wd * 0.35], [0, -0.75, 0]).rotateY(0), lx, top - 0.2, zc, C); for (const s of [-1, 1]) A(triGeo([0, 0, -wd * 0.35], [0, -0.75, -wd * 0.55], [0, -0.75, 0]), lx, top - 0.2, zc, C, s > 0 ? 0 : Math.PI); }
+      box(0.06, 0.08, 0.03, lx, top + 0.02, zc - wd * 0.3, { tag: 'laundry', col: '#b9834a', solid: false, ink: false }); box(0.06, 0.08, 0.03, lx, top + 0.02, zc + wd * 0.3, { tag: 'laundry', col: '#b9834a', solid: false, ink: false });
+      z -= wd + 0.32;
+    }
+    b.block(BOX, mat4(lx, Y - 0.6, zm, 0, 0, 0, [0.12, 0.9, Math.abs(z1 - z0) - 0.3]), { wall: true });     // the clothes are an obstacle; the bird perches on the line above them
+  });
+  orb('ves', [-49.4, BANK + 3.1, -31.4], 4.2, ['laundry'], 'close', BANK + 3.6);
 
   // ---------- the rock the bird starts on ----------
   A(DODE, -19.5, BANK + 0.45, 47, { tag: 'rock', col: BOULDERS[1][0], bleed: BOULDERS[1][1] }, 0.4, 0, 0, [1.4, 0.8, 1.2]);
@@ -765,7 +817,7 @@ export function buildWorld(scene) {
   tag('sky').source = sunPos.clone(); tag('sun').source = sunPos.clone();
   b.finish(scene);
 
-  return { slide: SL, clouds, colliders: b.colliders, orbs, start: new Vector3(-19.5, 0, 47), diverPos, diverBlock, people, cat: { x: 33.5, y: BANK + 1.1, z: 12.45, x0: 31, x1: 36.6 }, catBlock,
+  return { smoke: hSmoke.chimTop.clone(), light: { x: 82.4, y: BANK + 0.12, z: -2 }, slide: SL, clouds, colliders: b.colliders, orbs, start: new Vector3(-19.5, 0, 47), diverPos, diverBlock, people, cat: { x: 33.5, y: BANK + 1.1, z: 12.45, x0: 31, x1: 36.6 }, catBlock,
     animals: [{ kind: 'horse', tag: 'horse', x: 73, y: BANK + 0.06, z: 37, ry: -1.2 }, { kind: 'sheep', tag: 'sheep', x: -58, y: BANK + 0.06, z: -76, ry: 0.6 }, { kind: 'sheep', tag: 'sheep2', x: -56.2, y: BANK + 0.06, z: -79.2, ry: 2.4 }, { kind: 'sheep', tag: 'sheep2', x: -60.2, y: BANK + 0.06, z: -80.4, ry: -1.4 }],
     pigeons: { x: 55.5, y: BANK + 0.12, z: -12.6, fx: 51.6, fz: -14, fh: 9.5 }, fish: { x: 2.8, y: 0, z: 14 }, sunPos, fleur: new Vector3(0, 66, 8) };
 }

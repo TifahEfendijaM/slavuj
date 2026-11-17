@@ -5,6 +5,7 @@ import { paintGeo, washMat, addHull } from './paper.js';
 
 const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const lerp = (a, b, t) => a + (b - a) * t;
+const kk = (rate, dt) => 1 - Math.exp(-rate * dt);
 
 export function createDiver(pos) {
   const C = S.colors, SC = 1.25, mat = washMat('diver'), seed = [pos.x, pos.y + 1.4, pos.z];
@@ -42,7 +43,7 @@ export function createDiver(pos) {
     return { hip, knee };
   });
 
-  const d = { root, state: 'stand', t: 0, onSplash: null, splashPos: new THREE.Vector3() };
+  const d = { root, state: 'stand', t: 0, look: 0, onSplash: null, splashPos: new THREE.Vector3() };
   // arms: 0 = hanging, 1 = spread like a swallow, 2 = stretched above the head
   function pose(crouch, armMode, lean) {
     for (const { hip, knee } of legs) { hip.rotation.x = -0.75 * crouch; knee.rotation.x = 1.4 * crouch; }
@@ -89,10 +90,13 @@ export function createDiver(pos) {
       pose(0, 0.25, 0);
       arms[0].sh.rotation.z = -lerp(0.6, Math.PI - 0.35, wave) + Math.sin(time * 5) * 0.25 * wave;
       arms[1].sh.rotation.z = 0.9 + Math.sin(time * 2.2) * 0.15;
-      head.rotation.y = d.state === 'rise' && d.t < 1.9 ? Math.sin(d.t * 16) * 0.35 * (1 - wave) : 0;
+      // once he has shaken the water off he slowly lifts his head toward the spectators on the bridge
+      d.look += ((d.state === 'swim' || d.t > 2.1 ? 1 : 0) - d.look) * kk(0.9, dt);
+      head.rotation.y = (d.state === 'rise' && d.t < 1.9 ? Math.sin(d.t * 16) * 0.35 * (1 - wave) : 0) + 0.55 * d.look + Math.sin(time * 0.5) * 0.06 * d.look;
+      head.rotation.x = -0.5 * d.look; root.rotation.y = Math.PI + 0.2 * d.look;
     }
   };
   // already in the water (a later visit, after the finale has been seen)
-  d.swimAt = (p) => { d.splashPos.copy(p); d.state = 'swim'; root.visible = true; root.rotation.set(0, Math.PI, 0); };
+  d.swimAt = (p) => { d.splashPos.copy(p); d.state = 'swim'; d.look = 1; root.visible = true; root.rotation.set(0, Math.PI, 0); };
   return d;
 }

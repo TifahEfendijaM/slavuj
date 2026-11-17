@@ -90,6 +90,19 @@ export function setLife(o) { if ('wind' in o) wind = o.wind; if ('water' in o) w
 // ---------- the bird ----------
 export function flap(strength, scale = 1) { if (ctx) noise(now(), 0.12, { f0: 1300, f1: 450, q: 0.7, vol: (0.04 + 0.05 * strength) * S.audio.flap * scale, attack: 0.03 }); }
 export function flutter() { if (!ctx) return; const t = now(); for (let i = 0; i < 9; i++) noise(t + i * 0.05 + Math.random() * 0.03, 0.07, { f0: 2100 + Math.random() * 600, f1: 800, q: 0.8, vol: 0.07 }); }
+// a sheep bleating, as loud as it is near (g 0..1)
+export function baa(g = 1) {
+  if (!ctx || g <= 0) return;
+  const t = now(), f0 = 270 + Math.random() * 90, dur = 0.7 + Math.random() * 0.35;
+  const o = ctx.createOscillator(); o.type = 'sawtooth';
+  o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.07, t + 0.12); o.frequency.linearRampToValueAtTime(f0 * 0.9, t + dur);
+  const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 7 + Math.random() * 2; lg.gain.value = f0 * 0.07; l.connect(lg).connect(o.frequency);
+  const out = ctx.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.11 * g, t + 0.05); out.gain.setValueAtTime(0.1 * g, t + dur - 0.2); out.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  for (const [f, q, v] of [[900, 1.4, 1], [2300, 3, 0.45]]) { const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q; const gv = ctx.createGain(); gv.gain.value = v; o.connect(bp).connect(gv).connect(out); }
+  out.connect(amb); o.start(t); l.start(t); o.stop(t + dur + 0.05); l.stop(t + dur + 0.05);
+}
+// a knuckle on a wooden door
+export function knock(g = 1) { if (!ctx || g <= 0) return; const t = now(); tone(t, [[0, 190], [0.07, 120]], 0.2 * g, { decay: true, attack: 0.002, bus: amb }); noise(t, 0.05, { f0: 1100, q: 1.3, vol: 0.12 * g, attack: 0.002, bus: amb }); }
 export function takeoff() { if (!ctx) return; const t = now(); for (let i = 0; i < 4; i++) noise(t + i * 0.07, 0.09, { f0: 1700, f1: 600, q: 0.7, vol: 0.13 }); }
 export function land() { if (!ctx) return; const t = now(); tone(t, [[0, 150], [0.09, 70]], 0.2, { decay: true, attack: 0.004 }); noise(t, 0.12, { f0: 900, f1: 300, vol: 0.1 }); noise(t + 0.08, 0.1, { f0: 1600, f1: 700, vol: 0.06 }); }
 export function bump() { if (ctx) { const t = now(); tone(t, [[0, 120], [0.12, 60]], 0.22, { decay: true, attack: 0.004 }); noise(t, 0.1, { f0: 500, f1: 200, vol: 0.1 }); } }

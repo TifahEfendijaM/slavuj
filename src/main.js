@@ -35,6 +35,9 @@ const diver = createDiver(world.diverPos); scene.add(diver.root);
 const people = createPeople(scene, world, rng(41));
 const flight = new Flight(world.colliders, bird);
 people.onScatter = () => audio.flutter();
+// the postman's knocks are heard only nearby
+people.onKnock = (p) => { if (live) audio.knock(clamp(1 - flight.pos.distanceTo(p) / 22, 0, 1)); };
+let live = false;
 
 function resize() {
   const w = innerWidth, h = innerHeight, px = Math.min(devicePixelRatio, 2);
@@ -610,7 +613,7 @@ function tick(dt) {
   // without mouse capture the cursor can run out of room: resting it on the very edge of the window keeps turning
   if (noLock && !locked && innerWidth > 0 && !inp.turn) inp.turn = (mouse.x > innerWidth - 14 ? 1 : mouse.x < 14 ? -1 : 0) * S.flight.edgeTurnRate / S.flight.keyTurnRate;
 
-  const running = started && !paused && state === 'play' && (locked || noLock);
+  const running = started && !paused && state === 'play' && (locked || noLock); live = running;
   if (running) {
     flight.update(dt, inp);
     for (const ev of flight.events) { if (ev === 'splash') { splashFx(V(flight.pos.x, flight.waterY + 0.05, flight.pos.z), flight.splashPower); audio.birdSplash(flight.splashPower); } else audio[ev]?.(); }
@@ -627,6 +630,8 @@ function tick(dt) {
       city: near(42, 0, 60), murmur: Math.max(near(42, 0, 34), near(-7, 0, 22), near(19, 50, 20), near(-28, -4, 16), near(31, 76, 22), near(55, 72, 20)) });
   }
 
+  // the sheep bleat now and then, heard only when the bird is close to the meadow
+  if (running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x + 58, flight.pos.z + 78) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 28 && Math.random() < dt * 0.25) audio.baa(1 - sd / 28); }
   freeSingT -= dt;
   bird.root.position.copy(flight.pos);
   bird.root.rotation.set(-flight.pitch, flight.yaw, flight.roll);

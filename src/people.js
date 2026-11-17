@@ -12,11 +12,11 @@ const G = {
   thigh: cap(0.085, 0.26), calf: cap(0.068, 0.26), foot: cap(0.05, 0.12), arm: cap(0.052, 0.5), hand: new THREE.SphereGeometry(0.058, 8, 6),
   head: new THREE.SphereGeometry(0.13, 12, 10), hair: new THREE.SphereGeometry(0.139, 12, 7, 0, Math.PI * 2, 0, 1.75), scarf: new THREE.SphereGeometry(0.15, 12, 8, 0, Math.PI * 2, 0, 2.3),
   torso: lathe([[0.001, 0], [0.15, 0], [0.155, 0.14], [0.145, 0.28], [0.19, 0.5], [0.2, 0.57], [0.15, 0.64], [0.07, 0.68], [0.06, 0.74], [0.001, 0.74]]),
-  skirt: lathe([[0.001, -0.72], [0.3, -0.72], [0.17, 0.02], [0.001, 0.02]]), robe: lathe([[0.001, -0.88], [0.27, -0.88], [0.18, 0.02], [0.001, 0.02]]),   // listed bottom to top, so the surface faces outwards
+  skirt: lathe([[0.001, -0.89], [0.31, -0.89], [0.17, 0.02], [0.001, 0.02]]), robe: lathe([[0.001, -0.88], [0.27, -0.88], [0.18, 0.02], [0.001, 0.02]]),   // listed bottom to top, so the surface faces outwards
   uarm: cap(0.052, 0.2), farm: cap(0.048, 0.2),
   fes: new THREE.CylinderGeometry(0.085, 0.1, 0.13, 10), cap: new THREE.SphereGeometry(0.137, 10, 5, 0, Math.PI * 2, 0, 1.1), bloom: new THREE.IcosahedronGeometry(0.07, 0),
   catBody: new THREE.SphereGeometry(1, 12, 10), catLeg: new THREE.CylinderGeometry(0.04, 0.035, 0.26, 6).translate(0, -0.13, 0), catTail: new THREE.CylinderGeometry(0.035, 0.05, 0.6, 6).translate(0, 0.3, 0), ear: new THREE.ConeGeometry(0.07, 0.14, 4),
-  box: new THREE.BoxGeometry(1, 1, 1), rod: new THREE.CylinderGeometry(1, 1, 1, 6), ball: new THREE.IcosahedronGeometry(1, 1),
+  box: new THREE.BoxGeometry(1, 1, 1), disc: new THREE.CylinderGeometry(1, 1, 1, 14).rotateX(Math.PI / 2), rod: new THREE.CylinderGeometry(1, 1, 1, 6), ball: new THREE.IcosahedronGeometry(1, 1),
   wheel: new THREE.TorusGeometry(0.34, 0.03, 6, 20).rotateY(Math.PI / 2), cone: new THREE.ConeGeometry(0.05, 0.17, 8), tube: cap(0.2, 2.5).rotateX(Math.PI / 2), tubeX: cap(0.2, 0.8).rotateZ(Math.PI / 2),
 };
 const BLOCK = new THREE.MeshBasicMaterial();
@@ -54,7 +54,7 @@ export function createPeople(scene, world, R) {
   function person(o) {
     const pos = new THREE.Vector3(o.x, o.y, o.z), sc = o.sc || 1, P = painter(o.tag, pos);
     const root = new THREE.Group(); root.position.copy(pos); root.rotation.y = o.ry || 0; root.scale.setScalar(1.05 * sc); scene.add(root);
-    const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.kind === 'girl' ? '#e0567f' : top0, bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : bottom0, gown = o.robe || o.woman;
+    const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : bottom0, gown = o.robe || o.woman;
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
     const seated = ['sit', 'swing', 'drink', 'argue'].includes(o.kind), skirtC = o.woman && !o.robe && o.kind !== 'girl' ? pick(TOPS) : null;
@@ -71,6 +71,7 @@ export function createPeople(scene, world, R) {
     const head = grp(torso, 0, 0.85, 0.01); P(G.head, skin, head, 0, 0, 0);
     if (sc < 1) head.scale.setScalar(1.25);                       // children: a bigger head
     if (o.fes) painter('fes', pos)(G.fes, '#b3312c', head, 0, 0.15, 0, '#8f2420'); else if (o.robe) P(G.cap, '#f3efe6', head, 0, 0.02, 0);
+    else if (o.kind === 'post') { P(G.cap, '#23405e', head, 0, 0.03, 0, '#1a2f45'); const v = P(G.box, '#1a2f45', head, 0, 0.05, 0.13); v.scale.set(0.2, 0.025, 0.11); }
     else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl') { const s = P(G.scarf, pick(TOPS), head, 0, 0.012, -0.012); s.rotation.x = -0.25; }
     else {
       const hc = pick(HAIRS), h = P(G.hair, hc, head, 0, 0.012, -0.012); h.rotation.x = -0.3;
@@ -140,6 +141,12 @@ export function createPeople(scene, world, R) {
       const hat = P(G.fes, '#c9b48a', head, 0, 0.13, 0, '#a8905a'); hat.scale.set(1.9, 0.5, 1.9);
     }
     if (o.kind === 'drink') { p.cup = painter('coffee', pos)(G.fes, '#f8f4ea', root, 0.12, 0.66, 0.47, '#d9d2c2'); p.cup.scale.set(0.38, 0.45, 0.38); p.cup.rotation.x = Math.PI; }
+    if (o.kind === 'post') {      // a satchel on a strap, and a letter in the other hand
+      const bag = P(G.box, '#7a4a26', hips, -0.25, 0.02, 0.02, '#5a3418'); bag.scale.set(0.1, 0.3, 0.32);
+      rod(P, torso, [-0.2, 0.0, 0.05], [0.17, 0.64, 0.06], 0.014, '#5a3418');
+      const letter = P(G.box, '#f8f4ea', arms[0].el, 0, -0.34, 0.06, '#e6dfd0'); letter.scale.set(0.02, 0.14, 0.2);
+      p.raise = 1; p.lastK = -1;
+    }
     if (o.dog) p.dogBlock = block(o.x, o.y + 0.4, o.z, 0.5, 0.8, 0.9, { wall: true, person: true });
     if (o.kind === 'keeper') { for (const l of legs) { l.hip.rotation.x = -0.45; l.knee.rotation.x = 0.8; l.hip.rotation.z = 0; } hips.position.y = 0.84; for (const a of arms) a.sh.rotation.z = a.s * 0.95; }
     if (o.kind === 'cheer') { arms[1].sh.rotation.z = 2.5; }
@@ -183,6 +190,22 @@ export function createPeople(scene, world, R) {
   const FS = world.fish, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), FP = painter('fish', fishHome, 1), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7; scene.add(fish);
   FP(G.catBody, '#9fb6c2', fish, 0, 0, 0, '#6f8a9a').scale.set(0.05, 0.1, 0.24); { const t = FP(G.ear, '#6f8a9a', fish, 0, 0, -0.27); t.scale.set(0.5, 1.3, 1.6); t.rotation.x = Math.PI / 2; }
   const birdD = new THREE.Vector3();
+
+  // ---- smoke from a chimney: still curls in the sketch, then it rises and drifts ----
+  const SM = world.smoke, SMP = painter('smoke', new THREE.Vector3(SM.x, SM.y + 1.6, SM.z), 3.6);
+  const puffs = Array.from({ length: 9 }, (_, i) => SMP(G.ball, i % 2 ? '#e2dfd8' : '#d0ccc4', scene, 0, 0, 0, '#b4b0a8'));
+  // ---- the traffic light by the road: red until the town wakes, then it cycles ----
+  const TL = world.light, tlp = new THREE.Vector3(TL.x, TL.y, TL.z), TLP = painter('light', tlp, 2.6), tlg = new THREE.Group(); tlg.position.copy(tlp); scene.add(tlg);
+  rod(TLP, tlg, [0, 0, 0], [0, 3, 0], 0.06, '#3a3e42');
+  { const h = TLP(G.box, '#2e3236', tlg, 0, 3.45, 0, '#1e2124'); h.scale.set(0.34, 1.05, 0.3); }
+  const lamps = [], DIM = ['#5a2a26', '#5a4a22', '#22482e'], ON = ['#ee3a2a', '#f6c22a', '#3fcf62'];
+  for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) {
+    const y = 3.45 + (1 - i) * 0.32, z = sd * 0.15;
+    TLP(G.disc, DIM[i], tlg, 0, y, z).scale.set(0.11, 0.11, 0.02);
+    const on = TLP(G.disc, ON[i], tlg, 0, y, z + sd * 0.012); on.scale.set(0.112, 0.112, 0.02); on.visible = i === 0; lamps.push({ on, i });
+    TLP(G.box, '#2e3236', tlg, 0, y + 0.13, z + sd * 0.07).scale.set(0.24, 0.02, 0.13);
+  }
+  block(TL.x, TL.y + 1.5, TL.z, 0.2, 3, 0.2, { wall: true }); block(TL.x, TL.y + 3.45, TL.z, 0.36, 1.07, 0.34, {});
 
   // ---- the football ----
   const kickers = list.filter((p) => p.o.ball !== undefined).sort((a, b) => a.o.ball - b.o.ball);
@@ -316,6 +339,16 @@ export function createPeople(scene, world, R) {
         } else if (o.kind === 'wait') {      // looks down the road, checks her watch, shifts her weight
           const watch = alive ? sm(Math.sin(t * 0.5) * 3 - 1.8) : 0;
           a0.sh.rotation.x = -0.9 * watch; a0.el.rotation.x = -1.5 * watch; p.head.rotation.x = 0.35 * watch; p.head.rotation.y = alive ? Math.sin(t * 0.35) * 0.7 * (1 - watch) : 0.5; p.root.rotation.z = alive ? Math.sin(t * 0.6) * 0.03 : 0;
+        } else if (o.kind === 'post') {      // three knocks on the door, a wait, a glance around, three more
+          const c = alive ? (time + p.phase) % 4.4 : 0.35, kc = (c - 0.1) / 0.3, knocking = kc >= 0 && kc < 3;
+          p.raise += ((alive ? (c < 1.6 ? 1 : 0.15) : 1) - p.raise) * k(7, dt);
+          const tap = knocking ? Math.sin((kc % 1) * Math.PI) : 0;
+          a1.sh.rotation.set(-1.45 * p.raise, 0, -0.12); a1.el.rotation.x = -0.6 * p.raise - 0.75 * tap;
+          a0.sh.rotation.set(-0.45, 0, 0.1); a0.el.rotation.x = -0.9;
+          p.head.rotation.y = alive && !knocking && c > 1.8 ? Math.sin(c * 1.4) * 0.45 : 0; p.head.rotation.x = 0.05;
+          const kn = knocking ? Math.floor(kc + 0.5) : -1;
+          if (alive && knocking && kn !== p.lastK && kc % 1 > 0.5) { p.lastK = kn; this.onKnock?.(p.root.position); }
+          if (!knocking) p.lastK = -1;
         } else if (o.kind === 'pose') {      // stand close, wave at the camera
           a1.sh.rotation.z = alive ? 2.4 + Math.sin(t * 5) * 0.3 : 2.5; a1.el.rotation.z = alive ? Math.sin(t * 5) * 0.3 : 0; a0.sh.rotation.z = -0.15; p.torso.rotation.z = alive ? Math.sin(t * 0.9) * 0.05 : 0; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.15 : 0;
         } else if (o.kind === 'raft') {      // one blade in, then the other
@@ -349,6 +382,14 @@ export function createPeople(scene, world, R) {
         ball.position.lerpVectors(tmpA, tmpB, h); ball.position.y = ballHome.y + Math.abs(Math.sin(time * 2.3)) * 0.35 * Math.sin(Math.PI * h); ball.rotation.x += dt * 5;
         ballBlock.matrixWorld.setPosition(ball.position.x, ball.position.y, ball.position.z);
       }
+      // smoke and the traffic light
+      const st = alive ? time : 0;
+      puffs.forEach((m, i) => {
+        const f = (i / puffs.length + st * 0.1) % 1, sz = (0.18 + f * 0.75) * Math.min(1, (1 - f) / 0.25);
+        m.position.set(SM.x + f * 1.7 + Math.sin(f * 5 + i) * 0.18, SM.y + 0.3 + f * 4.2, SM.z + Math.cos(f * 4 + i * 1.3) * 0.15); m.scale.setScalar(sz); m.visible = sz > 0.02;
+      });
+      const lc = alive ? time % 10 : 9, light = lc < 4.5 ? 2 : lc < 5.8 ? 1 : 0;
+      for (const l of lamps) l.on.visible = l.i === light;
       // the horse and the sheep graze
       for (const a of animals) {
         const t = time * (alive ? 1 : 0) + a.phase, horse = a.o.kind === 'horse', sp = horse ? 0.7 : 0.45;
