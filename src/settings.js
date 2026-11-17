@@ -34,7 +34,6 @@ export default {
     maxLandSlope: 0.5,   // surfaces steeper than this (normal.y below it) cannot be landed on
   },
   camera: { fov: 60, distance: 2.7, flightDistance: 2.2,   // how far behind the bird the camera sits: when perched or swimming, and in flight
-    lookUp: 0.35,         // when not flying, how far (radians) the view can tilt up past the camera's lowest spot
     smooth: 6, diveFovBoost: 12 },
   bird: { scale: 0.5, blue: '#2466e8', blueDark: '#1a4fc0', yellow: '#ffc61a' },
   orb: { hoverHeight: 2, size: 0.5 },   // how high an orb floats above its object, and how big it is

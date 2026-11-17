@@ -160,7 +160,7 @@ export class Flight {
     this.bumpCool -= dt;
 
     if (this.mode === 'perched') {
-      this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - (inp.tilt - (ptr ? ptr.y : 0)) * f.keyPitchRate * dt, -0.25 - S.camera.lookUp, 1.1);
+      this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - (inp.tilt - (ptr ? ptr.y : 0)) * f.keyPitchRate * dt, -0.25, 1.1);
       this.pitch += (this.perchPitch - this.pitch) * k(10, dt); this.roll += (this.perchRoll - this.roll) * k(10, dt);
       if (!inp.takeoff && this.walkStep(dt, inp) === 'left') return;      // walked off a height, or into the water
       if (inp.takeoff) {
@@ -174,7 +174,7 @@ export class Flight {
 
     if (this.mode === 'swim') {
       this.swimT += dt;
-      this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - inp.tilt * 0, -0.1 - S.camera.lookUp, 1.1);
+      this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - inp.tilt * 0, -0.1, 1.1);
       this.pitch += -this.pitch * k(8, dt); this.roll += -this.roll * k(8, dt);
       this.yaw += angDiff(this.camYaw, this.yaw) * k(3, dt);
       this.speed = inp.dive ? Math.min(f.swimMax, Math.max(this.speed, 0.4) + f.swimAccel * dt) : Math.max(0, this.speed - 2.2 * dt);     // hold the mouse button to paddle, faster the longer it is held
