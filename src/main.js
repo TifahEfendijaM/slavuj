@@ -556,19 +556,20 @@ function splashFx(p, power = 1) {
 const camPos = V(0, 0, 0), camWant = V(0, 0, 0), camLook = V(0, 0, 0), tmp = V(0, 0, 0);
 const camRay = new THREE.Raycaster();
 let camSnap = true, dbg = null, camDist = S.camera.distance;
-const camOff = V(0, 0, 0);
+const camOff = V(0, 0, 0), camFocus = V(0, 0, 0);
 function updateCamera(dt) {
   const perched = flight.mode === 'perched' || flight.mode === 'swim';
   const elev = perched ? flight.camElev : 0.22 - flight.pitch * 0.55;
   camDist += ((perched ? S.camera.distance : S.camera.flightDistance) - camDist) * k(2.5, dt);
   const dist = camDist, ce = Math.cos(elev);
   const lift = 0.15 + 0.37 * S.bird.scale;
-  camLook.copy(flight.pos); camLook.y += lift;
+  if (camSnap) camFocus.copy(flight.pos); else camFocus.lerp(flight.pos, k(perched ? 5 : 80, dt));
+  camLook.copy(camFocus); camLook.y += lift;
   camWant.set(flight.pos.x - Math.sin(flight.camYaw) * ce * dist, flight.pos.y + lift + Math.sin(elev) * dist, flight.pos.z - Math.cos(flight.camYaw) * ce * dist);
   // the offset from the bird is what eases, not the position, so the camera does not fall behind at speed
   camWant.sub(flight.pos);
   if (camSnap) { camOff.copy(camWant); camSnap = false; } else camOff.lerp(camWant, k(S.camera.smooth, dt));
-  camPos.copy(flight.pos).add(camOff);
+  camPos.copy(camFocus).add(camOff);
   camera.position.copy(camPos);
   tmp.subVectors(camPos, camLook); const len = tmp.length(); tmp.normalize();
   camRay.set(camLook, tmp); camRay.far = len;

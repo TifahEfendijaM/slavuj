@@ -301,7 +301,9 @@ export function createPeople(scene, world, R) {
         } else if (o.kind === 'drink') {     // picks the cup up from its saucer, sips, sets it down again
           const sip = alive ? sm(Math.sin(t * 0.9) * 2.4 - 0.9) : 0;
           a1.sh.rotation.set(-0.9 - 0.2 * sip, 0, -0.2); a1.el.rotation.x = -0.1 - 1.65 * sip;
-          p.cup.position.set(0.12 - 0.07 * sip, 0.66 + 0.6 * sip, 0.47 - 0.17 * sip); p.cup.rotation.x = Math.PI - 0.5 * Math.max(0, sip - 0.8) * 5;
+          // on its saucer the cup sits where it was put; once lifted it is in his fingers, wherever the hand is
+          p.root.updateMatrixWorld(true); a1.hand.getWorldPosition(birdD); p.root.worldToLocal(birdD); birdD.y += 0.035; birdD.z += 0.045;
+          p.cup.position.set(0.12, 0.66, 0.47).lerp(birdD, sm(sip * 5)); p.cup.rotation.x = Math.PI - 0.5 * Math.max(0, sip - 0.8) * 5;
           p.head.rotation.x = -0.15 * Math.max(0, sip - 0.7) * 3; a0.sh.rotation.x = -0.6; a0.el.rotation.x = -0.9; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.3 * (1 - sip) : 0;
         } else if (o.kind === 'argue') {     // leaning in, hands flying, taking turns
           const mine = alive ? sm(Math.sin(t * 0.7 + (o.woman ? Math.PI : 0)) * 3) : o.woman ? 0 : 1, w = alive ? Math.sin(t * 9) : 0.5;

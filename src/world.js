@@ -158,7 +158,6 @@ export function buildWorld(scene) {
     cray.set(new Vector3(0, y, z), new Vector3(side, 0, 0)); cray.far = 20;
     const h = cray.intersectObjects(cliffs, false)[0]; if (!h) continue;
     const n = 4 + Math.floor(R2() * 5), c = YEL[Math.floor(R2() * YEL.length)];
-    if (i % 6 === 0) for (let j = 0; j < 3; j++) A(ICO0, h.point.x - side * 0.25, y + 0.3 + j * 0.25, z + (j - 1) * 0.35, { tag: 'flower', col: FLOWERS[Math.floor(R2() * FLOWERS.length)], hull: true, hatch: 0, solid: false }, R2() * 6, 0, 0, 0.16);
     b.object(() => {
       for (let j = 0; j < n; j++) {
         const L = 0.9 + R2() * 1.7;
@@ -438,10 +437,9 @@ export function buildWorld(scene) {
     for (const dz of [-0.3, 0.3]) flowers(-48.5, BANK + 0.82, 6 + dz, 2.2, 7);
   });
   orb('cvijet', [-48.5, BANK + 0.8, 6], 2.6, ['flower'], 'combo', BANK + 1.2, { near: { p: [-48.5, BANK + 0.6, 6], r: 2.6 } });
-  for (const [x, z] of [[-33, 44], [-60, 50], [-66, 60], [-45.5, 58], [-18, 70], [-64, -22], [-69.5, -20], [25, 50], [30, 60], [36, 55], [45, 40], [58, 40], [50, 56], [70, 20], [72, -40], [68, -58], [24, -72],
-    [-25, -75], [-45, -75], [60, 64], [20, 67.5], [33, -45], [21, -34], [66, 34], [-70, 48], [-30, 74], [74, -4]]) b.object(() => {
-    for (let i = 0; i < 9; i++) { const a = R2() * 6.28, r = R2() * 1.8; A(ICO0, x + Math.cos(a) * r, BANK + 0.24, z + Math.sin(a) * r, { tag: 'flower', col: FLOWERS[Math.floor(R2() * FLOWERS.length)], hull: true, hatch: 0, solid: false }, R2() * 6, 0, 0, 0.15 + R2() * 0.1); }
-    for (let i = 0; i < 3; i++) A(ICO, x + (R2() - 0.5) * 2.4, BANK + 0.16, z + (R2() - 0.5) * 2.4, { tag: 'flower', col: '#6f9f45', bleed: '#55883c', hull: true, solid: false }, R2() * 6, 0, 0, [0.3, 0.16, 0.3]);
+  for (const [x, z] of [[45, 40], [-60, 50], [70, 20]]) b.object(() => {
+    for (let i = 0; i < 4; i++) { const a = R2() * 6.28, r = R2() * 1.4; A(ICO0, x + Math.cos(a) * r, BANK + 0.24, z + Math.sin(a) * r, { tag: 'flower', col: FLOWERS[Math.floor(R2() * FLOWERS.length)], hull: true, hatch: 0, solid: false }, R2() * 6, 0, 0, 0.15 + R2() * 0.1); }
+    for (let i = 0; i < 1; i++) A(ICO, x + (R2() - 0.5) * 2.4, BANK + 0.16, z + (R2() - 0.5) * 2.4, { tag: 'flower', col: '#6f9f45', bleed: '#55883c', hull: true, solid: false }, R2() * 6, 0, 0, [0.3, 0.16, 0.3]);
   });
   for (const [x, z, n] of [[-22, 30, 6], [-26, 29, 5], [28, 55, 6], [33, 52, 5], [-55, 58, 6], [-64, -18, 5], [20, -27, 5], [34, -45, 5], [-20, 48, 5]]) b.object(() => {
     for (let i = 0; i < n; i++) A(ICO0, x + rr(-1.4, 1.4), BANK + 0.22, z + rr(-1.4, 1.4), { tag: 'flower', col: pick(FLOWERS), hull: true, hatch: 0, solid: false }, R() * 6, 0, 0, rr(0.16, 0.24));
@@ -700,17 +698,18 @@ export function buildWorld(scene) {
 
   // ---------- a café on the west square: two tables, chairs, Bosnian coffee ----------
   const G0 = BANK + 0.12;
-  const chair = (cx, cz, ry) => { b.push(mat4(cx, G0, cz, ry)); b.object(() => {
-    const Ch = { tag: 'chair', col: '#8a5a34', bleed: '#5f4028', orb: 'svadjanje' };
+  const chair = (cx, cz, ry, tg, id) => { b.push(mat4(cx, G0, cz, ry)); b.object(() => {
+    const Ch = { tag: tg, col: '#8a5a34', bleed: '#5f4028', orb: id };
     box(0.44, 0.05, 0.44, 0, 0.46, 0, { ...Ch, pat: PAT.planks, ps: 6 }); box(0.44, 0.5, 0.04, 0, 0.76, -0.2, { ...Ch, pat: PAT.planks, ps: 6 });
     for (const lx of [-0.18, 0.18]) for (const lz of [-0.18, 0.18]) box(0.04, 0.46, 0.04, lx, 0.23, lz, { ...Ch, solid: false, ink: false });
   }); b.pop(); };
-  for (const [tx, tz] of [[-57.6, 8.2], [-57.6, 12.2]]) {
+  // first table: the coffee drinker's (piti colours it with his coffee things; stolice colours its two chairs). Second table: the quarrel's.
+  for (const [tx, tz, tt, tc, tid, cid] of [[-57.6, 8.2, 'coffee', 'chair', 'piti', 'stolice'], [-57.6, 12.2, 'argue', 'argue', 'svadjanje', 'svadjanje']]) {
     b.object(() => {
-      const Tb = { tag: 'table', col: '#f3ecdc', bleed: '#d9cfb8', orb: 'svadjanje', edge: 40 };
+      const Tb = { tag: tt, col: '#f3ecdc', bleed: '#d9cfb8', orb: tid, edge: 40 };
       A(CYL12, tx, G0 + 0.74, tz, Tb, 0, 0, 0, [0.5, 0.06, 0.5]); A(CYL, tx, G0 + 0.37, tz, { ...Tb, col: '#4a4a48', bleed: '#2f2f2e', edge: 50 }, 0, 0, 0, [0.05, 0.74, 0.05]); A(CYL12, tx, G0 + 0.03, tz, { ...Tb, col: '#4a4a48', solid: false }, 0, 0, 0, [0.26, 0.05, 0.26]);
     });
-    chair(tx - 0.85, tz, Math.PI / 2); chair(tx + 0.85, tz, -Math.PI / 2);
+    chair(tx - 0.85, tz, Math.PI / 2, tc, cid); chair(tx + 0.85, tz, -Math.PI / 2, tc, cid);
   }
   b.object(() => {      // on the first table: a džezva and a small cup
     const K = { tag: 'coffee', solid: false, edge: 50 }, y = G0 + 0.77;
@@ -718,10 +717,10 @@ export function buildWorld(scene) {
     A(CYL12, -57.93, y + 0.008, 8.07, { ...K, col: '#f8f4ea', bleed: '#d9d2c2' }, 0, 0, 0, [0.07, 0.012, 0.07]);     // the saucer; the cup itself is in the guest's hand (people.js)
     A(CYL12, -57.6, y + 0.006, 8.2, { ...K, col: '#c98a4a', bleed: '#a8672f' }, 0, 0, 0, [0.3, 0.012, 0.3]);    // the copper tray
   });
-  orb('kafa', [-57.6, G0 + 0.85, 8.2], 1.3, ['coffee'], 'close', G0 + 0.9, { near: { p: [-56.7, BANK + 0.6, 7], r: 2 }, at: new Vector3(-57.6, G0 + 1.9, 8.2) });
-  orb('piti', [-58.4, G0 + 1, 8.2], 2, ['drink'], 'close', G0 + 1.6, { requires: ['kafa'], near: { p: [-56.7, BANK + 0.6, 7], r: 2 } });
+  orb('piti', [-58.1, G0 + 0.9, 8.2], 2.2, ['drink', 'coffee'], 'close', G0 + 1.6, { near: { p: [-58.5, BANK + 0.6, 6.7], r: 1.9 } });
+  orb('stolice', [-56.75, G0 + 0.5, 8.2], 1.5, ['chair'], 'close', G0 + 1, { near: { p: [-56.3, BANK + 0.6, 8.9], r: 1.7 }, at: new Vector3(-56.75, G0 + 1.9, 8.2) });
 
-  orb('svadjanje', [-57.6, G0 + 0.8, 12.2], 2.2, ['argue', 'table', 'chair'], 'close', G0 + 1.7, { near: { p: [-57.6, BANK + 0.6, 13.8], r: 2.2 } });
+  orb('svadjanje', [-57.6, G0 + 0.8, 12.2], 2.2, ['argue'], 'close', G0 + 1.7, { near: { p: [-57.6, BANK + 0.6, 13.8], r: 2.2 } });
 
   // ---------- the road along the eastern edge: a parked car, a bus at its stop ----------
   slab(83, 90, -66, 46, { tag: 'street', col: '#8d8e92', bleed: '#74767b' }, BANK + 0.08, 0.06);

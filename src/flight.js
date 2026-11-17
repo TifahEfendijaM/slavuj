@@ -81,14 +81,16 @@ export class Flight {
     this.yaw += angDiff(this.camYaw, this.yaw) * k(7, dt);
     this.walk = this.walk ? Math.min(f.runSpeed, this.walk + f.walkAccel * dt) : f.walkStart;
     const fw = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), step = this.walk * dt, gy = this.groundY, reach = 0.3 * sc + 0.08;
-    const hopTo = (hit) => { const dy = hit.point.y - gy; this.feet = null; this.hop = { from: this.pos.clone(), to: hit.point.clone().setY(hit.point.y + this.perchH), point: hit.point.clone(), obj: hit.object, t: 0, dur: 0.26 + Math.abs(dy) * 0.14, arc: 0.1 + Math.max(0, dy) * 0.25 + Math.abs(dy) * 0.08 }; };
+    const hopTo = (hit) => { const dy = hit.point.y - gy; this.feet = null; this.hop = { from: this.pos.clone(), to: hit.point.clone().setY(hit.point.y + this.perchH), point: hit.point.clone(), obj: hit.object, t: 0, dur: 0.38 + Math.abs(dy) * 0.3, arc: 0.16 + Math.max(0, dy) * 0.3 + Math.abs(dy) * 0.12 }; };
     const ahead = this.cast(this.pos, fw, step + reach);
     if (ahead && !ahead.object.userData.water) {                          // something in the way: hop onto it if it is low enough
       const top = this.cast(new THREE.Vector3(this.pos.x + fw.x * (ahead.distance + reach), gy + f.hopUp + 0.3, this.pos.z + fw.z * (ahead.distance + reach)), DOWN, f.hopUp + 0.32);
       if (top && this.landable(top) && top.point.y - gy > 0.04 && top.point.y - gy <= f.hopUp) hopTo(top); else this.walk = 0;
       return;
     }
-    const at = (d) => this.cast(new THREE.Vector3(this.pos.x + fw.x * d, gy + 0.4, this.pos.z + fw.z * d), DOWN, 0.4 + f.hopDown);
+    const at = (d) => this.cast(new THREE.Vector3(this.pos.x + fw.x * d, gy + f.hopUp + 0.05, this.pos.z + fw.z * d), DOWN, f.hopUp + 0.05 + f.hopDown);
+    const up = at(step + reach * 0.6);                                     // a seat, a table top, a kerb just ahead: hop onto it
+    if (up && this.landable(up) && up.point.y - gy > 0.13) { hopTo(up); return; }
     const g = at(step);
     if (g && this.landable(g)) {
       const dy = g.point.y - gy;
