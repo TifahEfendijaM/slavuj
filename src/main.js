@@ -365,7 +365,7 @@ function shotsFor(o, bird) {
   if (d.shot === 'bridge') return [{ from: V(13, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
   if (d.shot === 'close') return [closeShot(o, bird, C.closeDuration)];
   if (d.shot === 'wide') return [wideShot(o, C.wideDuration)];
-  return [closeShot(o, bird, 4), wideShot(o, C.wideDuration - 4)];
+  return [closeShot(o, bird, Math.max(4, C.paintDelay + nearEnd(o) + 0.8)), wideShot(o, C.wideDuration - 4)];     // the close look lasts until its object is coloured
 }
 // used from the console to check every orb's camera without playing through it
 function checkShots() {
@@ -444,7 +444,9 @@ function updateCutscene(dt) {
 }
 // the journal photo is taken once everything this word colours has finished colouring
 const paintEnd = (o) => Math.max(0, ...o.def.tags.map((t) => tag(t).end || 4.6));      // (the clock hands and the diver colour on their own, within 4.6 s)
-const snapTime = (o, dur) => Math.min(S.cutscene.paintDelay + paintEnd(o) + 0.4, dur - 0.2);
+// in a scene with a close look and then a wide one, the photo is of the first object, fully coloured, before the cut
+const nearEnd = (o) => Math.max(0, ...o.def.tags.map((t) => tag(t).nearEnd ?? tag(t).end ?? 4.6));
+const snapTime = (o, dur) => o.def.shot === 'combo' ? S.cutscene.paintDelay + nearEnd(o) + 0.3 : Math.min(S.cutscene.paintDelay + paintEnd(o) + 0.4, dur - 0.2);
 function finishOrb(o) {
   o.done = true; o.alive = false; scene.remove(o.vis); if (o.id === 'sat') hands.visible = true;
   if (!save.done.includes(o.id)) save.done.push(o.id); store();
@@ -692,6 +694,8 @@ window.__game = { flight, inp, keys, mouse, bird, orbs, byId, world, camera, S, 
   start() { started = true; noLock = true; $('start').classList.add('off'); $('hud').classList.remove('off'); refreshOrbs(false); updateLegend(); showFleur(); },
   view(...a) { dbg = a.length ? a : null; },
   step(seconds, dt = 1 / 60) { for (let t = 0; t < seconds; t += dt) tick(dt); },
+  // writes this save's own journal photos into assets/photos/ (dev server only); returns the ids saved
+  async exportPhotos() { const ids = []; for (const [id, d] of Object.entries(pics)) if ((await fetch('/__photo?id=' + id, { method: 'POST', body: d })).ok) ids.push(id); return ids; },
   checkShots, shotsFor, people, skipScene, snapshot, showCard, skipToFinale, restartLevel, closeWords, openWords, pick, startCutscene, orbHere, openJournal, closeJournal, startFinale,
   finish(id) { const o = byId[id]; for (const t of o.def.tags) paint(t, true); finishOrb(o); },
   unpainted() { const used = new Set(orbs.flatMap((o) => o.def.tags)); return Object.keys(tags).filter((t) => !used.has(t) && !['bird', 'sky', 'sun'].includes(t)); },

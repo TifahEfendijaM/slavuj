@@ -434,7 +434,7 @@ export function buildWorld(scene) {
   tree(-53, 11, 1.5, { big: true, orb: 'drvo' });
   orb('drvo', [-53, BANK + 6, 11], 7, ['tree'], 'combo', BANK + 11, { near: { p: [-53, BANK + 0.6, 11], r: 3.8 } });
   for (const [x, z, s] of [[-20, -22, 1], [-64, 22, 1.2], [-27, 45.5, 0.9], [-58, 46, 1.1], [-20, 58, 1], [-33, 70, 1.2], [-66, -44, 1.1], [-22, -46, 0.9], [-68, -70, 1.3],
-    [22, 54, 1], [33, 58, 1.1], [68, 44, 1.2], [56, 36.5, 0.8], [58, -62, 1.2], [30, -64, 1], [72, -66, 1.3], [-30, -70, 1.1], [45, 70, 1.2], [-55, 78, 1.2], [66, 30, 1]]) tree(x, z, s);
+    [22, 54, 1], [33, 58, 1.1], [68, 44, 1.2], [56, 34.4, 0.8], [58, -62, 1.2], [30, -64, 1], [72, -66, 1.3], [-30, -70, 1.1], [45, 70, 1.2], [-55, 78, 1.2], [66, 30, 1]]) tree(x, z, s);
   for (const [x, z, s] of [[-66, 12, 1.2], [-70, 14.5, 1], [57, -24.5, 1.1], [70, -30, 1.3], [-22, 26, 0.9], [38, 27, 1]]) cypress(x, z, s);
   for (const [x, z, s] of [[-18, 30, 1], [-60, 60, 1.2], [-44, 74, 1], [24, 62.5, 1], [35, 49, 0.9], [-67, -8, 1], [66, 14, 1.1], [18.5, -60, 1.2], [-20, -62, 1], [75, 50, 1.2], [-22, 43, 0.8]]) bush(x, z, s);
   b.object(() => { // a stone trough of flowers in the square
@@ -531,7 +531,7 @@ export function buildWorld(scene) {
   orb('ribar', [-5.4, 1.7, 19.6], 2.6, ['fisher'], 'close', 2.8, { near: { p: [-6.6, 1.2, 19.7], r: 2 } });
   orb('riba', [2.8, 0.6, 14], 1.3, ['fish'], 'close', 0.8, { near: { p: [2.8, 0.2, 15.8], r: 3 }, at: new Vector3(2.8, 1.9, 14) });
   orb('golub', [55.5, BANK + 0.3, -12.6], 2.6, ['pigeon'], 'close', BANK + 0.5, { near: { p: [55.5, BANK + 0.5, -12.6], r: 4 }, at: new Vector3(55.5, BANK + 1.9, -12.6) });
-  orb('konj', [45, BANK + 1.2, 42], 3, ['horse'], 'close', BANK + 2.2, { near: { p: [45, BANK + 0.5, 44.2], r: 3 } });
+  orb('konj', [46, BANK + 1.2, 43], 3, ['horse'], 'close', BANK + 2.2, { near: { p: [46, BANK + 0.5, 45.2], r: 3 } });
   orb('ovca', [56.5, BANK + 0.6, 53.5], 2.2, ['sheep'], 'close', BANK + 1.1, { near: { p: [57.5, BANK + 0.5, 52.1], r: 2.6 } });
   orb('tri', [56.6, BANK + 0.6, 55.2], 4, ['sheep2'], 'close', BANK + 1.1, { requires: ['ovca'], near: { p: [57.5, BANK + 0.5, 52.1], r: 5 }, at: new Vector3(56.6, BANK + 3.2, 55.6) });
   orb('postar', [-24.46, BANK + 1.3, 63.22], 2.4, ['post'], 'close', BANK + 2.6, { near: { p: [-23, BANK + 0.6, 62.6], r: 2.2 } });
@@ -620,6 +620,8 @@ export function buildWorld(scene) {
   b.pop();
   tag('school').hullWidth = 1.3;
   orb('skola', [42, BANK + 4.5, 89.2], 10, ['school'], 'close', BANK + 10);
+  const flag = { x: 35.6, y: BANK, z: 84.6, h: 7.2 };
+  orb('zastava', [flag.x + 1.0, BANK + flag.h - 0.75, flag.z], 2.2, ['flag'], 'close', BANK + flag.h + 0.2, { near: { p: [flag.x + 0.8, BANK + 0.5, flag.z - 0.6], r: 2.2 }, at: new Vector3(flag.x + 1, BANK + flag.h + 1.6, flag.z) });
 
   // ---------- the ice cream cart on the west square ----------
   b.push(mat4(-47.3, BANK + 0.12, 15.7, 0.4));
@@ -783,6 +785,20 @@ export function buildWorld(scene) {
   });
   orb('bunar', [51, BANK + 1, 48], 2.6, ['well'], 'close', BANK + 2.7);
 
+  // ---------- ograda: a low wooden fence around the meadow, with a gap for a gate on the town side ----------
+  b.object(() => {
+    const F = { tag: 'fence', col: '#9a7048', bleed: '#6f4c2c', orb: 'ograda', pat: PAT.planks, ps: 3 };
+    const run = (x0, z0, x1, z1) => {
+      const L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / 2.4)), ry = Math.atan2(x1 - x0, z1 - z0);
+      for (let i = 0; i <= n; i++) { const u = i / n; box(0.13, 1.05, 0.13, x0 + (x1 - x0) * u, BANK + 0.53, z0 + (z1 - z0) * u, { ...F, pat: 0 }, ry); }
+      for (const y of [0.45, 0.88]) box(0.06, 0.09, L, (x0 + x1) / 2, BANK + y, (z0 + z1) / 2, F, ry);
+      b.block(BOX, mat4((x0 + x1) / 2, BANK + 0.96, (z0 + z1) / 2, ry, 0, 0, [0.26, 0.08, L]), { orb: 'ograda' });     // a perch along the top
+    };
+    const X0 = 40.3, X1 = 61.7, Z0 = 36.3, Z1 = 59.7;
+    run(X0, Z0, X1, Z0); run(X1, Z0, X1, Z1); run(X1, Z1, X0, Z1); run(X0, Z1, X0, 49.6); run(X0, 46.4, X0, Z0);
+  });
+  orb('ograda', [40.3, BANK + 0.7, 41.4], 2.6, ['fence'], 'close', BANK + 1.4, { near: { p: [41.4, BANK + 0.5, 41.4], r: 2.2 } });
+
   // ---------- laundry on a line between two houses ----------
   b.object(() => {
     const lx = -49.4, Y = BANK + 3.1, z0 = -28.3, z1 = -34.45, zm = (z0 + z1) / 2, half = (z0 - z1) / 2, sag = 0.25;
@@ -821,7 +837,7 @@ export function buildWorld(scene) {
   tag('sky').source = sunPos.clone(); tag('sun').source = sunPos.clone();
   b.finish(scene);
 
-  return { smoke: [hSmoke, hSmoke2, hSmoke3, hSmoke4].map((h) => h.chimTop.clone()), light: { x: 82.4, y: BANK + 0.12, z: -2 }, slide: SL, clouds, colliders: b.colliders, orbs, start: new Vector3(-19.5, 0, 47), diverPos, diverBlock, people, cat: { x: 33.5, y: BANK + 1.1, z: 12.45, x0: 31, x1: 36.6 }, catBlock,
-    animals: [{ kind: 'horse', tag: 'horse', x: 45, y: BANK + 0.06, z: 42, ry: 0.8, roam: 3 }, { kind: 'sheep', tag: 'sheep', x: 56.5, y: BANK + 0.06, z: 53.5, ry: 0.6 }, { kind: 'sheep', tag: 'sheep2', x: 54.6, y: BANK + 0.06, z: 56.2, ry: 2.4 }, { kind: 'sheep', tag: 'sheep2', x: 58.2, y: BANK + 0.06, z: 55.6, ry: -1.4 }],
+  return { flag, smoke: [hSmoke, hSmoke2, hSmoke3, hSmoke4].map((h) => h.chimTop.clone()), light: { x: 82.4, y: BANK + 0.12, z: -2 }, slide: SL, clouds, colliders: b.colliders, orbs, start: new Vector3(-19.5, 0, 47), diverPos, diverBlock, people, cat: { x: 33.5, y: BANK + 1.1, z: 12.45, x0: 31, x1: 36.6 }, catBlock,
+    animals: [{ kind: 'horse', tag: 'horse', x: 46, y: BANK + 0.06, z: 43, ry: 0.8, roam: 2.5 }, { kind: 'sheep', tag: 'sheep', x: 56.5, y: BANK + 0.06, z: 53.5, ry: 0.6, roam: 2 }, { kind: 'sheep', tag: 'sheep2', x: 54.4, y: BANK + 0.06, z: 55.6, ry: 2.4, roam: 2 }, { kind: 'sheep', tag: 'sheep2', x: 57.6, y: BANK + 0.06, z: 55.2, ry: -1.4, roam: 2 }],
     pigeons: { x: 55.5, y: BANK + 0.12, z: -12.6, fx: 51.6, fz: -14, fh: 9.5 }, fish: { x: 2.8, y: 0, z: 14 }, sunPos, fleur: new Vector3(0, 66, 8) };
 }

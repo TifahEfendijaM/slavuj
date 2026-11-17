@@ -1,7 +1,9 @@
 // The people of Mostar, the cat, the dog. All of them stand frozen in the sketch until the
 // finale brings the town to life; then they walk, talk, sell, play, ride, paddle, applaud and wave.
 import * as THREE from 'three';
-import { paintGeo, washMat, addHull, tag } from './paper.js';
+import { paintGeo, washMat, addHull, tag, inkMaterial } from './paper.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 
 const TOPS = ['#b8452c', '#3f6f9a', '#4f8068', '#c69a3a', '#8a5a8a', '#e6dccb', '#5d7b8a', '#c9744a'];
 const BOTTOMS = ['#4a4a52', '#6a5a44', '#3d5066', '#7a6a58', '#5a4a40'];
@@ -31,7 +33,7 @@ export function createPeople(scene, world, R) {
     const src = tag(tagName).source, d = src ? pos.distanceTo(src) : 0;
     tag(tagName).subs.push({ box: new THREE.Box3().setFromCenterAndSize(pos.clone().setY(pos.y + 1), new THREE.Vector3(1, 2, 1)), ranges: [], hranges: [] });
     const tm = d < 5 ? { delay: 0, dur: 3.2 } : { delay: 2.6 + Math.min(d, 150) / 150 * 2.5, dur: 2.2 };
-    tag(tagName).end = Math.max(tag(tagName).end || 0, tm.delay + tm.dur); return tm;
+    const T = tag(tagName); T.end = Math.max(T.end || 0, tm.delay + tm.dur); if (!tm.delay) T.nearEnd = Math.max(T.nearEnd || 0, tm.dur); return tm;
   };
   const block = (x, y, z, w, h, d, data) => {
     const c = new THREE.Mesh(G.box, BLOCK); c.matrixAutoUpdate = false; c.matrix.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(w, h, d));
@@ -209,6 +211,59 @@ export function createPeople(scene, world, R) {
     TLP(G.box, '#2e3236', tlg, 0, y + 0.13, z + sd * 0.07).scale.set(0.24, 0.02, 0.13);
   }
   block(TL.x, TL.y + 1.5, TL.z, 0.2, 3, 0.2, { wall: true }); block(TL.x, TL.y + 3.45, TL.z, 0.36, 1.07, 0.34, {});
+  // ---- the flag in front of the school: hangs still in the sketch, then waves ----
+  const FL = world.flag, flp = new THREE.Vector3(FL.x, FL.y, FL.z), FLP = painter('flag', flp.clone().setY(FL.y + FL.h - 0.7), 2.4), flg = new THREE.Group(); flg.position.copy(flp); scene.add(flg);
+  rod(FLP, flg, [0, 0, 0], [0, FL.h + 0.1, 0], 0.06, '#d9d6cf');
+  FLP(G.ball, '#c9a23a', flg, 0, FL.h + 0.14, 0, '#a07a25').scale.setScalar(0.11);
+  const FW = 2.1, FH = 1.05, ftop = FL.h - 0.08, cloth = [];
+  // a piece of the cloth: a fine grid bent into shape (u across, v down), so it can ripple with the rest
+  const piece = (shape, col, bleed, z, nu = 12, nv = 6) => {
+    const geo = new THREE.PlaneGeometry(1, 1, nu, nv), pa = geo.attributes.position;
+    for (let i = 0; i < pa.count; i++) { const [x, y] = shape(pa.getX(i) + 0.5, 0.5 - pa.getY(i)); pa.setXYZ(i, x, ftop - y, z); }
+    const back = geo.clone(), ix = back.index.array;     // figures are one-sided: the cloth needs a face on each side
+    for (let i = 0; i < ix.length; i += 3) { const t = ix[i]; ix[i] = ix[i + 2]; ix[i + 2] = t; }
+    for (const g of [geo, back]) {
+      g.computeVertexNormals();
+      const m = FLP(g, col, flg, 0, 0, 0, bleed); m.clear();     // no outline shell: on a flat cloth it would cover the whole face
+      cloth.push({ m, base: Float32Array.from(m.geometry.attributes.position.array), z });
+    }
+  };
+  piece((u, v) => [0.06 + u * FW, v * FH], '#1f3f9a', '#132c73', 0, 16, 8);                                  // blue field
+  for (const z of [0.012, -0.012]) {
+    piece((u, v) => { const xl = 0.255 + v * 0.46, xr = 0.715; return [0.06 + (xl + u * (xr - xl)) * FW, v * FH]; }, '#f2c230', '#d9a625', z);   // yellow triangle
+    for (let k = 0; k < 7; k++) {         // the stars along its long side
+      const cx = 0.17 + k * 0.077, cy = (k + 0.4) / 7.4, r = 0.035;
+      piece((u, v) => [0.06 + (cx + (u - 0.5) * r * 2) * FW, (cy + (v - 0.5) * r * 2 * FW / FH) * FH], '#fbf7ec', '#e6dfd0', z * 1.6, 2, 2);
+    }
+  }
+  block(FL.x, FL.y + FL.h / 2, FL.z, 0.16, FL.h, 0.16, { wall: true }); block(FL.x, FL.y + FL.h + 0.12, FL.z, 0.3, 0.12, 0.3, { orb: 'zastava' });
+  // its ink outline, bent with the cloth (a flat cloth gets no outline shell, so it is drawn as a line)
+  const rim = [];
+  for (let i = 0; i < 16; i++) rim.push([0.06 + (i / 16) * FW, 0]);
+  for (let i = 0; i < 8; i++) rim.push([0.06 + FW, (i / 8) * FH]);
+  for (let i = 16; i > 0; i--) rim.push([0.06 + (i / 16) * FW, FH]);
+  for (let i = 8; i > 0; i--) rim.push([0.06, (i / 8) * FH]);
+  const rimGeo = new LineSegmentsGeometry().setPositions(new Float32Array(rim.length * 6)), rimLine = new LineSegments2(rimGeo, inkMaterial);
+  rimLine.frustumCulled = false; flg.add(rimLine);
+  const bend = (x, y, t, alive) => {      // -> [height, sideways] of a point of the cloth
+    const u = Math.max(0, x - 0.06) / FW;
+    const ripple = alive ? Math.sin(x * 2.6 - t * 5.2 + y * 0.6) * 0.16 + Math.sin(x * 4.1 - t * 7.9) * 0.05 : Math.sin(x * 2.6 + y * 0.6) * 0.07;
+    return [y - (alive ? 0.04 : 0.12) * u * u, ripple * u];
+  };
+  const waveFlag = (t, alive) => {
+    for (const { m, base, z } of cloth) {
+      const pa = m.geometry.attributes.position;
+      for (let i = 0; i < pa.count; i++) { const [y, dz] = bend(base[i * 3], base[i * 3 + 1], t, alive); pa.setY(i, y); pa.setZ(i, z + dz); }
+      pa.needsUpdate = true;
+    }
+    const ra = rimGeo.attributes.instanceStart.data, arr = ra.array;
+    rim.forEach(([x, v], i) => {
+      const [x2, v2] = rim[(i + 1) % rim.length], [ya, za] = bend(x, ftop - v, t, alive), [yb, zb] = bend(x2, ftop - v2, t, alive);
+      arr.set([x, ya, za, x2, yb, zb], i * 6);
+    });
+    ra.needsUpdate = true;
+  };
+  waveFlag(0, false);
 
   // ---- the football ----
   const kickers = list.filter((p) => p.o.ball !== undefined).sort((a, b) => a.o.ball - b.o.ball);
@@ -250,6 +305,7 @@ export function createPeople(scene, world, R) {
   const catS = { walk: 0, x: C.x, dir: 1, rest: 2 };
 
   return {
+    flagCloth: cloth,
     list, cat, ball,
     applaud() { for (const p of list) if (p.o.kind === 'watch') p.cheer = true; },
     update(dt, time, life, bird) {
@@ -391,6 +447,8 @@ export function createPeople(scene, world, R) {
         const f = (i / puffs.length + st * 0.1 + k * 0.37) % 1, sz = (0.18 + f * 0.75) * Math.min(1, (1 - f) / 0.25);
         m.position.set(SM.x + f * 1.7 + Math.sin(f * 5 + i) * 0.18, SM.y + 0.3 + f * 4.2, SM.z + Math.cos(f * 4 + i * 1.3) * 0.15); m.scale.setScalar(sz); m.visible = sz > 0.02;
       });
+      if (alive) waveFlag(time, true); else if (this.flagMoved) waveFlag(0, false);
+      this.flagMoved = alive;
       const lc = alive ? time % 10 : 9, light = lc < 4.5 ? 2 : lc < 5.8 ? 1 : 0;
       for (const l of lamps) l.on.visible = l.i === light;
       // the horse and the sheep graze
