@@ -488,7 +488,9 @@ function snapshot(id) {
   if (id === 'sunce') { from = V(30, 30, 50); to = V(-60, 62, -80); }
   else { const sh = shotsFor(byId[id], null)[0]; from = sh.from.clone().lerp(sh.to, 0.7); to = sh.lookFrom.clone().lerp(sh.lookTo, 0.7); }
   camera.position.copy(from); camera.lookAt(to); camera.fov = S.cutscene.fov; camera.updateProjectionMatrix(); bird.root.visible = false;
+  const shown = orbs.filter((o) => o.vis.visible); for (const o of shown) o.vis.visible = false;
   renderer.render(scene, camera);
+  for (const o of shown) o.vis.visible = true;
   const data = grabFrame();
   camera.position.copy(keep.p); camera.quaternion.copy(keep.q); camera.fov = keep.fov; camera.updateProjectionMatrix(); bird.root.visible = vis;
   return data;
@@ -668,6 +670,7 @@ function tick(dt) {
   audio.setRush(flight.speed, flight.mode === 'flying' && running, dt);
 
   for (const o of orbs) if (o.alive && !(cut && cut.o === o)) {
+    o.vis.visible = !cut;      // the other orbs stay out of the colouring scenes (and their photos)
     o.grow = Math.min(1, o.grow + dt * 1.4); const g = smooth(o.grow) * (1 + Math.sin(time * 3.1 + o.def.at.x) * 0.06);
     o.vis.scale.setScalar(g * S.orb.size); o.vis.position.y = o.def.at.y + Math.sin(time * 1.8 + o.def.at.z) * 0.25;
   }
