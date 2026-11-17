@@ -609,9 +609,9 @@ export function buildWorld(scene) {
     }
     box(2.6, 2.7, 0.14, 0, 1.35, fz + 0.03, { ...T, col: '#3f6f5a', bleed: '#2c5040', pat: PAT.planks, ps: 2.2, pool: 1 });
     for (const st of [0, 1]) box(4.2 - st * 0.8, 0.25, 1.6 - st * 0.6, 0, 0.125 + st * 0.25, fz + 0.8 - st * 0.3, { ...H, col: '#c4beb4', bleed: '#a29c94' });
-    A(roofGeo(4.2, 1.6, 0.9, 1.6, true), 0, 4.05, fz + 0.7, { ...T, tag: 'roof', col: TILES[1][0], bleed: TILES[1][1], pat: PAT.roof, ps: 1.5 }, 0);
-    A(triGeo([-1.95, 0, 0], [1.95, 0, 0], [0, 0.84, 0]), 0, 4.05, fz + 1.45, { ...T, col: '#fbf7ec', bleed: '#d9d2c2' });      // the canopy's front gable, white like its columns
-    for (const sx of [-1.9, 1.9]) A(CYL, sx, 2.05, fz + 1.35, { ...T, col: '#fbf7ec', bleed: '#d9d2c2', edge: 50 }, 0, 0, 0, [0.11, 4.1, 0.11]);
+    A(roofGeo(4.2, 1.6, 0.9, 1.6, true), 0, 4.05, fz + 0.7, { ...H, tag: 'roof', col: TILES[1][0], bleed: TILES[1][1], pat: PAT.roof, ps: 1.5 }, 0);
+    A(triGeo([-1.95, 0, 0], [1.95, 0, 0], [0, 0.84, 0]), 0, 4.05, fz + 1.45, { ...H, col: '#fbf7ec', bleed: '#d9d2c2' });      // the canopy's front gable, white like its columns
+    for (const sx of [-1.9, 1.9]) A(CYL, sx, 2.05, fz + 1.35, { ...H, col: '#fbf7ec', bleed: '#d9d2c2', edge: 50 }, 0, 0, 0, [0.11, 4.1, 0.11]);
     box(5.4, 1.5, 0.14, 0, 5.75, fz + 0.1, { ...T, col: '#34495a', bleed: '#25333f' });
     sign('ABC', 5.3, fz + 0.2, 0.13, { ...T, col: '#f8ecc6', bleed: '#f2d98a', ink: false, hatch: 0 });
     // a bell under a little roof on the ridge
@@ -671,12 +671,12 @@ export function buildWorld(scene) {
     slab(49.5, 61.5, 67, 78, { ...Pk, col: '#ecdcab', bleed: '#d9bf82' }, BANK + 0.09, 0.06);
     b.push(mat4(SL.x, SL.y, SL.z));
     box(1.3, 0.12, 1.2, 0, 1.9, 0, { ...Sd, col: '#e9b83a', bleed: '#c9942a' });
-    for (const [lx, lz] of [[-0.58, -0.52], [-0.58, 0.52], [0.58, -0.52], [0.58, 0.52]]) A(CYL, lx, 1.4, lz, { tag: 'slide', col: '#3f6f9a', bleed: '#2f5578', solid: false, edge: 50 }, 0, 0, 0, [0.06, 2.8, 0.06]);
-    for (const lz of [-0.56, 0.56]) box(1.3, 0.07, 0.07, 0, 2.75, lz, { tag: 'slide', col: '#3f6f9a', solid: false });
+    for (const [lx, lz] of [[-0.58, -0.52], [-0.58, 0.52], [0.58, -0.52], [0.58, 0.52]]) A(CYL, lx, 1.4, lz, { ...Sd, col: '#3f6f9a', bleed: '#2f5578', edge: 50 }, 0, 0, 0, [0.06, 2.8, 0.06]);
+    for (const lz of [-0.56, 0.56]) box(1.3, 0.07, 0.07, 0, 2.75, lz, { ...Sd, col: '#3f6f9a' });
     box(5.25, 0.08, 0.9, -3.1, 0.985, 0, { ...Sd, col: '#d9453a', bleed: '#b3352d' }, 0, 0, 0.357);
-    for (const lz of [-0.47, 0.47]) box(5.25, 0.34, 0.07, -3.1, 1.145, lz, { tag: 'slide', col: '#b3352d', solid: false }, 0, 0, 0.357);
-    for (const lz of [-0.4, 0.4]) box(0.08, 2.15, 0.08, 1.12, 0.95, lz, { tag: 'slide', col: '#3f6f9a', solid: false }, 0, 0, 0.44);
-    for (let i = 0; i < 5; i++) box(0.07, 0.07, 0.8, 1.52 - i * 0.18, 0.3 + i * 0.37, 0, { tag: 'slide', col: '#e9b83a', solid: false });
+    for (const lz of [-0.47, 0.47]) box(5.25, 0.34, 0.07, -3.1, 1.145, lz, { ...Sd, col: '#b3352d' }, 0, 0, 0.357);
+    for (const lz of [-0.4, 0.4]) box(0.08, 2.15, 0.08, 1.12, 0.95, lz, { ...Sd, col: '#3f6f9a' }, 0, 0, 0.44);
+    for (let i = 0; i < 5; i++) box(0.07, 0.07, 0.8, 1.52 - i * 0.18, 0.3 + i * 0.37, 0, { ...Sd, col: '#e9b83a' });
     b.pop();
     // a sandpit beside it
     box(3.4, 0.25, 3.4, 52.2, BANK + 0.2, 69.6, { ...Pk, col: '#b9683e', bleed: '#96502e', pat: PAT.planks, ps: 1 }); box(3.0, 0.1, 3.0, 52.2, BANK + 0.31, 69.6, { tag: 'park', col: '#f3e3ae', bleed: '#e0c98a', solid: false, ink: false });
