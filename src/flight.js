@@ -9,6 +9,8 @@ const k = (rate, dt) => 1 - Math.exp(-rate * dt);
 export const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const DOWN = new THREE.Vector3(0, -1, 0), UP = new THREE.Vector3(0, 1, 0);
 const _o = new THREE.Vector3(), _d = new THREE.Vector3();
+// the points of its underside, forward/sideways (times the bird's size): the same as where it stands (settle)
+const UNDER = [[0, 0], [0.32, 0], [-0.32, 0], [0.18, 0.15], [0.18, -0.15], [-0.18, 0.15], [-0.18, -0.15], [0, 0.21], [0, -0.21]];
 const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _inv = new THREE.Matrix4();
 const _nm = new THREE.Matrix3();
 
@@ -271,16 +273,25 @@ export class Flight {
     const step = this.vel.length() * dt, dir = this.vel.clone().normalize();
     let ahead = this.cast(this.pos, dir, step + R0);
     for (const sd of [-0.75, 0.75]) { const h = this.cast(_o.copy(this.pos).addScaledVector(left, sd * R0), dir, step + R0); if (h && !h.object.userData.water && (!ahead || h.distance < ahead.distance)) { ahead = h; h.side = sd * R0; } }
-    // its feet, swept along this frame's flight: where they touch a surface it can stand on, it lands, right there
+    // its underside (feet and belly, the same shape it stands with), swept along this frame's flight: at the first
+    // touch of a surface it can stand on, it is moved to that very moment and lands, so it stands where it already is
     if (this.grace <= 0 && step > 0.001) {
-      _o.copy(this.pos); _o.y -= this.perchH;
-      const fh = this.cast(_o, dir, step + 0.02);
-      if (fh && this.landable(fh) && this.land(fh)) return;
+      const sc = S.bird.scale, hf = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), hl = new THREE.Vector3(hf.z, 0, -hf.x);
+      let best = null;
+      for (const [a, b] of UNDER) {
+        const drop = a === 0 && b === 0 ? Math.max(this.perchH, 0.05 * sc + 0.3 * sc) : 0.05 * sc + 0.3 * sc * Math.sqrt(Math.max(0, 1 - (a / 0.4) ** 2 - (b / 0.26) ** 2));
+        _o.copy(this.pos).addScaledVector(hf, a * sc).addScaledVector(hl, b * sc); _o.y -= drop;
+        const h = this.cast(_o, dir, step + 0.02); if (h && this.landable(h) && (!best || h.distance < best.distance)) best = h;
+      }
+      if (best) {
+        const keep = this.pos.clone(); this.pos.addScaledVector(dir, best.distance);
+        const c = this.cast(_o.copy(this.pos).setY(this.pos.y + 0.3), DOWN, this.perchH + 0.9);
+        if (this.land(c && this.landable(c) && Math.abs(c.point.y - best.point.y) < 0.5 ? c : best)) return;
+        this.pos.copy(keep);
+      }
     }
-    // a surface it can stand on, ahead of its breast: it lands only once the touch is within this frame's flight,
-    // exactly where it touches; until then it simply keeps flying towards it
+    // a surface it can stand on ahead of its breast is simply flown on towards (the underside sweep lands it)
     const reachable = ahead && !ahead.object.userData.water && this.landable(ahead) && this.grace <= 0;
-    if (reachable && ahead.distance <= step + R0 * 0.6 && this.land(ahead)) return;
     if (ahead && !ahead.object.userData.water && (!reachable || !this.roomAt(ahead.point))) {      // (no room to stand there: it bumps off)
       const n = new THREE.Vector3(ahead.n.x, 0, ahead.n.z);
       if (n.lengthSq() < 0.01) n.copy(fwd).negate(); n.normalize();
@@ -308,7 +319,14 @@ export class Flight {
           this.clearL = this.clearR = 1; this.pos.y = this.waterY + 0.14 * S.bird.scale; this.events.push('splash'); return;
         }
       } else if (this.landable(below)) {
-        if (h <= 0.1 && this.grace <= 0 && this.land(below)) return;
+        // never lower than standing height over a surface it could stand on (a bounce off a wall can push it down
+        // into a roof): kept there at once, so landing finds it already in place
+        const stand = Math.max(this.perchH, 0.35 * S.bird.scale);
+        if (below.distance < stand) { this.pos.y += stand - below.distance; below.distance = stand; }
+        // close enough to stand: measured out from the surface (straight down misjudges a steep roof), and moved
+        // that last bit onto it before landing
+        const gap = below.distance * Math.max(0.3, below.n.y) - this.perchH * Math.max(0.3, below.n.y);
+        if (gap <= 0.1 && this.grace <= 0) { const keep = this.pos.clone(); this.pos.addScaledVector(below.n, -Math.max(0, gap)); if (this.land(below)) return; this.pos.copy(keep); }
         flare = clamp(1 - (h - 0.1) / 1.9, 0, 1) * clamp(Math.max((-this.vel.y - 0.4) / 1.6, (9 - this.speed) / 2), 0, 1);
       } else if (below.distance < R0) this.pos.addScaledVector(below.n, R0 - below.distance);
     }
