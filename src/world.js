@@ -410,7 +410,7 @@ export function buildWorld(scene) {
     A(CYL, 24, BANK + 1.2, -28, { ...F, col: '#ddd3bd', edge: 50 }, 0, 0, 0, [0.28, 1.6, 0.28]);
     A(new THREE.CylinderGeometry(1, 0.4, 1, 8), 24, BANK + 2.15, -28, { ...F, col: '#d0c4a8', bleed: '#b8a888', edge: 40 }, 0, 0, 0, [0.85, 0.35, 0.85]);
     for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; A(CYL, 24 + Math.cos(a) * 2.2, BANK + 1.6, -28 + Math.sin(a) * 2.2, { tag: 'fountain', col: '#7a5636', solid: false, edge: 60 }, 0, 0, 0, [0.09, 3.2, 0.09]); }
-    A(new THREE.ConeGeometry(1, 1, 6), 24, BANK + 3.85, -28, { ...F, tag: 'roof', col: SLABS[3][0], bleed: SLABS[3][1] }, 0, 0, 0, [2.9, 1.3, 2.9]);
+    A(new THREE.ConeGeometry(1, 1, 6), 24, BANK + 3.85, -28, { ...F, col: SLABS[3][0], bleed: SLABS[3][1] }, 0, 0, 0, [2.9, 1.3, 2.9]);
   });
   orb('dzamija', [27, BANK + 6, -41], 10, ['mosque'], 'close', BANK + 14, { requires: ['munara'] });
   orb('munara', [34, BANK + 14, -35.6], 10, ['minaret'], 'close', BANK + 27.2);
@@ -558,7 +558,7 @@ export function buildWorld(scene) {
     const H = { tag: 'hospital', orb: 'bolnica' }, T = { tag: 'hospital', solid: false }, W = 12, D = 7.5, Hh = 10.2, fz = D / 2 + 0.15;
     box(W, 1.2, D, 0, 0.6, 0, { ...H, col: '#c4beb4', bleed: '#a29c94', pat: PAT.blocks, ps: 0.55, pool: 1 });
     box(W + 0.3, Hh - 1.2, D + 0.3, 0, 1.2 + (Hh - 1.2) / 2, 0, { ...H, col: '#f6f3ec', bleed: '#d3dde0', pool: 1 });
-    box(W + 0.9, 0.5, D + 0.9, 0, Hh + 0.25, 0, { ...H, tag: 'roof', col: '#7fb3b0', bleed: '#5d9794' });
+    box(W + 0.9, 0.5, D + 0.9, 0, Hh + 0.25, 0, { ...H, col: '#7fb3b0', bleed: '#5d9794' });
     for (let fl = 0; fl < 3; fl++) for (let i = 0; i < 4; i++) {
       const mid = i === 1 || i === 2, px = -4.2 + i * 2.8, py = 2.5 + fl * 2.75;
       if (fl === 0 && mid) continue; if (fl === 2 && mid) continue;
@@ -777,7 +777,7 @@ export function buildWorld(scene) {
     A(new THREE.TorusGeometry(0.95, 0.09, 6, 18).rotateX(Math.PI / 2), wx, BANK + 0.92, wz, { tag: 'well', col: '#a89a8c', bleed: '#857868', solid: false, edge: 60 });
     A(CYL12, wx, BANK + 0.6, wz, { ...W, col: '#2f5a66', bleed: '#22434d', wall: true, ink: false, hatch: 0 }, 0, 0, 0, [0.9, 0.02, 0.9]);   // dark water far down
     for (const sx of [-0.88, 0.88]) box(0.14, 2.1, 0.14, wx + sx, BANK + 1.05, wz, { ...W, col: '#7a5636', bleed: '#5f4028' });
-    A(roofGeo(1.5, 2.3, 0.6, 2.3, true), wx, BANK + 2.1, wz, { ...W, tag: 'roof', col: TILES[3][0], bleed: TILES[3][1], pat: PAT.roof, ps: 1.5 }, Math.PI / 2);
+    A(roofGeo(1.5, 2.3, 0.6, 2.3, true), wx, BANK + 2.1, wz, { ...W, col: TILES[3][0], bleed: TILES[3][1], pat: PAT.roof, ps: 1.5 }, Math.PI / 2);
     A(CYL, wx, BANK + 1.55, wz, { ...W, col: '#6a4a30', solid: false, edge: 50 }, 0, 0, Math.PI / 2, [0.05, 1.76, 0.05]);
     box(0.05, 0.3, 0.05, wx + 1.0, BANK + 1.42, wz, { tag: 'well', col: '#6a4a30', solid: false }); box(0.05, 0.05, 0.2, wx + 1.0, BANK + 1.28, wz + 0.08, { tag: 'well', col: '#6a4a30', solid: false });
     A(CYL, wx, BANK + 1.36, wz, { tag: 'well', col: '#c9b48a', solid: false, ink: false }, 0, 0, 0, [0.012, 0.38, 0.012]);
