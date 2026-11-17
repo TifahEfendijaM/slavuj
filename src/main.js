@@ -751,3 +751,13 @@ window.__game = { flight, inp, keys, mouse, bird, orbs, byId, world, camera, S, 
   finish(id) { const o = byId[id]; for (const t of o.def.tags) paint(t, true); finishOrb(o); },
   unpainted() { const used = new Set(orbs.flatMap((o) => o.def.tags)); return Object.keys(tags).filter((t) => !used.has(t) && !['bird', 'sky', 'sun'].includes(t)); },
 };
+
+// Dev only: open http://localhost:5183/?exportPhotos after a full play-through (in the same browser) to copy this
+// save's journal photos into assets/photos/, where they become the default photos for players who skip a scene.
+if (import.meta.env.DEV && params.has('exportPhotos')) {
+  (async () => {
+    const ids = await window.__game.exportPhotos(), missing = ORDER.filter((id) => !ids.includes(id));
+    document.body.insertAdjacentHTML('beforeend', `<div style="position:fixed;inset:20% 10% auto;z-index:99;background:#fffaf0;border:3px solid #3b352f;border-radius:14px;padding:20px 26px;font-size:22px;line-height:1.4">
+      Saved ${ids.length} journal photos into assets/photos/.${missing.length ? `<br>No photo yet for: ${missing.join(', ')}` : '<br>Every word has one.'}</div>`);
+  })();
+}
