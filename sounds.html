@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slavuj · Sound Picker</title>
+<style>
+  :root { --paper: #f5efdf; --ink: #3b352f; --soft: #8a7f72; --blue: #2466e8; --yellow: #ffc61a; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'Patrick Hand', 'Comic Sans MS', cursive; }
+  main { max-width: 900px; margin: 0 auto; padding: 26px 16px 70px; }
+  h1 { font-family: 'Caveat', cursive; font-size: 52px; margin: 0; color: var(--blue); }
+  p { font-size: 19px; line-height: 1.45; margin: 6px 0 16px; }
+  h2 { font-family: 'Caveat', cursive; font-size: 34px; margin: 26px 0 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  button { font: inherit; font-size: 20px; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 12px; background: #fffaf0; cursor: pointer; box-shadow: 2px 3px 0 rgba(59,53,47,.2); }
+  button.now { background: #ffe9a8; }
+  button.playing { background: var(--yellow); }
+  small { display: block; font-size: 14px; color: var(--soft); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sound picker</h1>
+  <p>Click a button to hear it. The ones marked <b>in game now</b> are what the game uses today.<br>
+  Tell Claude the codes you like, e.g. “sheep 2347 and 2350, horse 0859, cat 1893, applause 0020”. For the sheep you can pick a few: the game takes turns between them.</p>
+  <div id="groups"></div>
+</main>
+<script type="module">
+import '@fontsource/caveat/latin-700.css';
+import '@fontsource/patrick-hand/latin-400.css';
+const files = Object.keys(import.meta.glob('./sound-candidates/*.mp3')).map((p) => p.split('/').pop());
+const now = { 'sheep-1.mp3': 1, 'sheep-4.mp3': 1, 'applause-40.mp3': 1, 'horse-neigh.mp3': 1, 'cat-meow.mp3': 1 };
+const groups = [['Sheep', 'sheep'], ['Horse', 'horse'], ['Cat', 'cat'], ['Applause (the crowd on the bridge)', 'applause']];
+let player = null, playingBtn = null;
+for (const [title, key] of groups) {
+  const h = document.createElement('h2'); h.textContent = title; document.getElementById('groups').append(h);
+  const grid = document.createElement('div'); grid.className = 'grid'; document.getElementById('groups').append(grid);
+  for (const f of files.filter((x) => x.startsWith(key)).sort((a, b) => (now[b] || 0) - (now[a] || 0) || a.localeCompare(b))) {
+    const b = document.createElement('button'), code = f.replace(/\.mp3$/, '').split('-').slice(1).join('-');
+    b.innerHTML = `▶ ${now[f] ? 'in game now' : code}<small>${now[f] ? '(current)' : key + ' ' + code}</small>`; if (now[f]) b.classList.add('now');
+    b.onclick = () => { player?.pause(); playingBtn?.classList.remove('playing'); player = new Audio('./sound-candidates/' + f); playingBtn = b; b.classList.add('playing'); player.onended = () => b.classList.remove('playing'); player.play(); };
+    grid.append(b);
+  }
+}
+</script>
+</body>
+</html>
