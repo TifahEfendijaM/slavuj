@@ -487,11 +487,11 @@ export function createPeople(scene, world, R) {
         }
         a.walk += ((moving ? 1 : 0) - a.walk) * k(4, dt);
         // now and then the horse lifts its head high and neighs (the sound is played in main.js)
-        if (horse && alive && !moving && !(a.neigh > 0) && R() < dt / 16) { a.neigh = 2.2; this.onNeigh?.(a.root.position); }
+        if (horse && alive && !moving && !(a.neigh > 0) && R() < dt / 16) { a.neigh = 2.8; this.onNeigh?.(a.root.position); }
         if (a.neigh > 0) a.neigh -= dt;
-        const proud = a.neigh > 0 ? sm(Math.min(1, (2.2 - a.neigh) / 0.35, a.neigh / 0.5)) : 0;
+        const proud = a.neigh > 0 ? sm(Math.min(1, (2.8 - a.neigh) / 0.3, a.neigh / 0.6)) : 0, toss = a.neigh > 0 ? Math.sin((2.8 - a.neigh) * 8) * 0.14 * proud : 0;
         const down = alive ? (1 - a.walk) * sm(Math.sin(t * 0.5) * 2 + 1.1) * (1 - proud) : 0.3;
-        a.neck.rotation.x = down * (horse ? 1.15 : 0.8) + (alive ? Math.sin(t * 5) * 0.04 * down : 0) - proud * (0.55 + Math.sin(t * 9) * 0.06);
+        a.neck.rotation.x = down * (horse ? 1.15 : 0.8) + (alive ? Math.sin(t * 5) * 0.04 * down : 0) - proud * 0.95 - toss;      // neighing: head lifted high, with a toss or two
         if (a.tail) a.tail.rotation.z = alive ? Math.sin(t * 2.4) * 0.35 : 0.1;
         const sw = Math.sin(t * (horse ? 5 : 8)) * 0.4 * a.walk;
         a.legs.forEach((l, i) => { l.rotation.x = i === 0 || i === 3 ? sw : -sw; });

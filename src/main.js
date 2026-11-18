@@ -37,8 +37,10 @@ const flight = new Flight(world.colliders, bird);
 people.onScatter = () => audio.flutter();
 // the postman's knocks are heard only nearby
 people.onKnock = (p) => { if (live) audio.knock(clamp(1 - flight.pos.distanceTo(p) / 22, 0, 1)); };
-people.onNeigh = (p) => { if (live) audio.neigh(clamp(1 - flight.pos.distanceTo(p) / 32, 0, 1)); };      // heard only nearby
-people.onMeow = (p) => { if (live) audio.meow(clamp(1 - flight.pos.distanceTo(p) / 16, 0, 1)); };
+// animal sounds are quiet and only heard close to the animal: they fade out quickly with distance
+const nearGain = (p, r) => clamp(1 - flight.pos.distanceTo(p) / r, 0, 1) ** 1.6;
+people.onNeigh = (p) => { if (live) audio.neigh(nearGain(p, 22)); };
+people.onMeow = (p) => { if (live) audio.meow(nearGain(p, 11)); };
 // the spectators on the bridge: they keep applauding now and then after the finale, heard from nearby
 const crowd = (() => { const w = world.people.filter((p) => p.kind === 'watch'), c = V(0, 0, 0); for (const p of w) c.add(V(p.x, p.y, p.z)); return c.multiplyScalar(1 / Math.max(1, w.length)); })();
 let clapWait = 6;
@@ -704,10 +706,10 @@ function tick(dt) {
 
   // the sheep bleat now and then, heard only when the bird is close to the meadow
   if (running && shared.uLife.value > 0.5 && !fin && (clapWait -= dt) < 0) {      // the bridge crowd claps again every so often
-    clapWait = 9 + Math.random() * 9; const g = clamp(1 - flight.pos.distanceTo(crowd) / 45, 0, 1);
+    clapWait = 9 + Math.random() * 9; const g = nearGain(crowd, 32);
     if (g > 0) { audio.applause(3 + Math.random() * 2, g); people.applaud(); }
   }
-  if (running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - 56.5, flight.pos.z - 55) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 28 && Math.random() < dt * 0.25) audio.baa(1 - sd / 28); }
+  if (running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - 56.5, flight.pos.z - 55) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 18 && Math.random() < dt * 0.25) audio.baa((1 - sd / 18) ** 1.6); }
   freeSingT -= dt;
   bird.root.position.copy(flight.pos);
   bird.root.rotation.set(-flight.pitch, flight.yaw, flight.roll);

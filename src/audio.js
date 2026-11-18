@@ -106,9 +106,11 @@ export function setLife(o) { if ('wind' in o) wind = o.wind; if ('water' in o) w
 export function flap(strength, scale = 1) { if (ctx) noise(now(), 0.12, { f0: 1300, f1: 450, q: 0.7, vol: (0.04 + 0.05 * strength) * S.audio.flap * scale, attack: 0.03 }); }
 export function flutter() { if (!ctx) return; const t = now(); for (let i = 0; i < 9; i++) noise(t + i * 0.05 + Math.random() * 0.03, 0.07, { f0: 2100 + Math.random() * 600, f1: 800, q: 0.8, vol: 0.07 }); }
 // a sheep bleating, as loud as it is near (g 0..1)
+let baaN = 0;
 export function baa(g = 1) {
   if (!ctx || g <= 0) return;
-  if (clip(Math.random() < 0.5 ? 'sheep-1' : 'sheep-4', 0.55 * g, { rate: 0.92 + Math.random() * 0.16 })) return;
+  const takes = Object.keys(sfxBufs).filter((n) => n.startsWith('sheep')); baaN = (baaN + 1) % Math.max(1, takes.length);
+  if (takes.length && clip(takes[baaN], 0.3 * g, { rate: 1.18 })) return;      // (pitched up: the recordings are deep for these small sheep)
   const t = now(), f0 = 270 + Math.random() * 90, dur = 0.7 + Math.random() * 0.35;
   const o = ctx.createOscillator(); o.type = 'sawtooth';
   o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.07, t + 0.12); o.frequency.linearRampToValueAtTime(f0 * 0.9, t + dur);
@@ -118,8 +120,8 @@ export function baa(g = 1) {
   out.connect(amb); o.start(t); l.start(t); o.stop(t + dur + 0.05); l.stop(t + dur + 0.05);
 }
 // the horse neighing and the cat miaowing, as loud as they are near (g 0..1)
-export function neigh(g = 1) { if (ctx && g > 0) clip('horse-neigh', 0.6 * g, { rate: 0.95 + Math.random() * 0.1 }); }
-export function meow(g = 1) { if (ctx && g > 0) clip('cat-meow', 0.45 * g, { rate: 0.95 + Math.random() * 0.12 }); }
+export function neigh(g = 1) { if (ctx && g > 0) clip('horse-neigh', 0.38 * g); }
+export function meow(g = 1) { if (ctx && g > 0) clip('cat-meow', 0.3 * g); }
 // a knuckle on a wooden door
 export function knock(g = 1) { if (!ctx || g <= 0) return; const t = now(); tone(t, [[0, 190], [0.07, 120]], 0.2 * g, { decay: true, attack: 0.002, bus: amb }); noise(t, 0.05, { f0: 1100, q: 1.3, vol: 0.12 * g, attack: 0.002, bus: amb }); }
 export function takeoff() { if (!ctx) return; const t = now(); for (let i = 0; i < 4; i++) noise(t + i * 0.07, 0.09, { f0: 1700, f1: 600, q: 0.7, vol: 0.13 }); }
@@ -130,7 +132,7 @@ export function birdSplash(p) { if (!ctx) return; const t = now(); noise(t, 0.25
 // a crowd clapping; gain below 1 is the same crowd heard from further off
 export function applause(seconds = 6, gain = 1) {
   if (!ctx) return; const t = now();
-  const rec = sfxBufs['applause-40']; if (rec && clip('applause-40', 0.8 * gain, { dur: seconds, fade: Math.min(1.2, seconds / 4), offset: Math.random() * Math.max(0, rec.duration - 2) })) return;
+  const rec = sfxBufs['applause']; if (rec && clip('applause', 0.55 * gain, { dur: seconds, fade: Math.min(1.2, seconds / 4), offset: Math.random() * Math.max(0, rec.duration - 2) })) return;
   for (let i = 0; i < seconds * 48; i++) { const at = Math.random() * seconds, env = Math.sin(Math.PI * Math.min(1, at / seconds)) ** 0.5; noise(t + at, 0.045, { f0: 1000 + Math.random() * 2400, q: 1.1, vol: (0.13 * env + 0.015) * gain, attack: 0.002, bus: amb }); }
 }
 export function skim() { if (ctx) { const t = now(); noise(t, 0.3, { f0: 2500, f1: 900, q: 0.8, vol: 0.12 }); tone(t, [[0, 700], [0.12, 1300]], 0.04); } }
