@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <title>Slavuj · Mostar</title>
 <style>
   :root { --paper: #f5efdf; --paper2: #efe6d0; --ink: #3b352f; --yellow: #ffc61a; --gold: #c8891a; --blue: #2466e8; --red: #b8452c; }
@@ -122,7 +123,43 @@
   #card img { display: block; width: min(540px, 78vw); aspect-ratio: 3 / 2; object-fit: cover; border: 2px solid var(--ink); border-radius: 4px; background: var(--paper2); }
   #card b { font-family: 'Caveat', cursive; font-size: 44px; line-height: 1.1; color: var(--blue); } #card span { font-size: 22px; margin-left: 12px; opacity: .8; }
   #jclose { position: absolute; right: 12px; top: 8px; font-size: 18px; background: none; border: 0; cursor: pointer; z-index: 2; }
-  @media (max-width: 760px) { .book { grid-template-columns: 1fr; overflow: auto; } .book::after { display: none; } }
+  @media (max-width: 760px) and (orientation: portrait) { .book { grid-template-columns: 1fr; overflow: auto; } .book::after { display: none; } }
+
+  /* ---- phones (body.touch, set by src/touch.js) ---- */
+  body.touch { touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #tzone { position: fixed; left: 0; top: 0; bottom: 0; width: 58%; z-index: 1; }
+  #tring, #tknob { position: fixed; border-radius: 50%; pointer-events: none; z-index: 2; opacity: 0; transition: opacity .15s; }
+  #tring { width: 132px; height: 132px; margin: -66px; border: 2.5px dashed rgba(59, 53, 47, .55); background: rgba(245, 239, 223, .25); }
+  #tknob { width: 58px; height: 58px; margin: -29px; border: 2.5px solid var(--ink); background: rgba(255, 250, 240, .85); box-shadow: 2px 3px 0 rgba(59, 53, 47, .2); }
+  #tring.on, #tknob.on { opacity: 1; }
+  .tbtn { position: fixed; z-index: 3; background: rgba(255, 250, 240, .8); box-shadow: 3px 4px 0 rgba(59, 53, 47, .18); padding: 0; display: grid; place-items: center;
+    transition: opacity .25s, transform .08s, background .08s; touch-action: none; }
+  .tbtn.down { transform: scale(.92); background: #fff2c4; }
+  .tbtn.big { width: 92px; height: 92px; border-radius: 50%; } .tbtn.big svg { width: 46px; height: 46px; margin-top: 4px; }
+  .tbtn.big span { font-size: 17px; line-height: 1; margin-top: -10px; }
+  .tbtn.small { width: 54px; height: 54px; border-radius: 50%; } .tbtn.small svg { width: 30px; height: 30px; }
+  #tflap { right: calc(22px + env(safe-area-inset-right)); bottom: 26px; }
+  #tdive { right: calc(132px + env(safe-area-inset-right)); bottom: 70px; }
+  #topen { right: calc(40px + env(safe-area-inset-right)); bottom: 140px; font-size: 26px; padding: 6px 26px 9px; background: #fff2c4; animation: pulse 1.2s ease infinite; }
+  #tpause { left: calc(14px + env(safe-area-inset-left)); top: 12px; }
+  #tsing { right: calc(16px + env(safe-area-inset-right)); top: 70px; }
+  body.touch #hud { right: calc(16px + env(safe-area-inset-right)); }
+  body.touch #hint { top: 12px; bottom: auto; font-size: 18px; max-width: 54vw; white-space: normal; text-align: center; pointer-events: none; }
+  body.tidle #tzone, body.tidle .tbtn, body.tidle #tring, body.tidle #tknob, body.cine .tbtn { opacity: 0; pointer-events: none; }
+  #turn { display: none; z-index: 20; background: var(--paper); } #turn .card { font-size: 26px; max-width: 70vw; padding: 20px 24px; }
+  @media (orientation: portrait) { body.touch #turn { display: grid; } }
+  body:not(.touch) #tzone, body:not(.touch) .tbtn, body:not(.touch) #tring, body:not(.touch) #tknob { display: none; }
+  #wclose { font-size: 20px; padding: 2px 16px 4px; background: #fffaf0; }
+  /* a phone held sideways is short: everything on the cards shrinks to fit */
+  @media (max-height: 520px) {
+    #start h1 { font-size: 52px; } #start .sub { font-size: 18px; margin: 2px 0 6px; } #start table { font-size: 15px; border-spacing: 10px 2px; margin-bottom: 6px; }
+    #start .go { font-size: 26px; } #start .foot { margin-top: 4px; } .card { padding: 14px 26px; }
+    #pause .card { font-size: 21px; } #pause table { font-size: 15px; margin-top: 4px; } #pause .menu { margin-top: 8px; } #pause .note { display: none; }
+    #words { padding: 10px 18px 12px; right: 4vw; } .word { font-size: 38px; padding: 2px 8px 4px 30px; } #words h2 { font-size: 19px; }
+    #learn { bottom: 70px; } #learn b { font-size: 40px; } #learn span { font-size: 21px; }
+    .page { padding: 14px 20px; } .page h2 { font-size: 34px; } .jw b { font-size: 20px; } .jw i { font-size: 14px; }
+    #card img { width: min(540px, 70vw, 120vh); }
+  }
 </style>
 </head>
 <body>

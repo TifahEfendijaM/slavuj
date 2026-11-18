@@ -22,6 +22,7 @@ export default {
     hopUp: 1.4,           // highest step it hops up onto while walking (the garden walls are up to 1.3 m)
     hopDown: 1.3,         // deepest drop it hops down; anything deeper and it dives off
     keyTurnRate: 1.8,     // turning speed with A/D or arrow keys
+    pointerTurnRate: 1.9, // turning speed with the phone joystick pushed all the way
     keyPitchRate: 1.2,    // tilting speed with W/S or arrow keys
     turnSmooth: 6,        // how quickly the bird follows the steering
     pitchSmooth: 4,
@@ -34,6 +35,12 @@ export default {
     bodyRadius: 0.3,     // how close the body may come to a wall
     wingReach: 0.62,       // how far to the side the bird feels for walls
     maxLandSlope: 0.5,   // surfaces steeper than this (normal.y below it) cannot be landed on
+  },
+  touch: {                // phones: the floating joystick
+    stickRadius: 62,      // how far (pixels) the thumb pushes for a full turn or tilt
+    deadZone: 0.12,       // the first part of a push does nothing, so a resting thumb flies straight
+    curve: 1.4,           // above 1: small pushes turn gently, big pushes turn hard
+    turn: 1,              // turning strength (1 = as fast as pointerTurnRate)
   },
   camera: { fov: 60, distance: 2.7, flightDistance: 2.2,   // how far behind the bird the camera sits: when perched or swimming, and in flight
     smooth: 6, diveFovBoost: 12 },

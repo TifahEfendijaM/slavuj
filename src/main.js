@@ -13,6 +13,7 @@ import { rng } from './paper.js';
 import journalArt from '../assets/journal-mostar.webp';
 import { Flight } from './flight.js';
 import * as audio from './audio.js';
+import { isTouch, setupTouch } from './touch.js';
 import { WORDS, ORDER, CULTURE } from './vocab.js';
 
 const $ = (id) => document.getElementById(id);
@@ -193,7 +194,7 @@ function refused() { if (performance.now() - unlockedAt > 2500) { noLock = true;
 function resume() { paused = false; if (!noLock) { lock(); setTimeout(() => { if (!locked && !noLock && state === 'play') paused = true; }, 250); } }
 $('start').addEventListener('click', (e) => {
   if (e.target.closest('a,button')) return;
-  started = true; $('start').classList.add('off'); $('hud').classList.remove('off'); lock(); refreshOrbs(false); updateLegend(); showFleur();
+  started = true; $('start').classList.add('off'); $('hud').classList.remove('off'); touch?.enterFullscreen(); lock(); refreshOrbs(false); updateLegend(); showFleur();
   if (save.finale) audio.setLife({ wind: 1, water: 1, birds: true, city: true });
 });
 function reload() { if (!fresh) return location.reload(); params.delete('fresh'); const q = params.toString(); location.href = location.pathname + (q ? '?' + q : ''); }
@@ -248,6 +249,28 @@ addEventListener('keydown', (e) => {
     if (!$('card').classList.contains('off')) $('card').classList.add('off'); else if (['Escape', 'KeyJ', 'Tab', 'Enter'].includes(e.code)) closeJournal();
   } else if (e.code === 'Enter') skipScene();
 });
+// on a phone: the touch controls (src/touch.js) and the texts that name keys say what to tap instead
+const touch = isTouch ? setupTouch(inp, {
+  canPlay: () => started && state === 'play' && !paused,
+  onTakeoff: () => { audio.unlock(); inp.takeoff = true; },
+  onPause: () => { if (started && state === 'play') paused = true; },
+  onSing: () => { if (started && state === 'play' && !paused) { audio.chirp(); freeSingT = 0.35; } },
+  canOpen: () => !!orbHere(),
+  onOpen: () => { const o = orbHere(); if (o && state === 'play' && !paused) openWords(o); },
+}) : null;
+if (touch) {
+  noLock = true;
+  $('start').querySelector('table').innerHTML = '<tr><td>Drag on the left</td><td>steer (push up to climb, down to sink)</td></tr><tr><td>Flap button</td><td>take off · flap hard to climb</td></tr>'
+    + '<tr><td>Hold dive</td><td>dive in flight · walk on the ground · paddle on water</td></tr><tr><td>Open</td><td>the word list, when you land at an orb</td></tr>';
+  $('start').querySelector('.go').textContent = 'Tap to fly';
+  $('pause').querySelector('.card').firstChild.textContent = 'Paused · tap to keep flying';
+  $('pause').querySelector('table').innerHTML = '<tr><td>Drag on the left</td><td>steer</td></tr><tr><td>Flap</td><td>flap hard to climb</td></tr><tr><td>Hold dive</td><td>dive</td></tr>'
+    + '<tr class="gap"><td>Feather</td><td>journal</td></tr><tr><td>Note</td><td>sing</td></tr>';
+  $('words').querySelector('.esc').innerHTML = '<button id="wclose" class="wobbly">close</button> · tap the speaker to hear a word';
+  $('wclose').addEventListener('click', () => { if (state === 'words') closeWords(); });
+  $('jclose').textContent = 'close'; $('skip').textContent = 'skip';
+  const jt = $('jcount').nextSibling; if (jt) jt.textContent = ' · tap a word to see its picture';
+}
 addEventListener('keyup', (e) => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
 function updateLegend() { /* the controls are listed on the pause card */ }
@@ -708,10 +731,11 @@ function updateHint() {
   $('pause').classList.toggle('off', !(started && paused && state === 'play'));
   if (!started || state !== 'play' || paused) return hint('');
   if (toastT > 0) return hint(toast);
-  if (flight.mode === 'swim') return hint((orbHere() ? '<kbd>E</kbd> open the word list · ' : '') + 'hold the mouse button to paddle · <kbd>Space</kbd> take off');
+  const [OPEN, HOLD, UP] = touch ? ['tap <b>Open</b> for the word list', 'hold <b>dive</b> to', 'tap <b>flap</b> to take off'] : ['<kbd>E</kbd> open the word list', 'hold the mouse button to', '<kbd>Space</kbd> take off'];
+  if (flight.mode === 'swim') return hint((orbHere() ? OPEN + ' · ' : '') + HOLD + ' paddle · ' + UP);
   if (flight.mode === 'perched') {
-    if (orbHere()) return hint('<kbd>E</kbd> open the word list · hold the mouse button to walk');
-    return hint('<kbd>Space</kbd> take off' + (!FIRST.done ? ' · fly to the glowing orb and land on the roof' : ' · hold the mouse button to walk'));
+    if (orbHere()) return hint(OPEN + ' · ' + HOLD + ' walk');
+    return hint(UP + (!FIRST.done ? ' · fly to the glowing orb and land on the roof' : ' · ' + HOLD + ' walk'));
   }
   hint('');
 }
@@ -725,9 +749,10 @@ function tick(dt) {
   for (const n in tags) { const t = tags[n]; if (t.fadeLine) { const op = clamp(1 - (t.uT.value - 2.5) / 3, 0, 1); t.fadeLine.visible = op > 0.01; t.fadeLine.material.opacity = op; } }
   inp.turn = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
   inp.tilt = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
-  inp.flap = keys.has('Space'); inp.dive = mouseDown;
+  inp.flap = keys.has('Space') || !!touch?.flap; inp.dive = mouseDown || !!touch?.dive;
+  touch?.update(started && state === 'play' && !paused);
   // without mouse capture the cursor can run out of room: resting it on the very edge of the window keeps turning
-  if (noLock && !locked && innerWidth > 0 && !inp.turn) inp.turn = (mouse.x > innerWidth - 14 ? 1 : mouse.x < 14 ? -1 : 0) * S.flight.edgeTurnRate / S.flight.keyTurnRate;
+  if (noLock && !locked && !touch && innerWidth > 0 && !inp.turn) inp.turn = (mouse.x > innerWidth - 14 ? 1 : mouse.x < 14 ? -1 : 0) * S.flight.edgeTurnRate / S.flight.keyTurnRate;
 
   const running = started && !paused && state === 'play' && (locked || noLock); live = running;
   if (running) {
