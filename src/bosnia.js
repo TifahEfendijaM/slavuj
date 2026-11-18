@@ -10,8 +10,9 @@ import { WORD_COUNTS } from './maps/counts.js';
 
 const { W0, N1, kx, sc } = GEO.proj;
 const at = (lon, lat) => [(lon - W0) * kx * sc, (N1 - lat) * sc];
-// pins that would overlap their neighbour are drawn a little way off, with a line to the real place
-const NUDGE = { sarajevo: [-70, -78], jahorina: [92, 46], neum: [-96, 40] };
+// a pin that would overlap its neighbour (Jahorina is right next to Sarajevo) or the coast (Neum) is drawn a little way off,
+// with a line to its real place; the route joins the real places
+const NUDGE = { jahorina: [96, 40], neum: [-96, 40] };
 const SEASON_COL = { summer: '#f2b02a', autumn: '#d9612e', winter: '#5f9fd6', spring: '#6cb46a' };
 
 // little drawings for each town's pin, in a 40 x 40 box
@@ -25,12 +26,13 @@ const ICON = {
 
 export function showBosnia() {
   const el = document.createElement('div'); el.id = 'bosnia'; document.body.append(el);
+  const fit = () => { el.style.height = innerHeight + 'px'; }; fit(); addEventListener('resize', fit); visualViewport?.addEventListener('resize', fit);      // (the really visible height: phone browsers count their bars into 100vh)
   const pins = MAPS.map((m, i) => {
     const [rx, ry] = at(m.lon, m.lat), [nx, ny] = NUDGE[m.id] || [0, 0], x = rx + nx, y = ry + ny, p = progress(m.id), open = !m.soon && unlocked(i), done = finished(m.id), n = WORD_COUNTS[m.id] || 0;
     const words = (p.done || []).length + (p.finale ? 1 : 0);
     return { m, x, y, rx, ry, open, done, state: m.soon ? 'soon' : done ? 'done' : open ? 'open' : 'locked', words, n };
   });
-  const route = pins.filter((q) => !q.m.extra).map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join(' ');
+  const route = pins.filter((q) => !q.m.extra).map((q) => `${q.rx.toFixed(1)},${q.ry.toFixed(1)}`).join(' ');
   const H = GEO.h;
   el.innerHTML = `
     <div class="bhead"><h1>Slavuj</h1><div class="bsub">Choose where to fly · each town is a season of the year</div></div>
@@ -68,7 +70,7 @@ export function showBosnia() {
   // the place names sit clear of each other: Jahorina's label goes below the pin, Sarajevo's above
   for (const g of el.querySelectorAll('.pin')) {
     const q = pins[+g.dataset.i];
-    if (q.m.id === 'sarajevo') { g.querySelector('.pname').setAttribute('y', -66); g.querySelector('.pseason').setAttribute('y', -48); }
+    if (q.m.id === 'sarajevo') { g.querySelector('.pname').setAttribute('y', -66); g.querySelector('.pseason').setAttribute('y', -48); }      // (above its pin, clear of Jahorina's line)
     g.addEventListener('click', () => {
       if (q.state === 'open' || q.state === 'done') { location.href = mapUrl(q.m.id); return; }
       const prev = MAPS[+g.dataset.i - 1];
