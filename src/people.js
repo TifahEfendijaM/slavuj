@@ -411,13 +411,13 @@ export function createPeople(scene, world, R) {
         } else if (o.kind === 'fisher') {    // waits; now and then lifts the rod a little
           const tug = alive ? Math.max(0, Math.sin(t * 0.7)) ** 6 : 0;
           p.rod.rotation.x = -tug * 0.12 + (alive ? Math.sin(t * 1.3) * 0.01 : 0); p.head.rotation.y = alive ? Math.sin(t * 0.3) * 0.2 : 0; p.float.position.y = -1.62 + (alive ? Math.sin(t * 2.2) * 0.03 : 0);
-        } else if (o.kind === 'drink') {     // picks the cup up from its saucer, sips, sets it down again
-          const sip = alive ? sm(Math.sin(t * 0.9) * 2.4 - 0.9) : 0;
-          a1.sh.rotation.set(-0.9 - 0.2 * sip, 0, -0.2); a1.el.rotation.x = -0.1 - 1.65 * sip;
-          // on its saucer the cup sits where it was put; once lifted it is in his fingers, wherever the hand is
-          p.root.updateMatrixWorld(true); a1.hand.getWorldPosition(birdD); p.root.worldToLocal(birdD); birdD.y += 0.035; birdD.z += 0.045;
-          p.cup.position.set(0.12, 0.66, 0.47).lerp(birdD, sm(sip * 5)); p.cup.rotation.x = Math.PI - 0.5 * Math.max(0, sip - 0.8) * 5;
-          p.head.rotation.x = -0.15 * Math.max(0, sip - 0.7) * 3; a0.sh.rotation.x = -0.6; a0.el.rotation.x = -0.9; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.3 * (1 - sip) : 0;
+        } else if (o.kind === 'drink') {     // the cup at his lips, sipping; now and then he lowers it to the saucer and lifts it again
+          // drinking pose: his hand at his mouth (found by search: hand 1 mm from the spot), the cup in his fingers at his lips
+          const sip = alive ? sm(Math.sin(t * 0.7) * 2.6 + 1.1) : 1, held = sm(Math.min(1, sip * 4));
+          a1.sh.rotation.set(-0.9 + (-1.26 + 0.9) * sip, -0.47 * sip, -0.2 + (-0.29 + 0.2) * sip); a1.el.rotation.x = -0.1 + (-2.15 + 0.1) * sip;
+          p.root.updateMatrixWorld(true); a1.hand.getWorldPosition(birdD); p.root.worldToLocal(birdD); birdD.x -= 0.045; birdD.y += 0.03; birdD.z += 0.012;
+          p.cup.position.set(0.12, 0.66, 0.47).lerp(birdD, held); p.cup.rotation.set(Math.PI - 0.95 * sip, 0, 0);      // tipped towards his mouth as he drinks
+          p.head.rotation.x = -0.22 * sip; a0.sh.rotation.x = -0.6; a0.el.rotation.x = -0.9; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.3 * (1 - sip) : 0;
         } else if (o.kind === 'argue') {     // leaning in, hands flying, taking turns
           const mine = alive ? sm(Math.sin(t * 0.7 + (o.woman ? Math.PI : 0)) * 3) : o.woman ? 0 : 1, w = alive ? Math.sin(t * 9) : 0.5;
           // whoever is speaking throws their hands up and apart; the other sits back with arms crossed, shaking their head
