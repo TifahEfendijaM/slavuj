@@ -54,7 +54,7 @@ function build(scene) {
   for (const fy of [2.2, 4.6]) for (let i = 0; i < 6; i++) { const wx = 24 - 9 + i * 3.6; box(1.1, 1.3, 0.1, wx, BANK + fy + 2, -28 + 6.18, { tag: 'light', col: '#f2c66a', bleed: '#d9963a', solid: false, pool: 1 }); }
   icicles(24, -28 + 6 + 0.66, BANK + 10, 0, 23.2, 14);
   orb('hotel', [24, BANK + 6, -28], 12, ['hotel'], 'close', hot.top, { front: 0 });
-  orb('svjetlo', [24, BANK + 6, -21.6], 9, ['light'], 'close', BANK + 9, { requires: ['hotel'], front: 0, at: V(14, BANK + 8, -20.5) });
+  orb('svjetlo', [24, BANK + 6, -21.6], 9, ['light'], 'close', BANK + 9, { requires: ['hotel'], front: 0, at: V(18, BANK + 3, -19.8), near: { p: [18, BANK + 0.5, -19.8], r: 2.6 } });
   orb('ledenica', [-10, BANK + 3.2, 29.2], 3, ['icicle'], 'combo', BANK + 3.4, { requires: ['koliba'], near: { p: [-8, BANK + 0.5, 30.6], r: 2.6 }, at: V(-6.8, BANK + 4.4, 29.6), front: 0 });
   tag('icicle').holdRest = 2.9;
 

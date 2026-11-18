@@ -15,7 +15,10 @@ export const saveKey = (id) => `slavuj-${id}-1` + slot;      // (Mostar's key is
 export const MAP_ID = MAPS.some((m) => m.id === params.get('map') && !m.soon) ? params.get('map') : null;
 
 export function progress(id) { try { return JSON.parse(localStorage.getItem(saveKey(id)) || '{}'); } catch (e) { return {}; } }
-export const finished = (id) => !!progress(id).finale;
+// finishing a map is remembered on its own, so restarting it never locks the next one again
+export const wonKey = (id) => saveKey(id) + '-finished';
+export function markFinished(id) { try { localStorage.setItem(wonKey(id), '1'); } catch (e) { /* no storage */ } }
+export const finished = (id) => { try { if (localStorage.getItem(wonKey(id))) return true; } catch (e) { /* */ } return !!progress(id).finale; };
 // a map is open once the one before it has been finished (?unlock opens them all, for testing)
 export const unlocked = (i) => i === 0 || params.has('unlock') || finished(MAPS[i - 1].id);
 

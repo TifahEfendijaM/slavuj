@@ -4,7 +4,7 @@ import '@fontsource/caveat/latin-700.css';
 import '@fontsource/caveat/latin-ext-700.css';
 import '@fontsource/patrick-hand/latin-400.css';
 import '@fontsource/patrick-hand/latin-ext-400.css';
-import { MAPS, progress, unlocked, mapUrl } from './maps/index.js';
+import { MAPS, progress, unlocked, mapUrl, finished } from './maps/index.js';
 import { GEO } from './maps/geo.js';
 import { WORD_COUNTS } from './maps/counts.js';
 
@@ -26,7 +26,7 @@ const ICON = {
 export function showBosnia() {
   const el = document.createElement('div'); el.id = 'bosnia'; document.body.append(el);
   const pins = MAPS.map((m, i) => {
-    const [rx, ry] = at(m.lon, m.lat), [nx, ny] = NUDGE[m.id] || [0, 0], x = rx + nx, y = ry + ny, p = progress(m.id), open = !m.soon && unlocked(i), done = !!p.finale, n = WORD_COUNTS[m.id] || 0;
+    const [rx, ry] = at(m.lon, m.lat), [nx, ny] = NUDGE[m.id] || [0, 0], x = rx + nx, y = ry + ny, p = progress(m.id), open = !m.soon && unlocked(i), done = finished(m.id), n = WORD_COUNTS[m.id] || 0;
     const words = (p.done || []).length + (p.finale ? 1 : 0);
     return { m, x, y, rx, ry, open, done, state: m.soon ? 'soon' : done ? 'done' : open ? 'open' : 'locked', words, n };
   });

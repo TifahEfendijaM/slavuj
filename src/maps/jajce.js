@@ -115,7 +115,7 @@ function build(scene) {
     A(GEO.CONE8, st.x, st.y + 1.33, st.z + 0.62, { ...SK, col: '#d9453a', bleed: '#a8302a' }, 0, Math.PI / 2, 0, [0.04, 0.3, 0.04]);
     A(GEO.CYL, st.x, st.y + 1.15, st.z + 0.24, SK, 0, 0.5, 0, [0.06, 0.4, 0.06]);
   });
-  orb('roda', [st.x, st.y + 1, st.z], 1.4, ['stork'], 'close', st.y + 1.6, { front: Math.PI / 2 });
+  orb('roda', [st.x, st.y + 1, st.z], 1.4, ['stork'], 'close', st.y + 1.6, { front: Math.PI / 2, near: { p: [st.x, st.y + 0.6, st.z], r: 1.8 } });
   const sw = houses[5];      // its front faces the square (south side of the square, facing -z)
   b.object(() => {
     for (const dx of [-1.6, 1.4]) A(GEO.HEMI, sw.x + dx, BANK + sw.h - 0.05, sw.z - sw.d / 2 - 0.22, { tag: 'nest', col: '#a8825a', bleed: '#7a5a3a', hull: true, solid: false }, 0, Math.PI, 0, [0.32, 0.3, 0.24]);
@@ -140,7 +140,7 @@ function build(scene) {
     for (const [x, z] of [[28, -76], [92, -76], [28, -124], [92, -124]]) A(GEO.CYL12, x, HT + 3.4, z, { ...Z, edge: 40 }, 0, 0, 0, [2.4, 6.8, 2.4]);
     for (let i = 0; i < 20; i++) { const x = 28.8 + i * 3.25; if (Math.abs(x - 60) > 7) box(1.2, 0.7, 1.6, x, HT + 4.75, -76, Z); }
   });
-  orb('zidine', [60, HT + 2.4, -100], 18, ['walls'], 'close', HT + 7.4, { stage: 2, front: 0 });
+  orb('zidine', [60, HT + 2.4, -100], 18, ['walls'], 'close', HT + 7.4, { stage: 2, front: 0, near: { p: [60, HT + 0.5, -100], r: 9 }, at: V(60, HT + 4, -100) });
   b.object(() => {
     const G = { tag: 'gate', col: '#c4b494', bleed: '#9a8a6a', pat: PAT.blocks, ps: 0.6 };
     for (const s of [-1, 1]) box(2.6, 6, 2.4, 60 + s * 8.3, HT + 3, -76, G);
@@ -223,7 +223,7 @@ function build(scene) {
     const a = V(10.4, LOW + 1.7, 110.6), c = V(18, 29.6, 128), d = c.clone().sub(a), L = d.length();
     b.add(GEO.BOX, new THREE.Matrix4().compose(a.clone().add(c).multiplyScalar(0.5), new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), d.normalize()), V(0.03, L, 0.03)), { tag: 'kite', col: '#f6f1e6', solid: false, ink: false });
   });
-  orb('zmaj', [18, 30, 128], 2.2, ['kite'], 'close', 31, { front: Math.PI });
+  orb('zmaj', [18, 30, 128], 2.2, ['kite'], 'close', 31, { front: Math.PI, at: V(18, LOW + 3, 124), near: { p: [18, LOW + 0.5, 124], r: 3 } });
   orb('djecak', [10, LOW + 0.8, 110], 1.4, ['kidboy'], 'close', LOW + 1.6, { near: { p: [12.4, LOW + 0.5, 108.6], r: 2.4 }, at: V(8.6, LOW + 2.6, 108.6) });
   A(GEO.CYL, 42.4, LOW + 0.9, 100.4, { tag: 'shepherd', col: '#7a5636', bleed: '#5a3e26', solid: false }, 0, 0, 0.08, [0.04, 1.9, 0.04]);      // the shepherd's staff
   orb('pastir', [42, LOW + 1, 100], 1.6, ['shepherd'], 'close', LOW + 2.2, { near: { p: [39.4, LOW + 0.5, 101.6], r: 2.4 }, at: V(43.6, LOW + 2.8, 98.6) });

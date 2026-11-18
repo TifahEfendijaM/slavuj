@@ -128,7 +128,7 @@ function build(scene) {
     for (let i = 0; i < 12; i++) A(GEO.SPH, 17 + Math.cos(i * 1.7) * (0.12 + (i % 3) * 0.08), BANK + 1.18 + (i % 4) * 0.06, 10 + Math.sin(i * 1.7) * 0.22, { tag: 'grapes', col: '#6a3a7a', bleed: '#4a2458', solid: false, ink: false, hull: true }, 0, 0, 0, 0.07);
     for (const [x, z, sc] of [[15.6, 7.4, 0.42], [15.3, 8.3, 0.34], [15.7, 12.7, 0.5], [15.2, 11.9, 0.32]]) A(GEO.SPH, x, BANK + sc * 0.7, z, { tag: 'pumpkin', col: '#e8792e', bleed: '#c45a1e', hull: true }, R() * 6, 0, 0, [sc, sc * 0.7, sc]);
   });
-  orb('pijaca', [17, BANK + 1.5, 10], 3.4, ['stall'], 'close', BANK + 3.2, { front: -Math.PI / 2 });
+  orb('pijaca', [17, BANK + 1.5, 10], 3.4, ['stall'], 'close', BANK + 3.2, { front: -Math.PI / 2, near: { p: [14.4, BANK + 0.5, 12.6], r: 2.4 }, at: V(14.6, BANK + 3.6, 12.4) });
   orb('korpa', [17, BANK + 1.05, 10], 1.6, ['basket'], 'close', BANK + 1.6, { near: { p: [14.8, BANK + 0.5, 10], r: 2.4 }, at: V(15.6, BANK + 2.8, 9.4), front: -Math.PI / 2 });
   orb('jabuka', [17, BANK + 1.2, 8.5], 0.8, ['apple'], 'close', BANK + 1.6, { requires: ['korpa'], near: { p: [14.8, BANK + 0.5, 8.6], r: 2.4 }, at: V(15.8, BANK + 2.8, 8.2), front: -Math.PI / 2 });
   orb('grozdje', [17, BANK + 1.25, 10], 0.7, ['grapes'], 'close', BANK + 1.6, { requires: ['korpa'], near: { p: [14.8, BANK + 0.5, 10], r: 2.4 }, at: V(15.8, BANK + 2.8, 10.4), front: -Math.PI / 2 });
@@ -168,7 +168,7 @@ function build(scene) {
     A(GEO.HEMI, x, BANK + h + 2.0, z, { ...CH, col: '#7a9a8a', bleed: '#567a68', hull: true }, 0, 0, 0, [2.2, 2.4, 2.2]);
   });
   orb('vijecnica', [62, BANK + 6, 24], 13, ['cityhall'], 'close', BANK + 16.6, { front: 0 });
-  orb('pruge', [62, BANK + 6, 32.1], 11, ['stripes'], 'close', BANK + 9, { requires: ['vijecnica'], front: 0, at: V(52, BANK + 9, 33.5) });
+  orb('pruge', [62, BANK + 6, 32.1], 11, ['stripes'], 'close', BANK + 9, { requires: ['vijecnica'], front: 0, at: V(52, BANK + 3, 35.4), near: { p: [52, BANK + 0.5, 35.4], r: 3 } });
   // the tram, waiting at its stop (once the town wakes it runs up and down the river road)
   const tram = b.object(() => {
     const T = { tag: 'tram', col: '#f2c230', bleed: '#d9a625', hull: true, ink: false };

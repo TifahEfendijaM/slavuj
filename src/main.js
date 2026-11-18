@@ -7,7 +7,7 @@ import S from './settings.js';
 import { shared, setResolution, tags, tag, SUN_DIR, paintGeo, washMat, addHull } from './paper.js';
 import { BANK } from './world.js';
 import M from './maps/current.js';
-import { saveKey, mapUrl, MAPS } from './maps/index.js';
+import { saveKey, mapUrl, MAPS, markFinished } from './maps/index.js';
 import { createBird } from './bird.js';
 import { createDiver } from './diver.js';
 import { createPeople } from './people.js';
@@ -70,6 +70,7 @@ const KEY = saveKey(M.id);   // ?slot=name keeps a separate save
 let save = { done: [], finale: false };
 try { if (!fresh) save = { ...save, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { /* no storage */ }
 const store = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* no storage */ } };
+if (save.finale) markFinished(M.id);      // (a map finished before this mark existed)
 const painting = new Set();
 // journal photos: one frame grabbed from each word's own colouring scene, stored beside the save
 const PICS = KEY + '-pics';
@@ -192,6 +193,12 @@ function orbHere() {
     else if (n) { const d = flight.pos.distanceTo(V(...n.p)); if (d < n.r && d < bd) { best = o; bd = d; } }
   }
   if (!best && flight.mode === 'perched') best = [].concat(flight.landedOn?.userData.orb || []).map((id) => byId[id]).find((o) => o?.alive) || null;
+  // or: it stands on something of the word's own kind (the dome, the fortress...), close to that word's orb
+  const t = flight.landedOn?.userData.tag;
+  if (!best && flight.mode === 'perched' && t) for (const o of orbs) if (o.alive && !o.def.near && !o.def.swim && o.def.tags.includes(t)) {
+    const d = Math.hypot(flight.pos.x - o.def.at.x, flight.pos.z - o.def.at.z);
+    if (d < Math.max(6, o.def.size * 1.2) && d < bd) { best = o; bd = d; }
+  }
   return best;
 }
 
@@ -709,7 +716,7 @@ function updateFinale(dt) {
   if (t >= 26 && !f.ending) {
     f.ending = true;
     fadeCut(() => {
-      fin = null; save.finale = true; store(); document.body.classList.remove('cine'); audio.swell(false, 9); audio.setMusic(0.9, true); audio.duckMusic(false);
+      fin = null; save.finale = true; store(); markFinished(M.id); document.body.classList.remove('cine'); audio.swell(false, 9); audio.setMusic(0.9, true); audio.duckMusic(false);
       camera.fov = S.camera.fov; camera.updateProjectionMatrix(); camSnap = true;
       flight.mode = 'flying'; flight.mousePitch = 0; flight.grace = 0.5; fleur.visible = false;
       state = 'play'; awakeNote = true; openJournal(FIN.word);
