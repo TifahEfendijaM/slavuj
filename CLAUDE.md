@@ -5,14 +5,13 @@ A promo mini game for easybosnian.com. A nightingale flies over a sketched, colo
 Three.js + Vite. Live at https://tifahefendijam.github.io/slavuj/ (repo TifahEfendijaM/slavuj; every push to `main` republishes).
 
 ## Status
-Level 1, Mostar (summer), is approved: 82 words, the finale, the living town, the journal with culture pages, desktop and phone controls.
-Now building: the Bosnia map (level select) and three more maps, one per season.
+All four season maps are built and live: Mostar (summer, approved), Sarajevo (autumn), Jahorina (winter), Jajce (spring). The page opens on the Bosnia map, where they unlock in season order.
+The three new maps still need the user's review in play, on desktop and phone.
 
 ## Maps
-- Summer: Mostar (done). Autumn: Sarajevo old town (Baščaršija) with Žuta tabija on the hill. Winter: Jahorina. Spring: Jajce.
-- Later: Neum (a second summer map). Also liked, for later: Trebević, Igman, Vrelo Bosne, Blagaj.
-- About 40 words per new map. New words use the browser's synthetic voice until the user records them (record.html).
-- Maps unlock in season order on the Bosnia map; finished maps can be replayed. "Skip to the finale" stays available on every map for testing.
+- Summer: Mostar. Autumn: Sarajevo old town with Žuta tabija. Winter: Jahorina. Spring: Jajce. Later: Neum (shown as "later" on the map). Also liked: Trebević, Igman, Vrelo Bosne, Blagaj.
+- About 40 words per new map; new words use the browser's synthetic voice until recorded (record.html lists every map's words).
+- "Skip to the finale" stays on every map for testing; `?unlock` opens every map on the Bosnia map.
 - Each finished map is published straight away.
 
 ## Rules from the user
@@ -28,6 +27,8 @@ Now building: the Bosnia map (level select) and three more maps, one per season.
 - Phone (detected automatically, landscape only): a floating joystick that starts wherever the thumb lands, flap and dive buttons on the right, Open at an orb, pause and sing buttons. Code in `src/touch.js`.
 
 ## Where things are
+- `src/maps/`: one module per map (its world, words, story page, finale, sounds, flight bounds); `index.js` lists them in order. Mostar's world is `src/world.js`, the others use `src/kit.js`.
+- `src/bosnia.js`: the Bosnia map page. `src/boot.js` chooses between it and a map (`?map=<id>`).
 - `src/settings.js`: values to tweak (flight, joystick, camera, audio).
 - `src/world.js`: the town, its objects, the orbs and their camera shots. `src/vocab.js`: the words.
 - `src/people.js`: people and animals. `src/flight.js`: flying, landing, walking, swimming. `src/main.js`: game flow.

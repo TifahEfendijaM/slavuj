@@ -115,7 +115,7 @@ export function createPeople(scene, world, R) {
     if (moving && o.to) { p.from = pos.clone(); p.to = new THREE.Vector3(o.to[0], o.y, o.to[1]); root.rotation.y = Math.atan2(p.to.x - p.from.x, p.to.z - p.from.z); }
     if (seated || o.kind === 'raft') { hips.position.y = 0.5; for (const l of legs) { l.hip.rotation.x = -1.5; l.knee.rotation.x = o.kind === 'raft' ? 0.55 : 1.45; } }
     if (o.kind === 'girl') torso.rotation.x = 0.5;
-    if (o.kind === 'boy') for (const [dx, dy, c] of [[0, 0.1, '#e0453a'], [0.07, 0.03, '#f2c230'], [-0.07, 0.04, '#f08fb0'], [0, -0.02, '#5a9148']]) P(G.bloom, c, arms[1].el, dx, -0.41 - dy, 0.02);
+    if (o.kind === 'boy' && !o.kite) for (const [dx, dy, c] of [[0, 0.1, '#e0453a'], [0.07, 0.03, '#f2c230'], [-0.07, 0.04, '#f08fb0'], [0, -0.02, '#5a9148']]) P(G.bloom, c, arms[1].el, dx, -0.41 - dy, 0.02);
 
     if (o.dog) {       // the dog trots beside him on a leash
       const d = p.dog = grp(root, 0.55, 0, 0.75), C = '#b9834a', C2 = '#8f5f30', P = painter('dog', pos);
