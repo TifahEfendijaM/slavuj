@@ -63,20 +63,25 @@ const WORDS = { ...Object.fromEntries(Object.entries(MOSTAR).map(([k, v]) => ['m
 
 // every word the game can say: the words themselves and the answer choices (which have speaker buttons too)
 const en = {}; for (const w of Object.values(WORDS)) en[w.word] = w.en;
-const all = []; const seen = new Set();
-for (const w of Object.values(WORDS)) for (const x of [w.word, ...(w.choices || [])]) if (!seen.has(x)) { seen.add(x); all.push(x); }
+// newest map first, so its words come before the older ones; each word remembers the map it first appears in
+const MAPS = [['Jajce', JAJCE], ['Jahorina', JAHORINA], ['Sarajevo', SARAJEVO], ['Mostar', MOSTAR]], from = {};
+let all = []; const seen = new Set();
+for (const [name, ws] of MAPS) for (const w of Object.values(ws)) for (const x of [w.word, ...(w.choices || [])]) if (!seen.has(x)) { seen.add(x); all.push(x); from[x] = name; }
 // same file name rule as the game (src/audio.js): lower case, no diacritics
 const slug = (w) => w.toLowerCase().replace(/đ/g, 'dj').replace(/[ćč]/g, 'c').replace(/š/g, 's').replace(/ž/g, 'z');
 // which words already have a recording (asked once; not watched, so saving does not reload this page)
 const has = async (id) => { const r = await fetch(`/assets/audio/words/${encodeURIComponent(id)}.wav`, { method: 'HEAD' }); return r.ok && (r.headers.get('content-type') || '').includes('audio'); };      // (a missing file comes back as a web page)
 const existing = new Set((await Promise.all(all.map(async (w) => ((await has(slug(w))) ? slug(w) : null)))).filter(Boolean));
+// the words still to record go to the top (newest map first), the ones already recorded below them
+const todo = all.filter((w) => !existing.has(slug(w)));      // (the words to learn before the answer choices)
+all = [...todo.filter((w) => en[w]), ...todo.filter((w) => !en[w]), ...all.filter((w) => existing.has(slug(w)))];
 
 const $ = (id) => document.getElementById(id), list = $('list');
 let cur = 0, ctx = null, stream = null, recording = false, takes = {}, player = null;
 const rows = all.map((word, i) => {
   const li = document.createElement('li'), id = slug(word);
   li.innerHTML = `<div><span class="w"></span><span class="en"></span></div><div class="btns"><button class="rec">● Record</button><button class="play" disabled>▶ Play</button><button class="save" disabled>Save</button></div>`;
-  li.querySelector('.w').textContent = word; li.querySelector('.en').textContent = en[word] ? en[word] : '(answer choice)';
+  li.querySelector('.w').textContent = word; li.querySelector('.en').textContent = (en[word] ? en[word] : '(answer choice)') + ' · ' + from[word];
   if (existing.has(id)) li.classList.add('done');
   li.querySelector('.rec').onclick = () => { select(i); toggleRec(); };
   li.querySelector('.play').onclick = () => { select(i); play(); };
