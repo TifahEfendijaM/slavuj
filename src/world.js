@@ -846,7 +846,7 @@ export function buildWorld(scene) {
   tag('sky').source = sunPos.clone(); tag('sun').source = sunPos.clone();
   b.finish(scene);
 
-  return { flag, smoke: [hSmoke, hSmoke2, hSmoke3, hSmoke4].map((h) => h.chimTop.clone()), light: { x: 82.4, y: BANK + 0.12, z: -2 }, slide: SL, clouds, colliders: b.colliders, orbs, start: new Vector3(-19.5, 0, 47), diverPos, diverBlock, people, cat: { x: 33.5, y: BANK + 1.1, z: 12.45, x0: 31, x1: 36.6 }, catBlock,
+  return { fountain: { x: 24, y: BANK, z: -28 }, flag, smoke: [hSmoke, hSmoke2, hSmoke3, hSmoke4].map((h) => h.chimTop.clone()), light: { x: 82.4, y: BANK + 0.12, z: -2 }, slide: SL, clouds, colliders: b.colliders, orbs, start: new Vector3(-19.5, 0, 47), diverPos, diverBlock, people, cat: { x: 33.5, y: BANK + 1.1, z: 12.45, x0: 31, x1: 36.6 }, catBlock,
     animals: [{ kind: 'horse', tag: 'horse', x: 46, y: BANK + 0.06, z: 43, ry: 0.8, roam: 2.5 }, { kind: 'sheep', tag: 'sheep', x: 56.5, y: BANK + 0.06, z: 53.5, ry: 0.6, roam: 2 }, { kind: 'sheep', tag: 'sheep2', x: 54.4, y: BANK + 0.06, z: 55.6, ry: 2.4, roam: 2 }, { kind: 'sheep', tag: 'sheep2', x: 57.6, y: BANK + 0.06, z: 55.2, ry: -1.4, roam: 2 }],
     pigeons: { x: 55.5, y: BANK + 0.12, z: -12.6, fx: 51.6, fz: -14, fh: 9.5 }, fish: { x: 2.8, y: 0, z: 14 }, sunPos, fleur: new Vector3(0, 66, 8) };
 }

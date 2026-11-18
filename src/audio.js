@@ -122,6 +122,13 @@ export function baa(g = 1) {
 // the horse neighing and the cat miaowing, as loud as they are near (g 0..1)
 export function neigh(g = 1) { if (ctx && g > 0) clip('horse-neigh', 0.38 * g); }
 export function meow(g = 1) { if (ctx && g > 0) clip('cat-meow', 0.3 * g); }
+// the šadrvan's water: one quiet loop, as loud as the bird is near it (0 = silent)
+let fountainGain = null;
+export function setFountain(g) {
+  if (!ctx) return;
+  if (!fountainGain) { const buf = sfxBufs.fountain; if (!buf || g <= 0) return; fountainGain = ctx.createGain(); fountainGain.gain.value = 0; const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(fountainGain).connect(amb); src.start(); }
+  fountainGain.gain.setTargetAtTime(0.32 * g, now(), 0.25);
+}
 // a knuckle on a wooden door
 export function knock(g = 1) { if (!ctx || g <= 0) return; const t = now(); tone(t, [[0, 190], [0.07, 120]], 0.2 * g, { decay: true, attack: 0.002, bus: amb }); noise(t, 0.05, { f0: 1100, q: 1.3, vol: 0.12 * g, attack: 0.002, bus: amb }); }
 export function takeoff() { if (!ctx) return; const t = now(); for (let i = 0; i < 4; i++) noise(t + i * 0.07, 0.09, { f0: 1700, f1: 600, q: 0.7, vol: 0.13 }); }

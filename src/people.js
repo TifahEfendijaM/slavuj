@@ -200,6 +200,20 @@ export function createPeople(scene, world, R) {
     const SMP = painter('smoke', new THREE.Vector3(SM.x, SM.y + 1.6, SM.z), 3.6);
     return { SM, k, puffs: Array.from({ length: 9 }, (_, i) => SMP(G.ball, i % 2 ? '#e2dfd8' : '#d0ccc4', scene, 0, 0, 0, '#b4b0a8')) };
   });
+  // ---- the šadrvan: eight thin streams fall from the rim of its upper bowl into the basin (still in the sketch) ----
+  const FT = world.fountain, FTP = painter('fountain', new THREE.Vector3(FT.x, FT.y + 1.6, FT.z), 2.4);
+  const FALL = 0.574, DROPS = 16, R0F = 0.86, R1F = 1.3, Y0F = FT.y + 2.29, VY0 = 0.25;      // seconds to fall; from the rim to the water
+  const streams = Array.from({ length: 8 }, (_, i) => {
+    const a = (i + 0.5) * Math.PI / 4, dx = Math.sin(a), dz = Math.cos(a);
+    return { dx, dz, drops: Array.from({ length: DROPS }, () => { const m = FTP(G.ball, '#bfe4ea', scene, 0, 0, 0, '#7fc0cc'); m.clear(); m.scale.set(0.024, 0.075, 0.024); return m; }) };
+  });
+  const flow = (time) => {
+    for (const s of streams) s.drops.forEach((m, k) => {
+      const u = ((k / DROPS) + time / FALL) % 1, t = u * FALL, r = R0F + (R1F - R0F) * u;
+      m.position.set(FT.x + s.dx * r, Y0F + VY0 * t - 4.9 * t * t, FT.z + s.dz * r);
+    });
+  };
+  flow(0);
   // ---- the traffic light by the road: red until the town wakes, then it cycles ----
   const TL = world.light, tlp = new THREE.Vector3(TL.x, TL.y, TL.z), TLP = painter('light', tlp, 2.6), tlg = new THREE.Group(); tlg.position.copy(tlp); scene.add(tlg);
   rod(TLP, tlg, [0, 0, 0], [0, 3, 0], 0.06, '#3a3e42');
@@ -456,7 +470,9 @@ export function createPeople(scene, world, R) {
         ball.position.lerpVectors(tmpA, tmpB, h); ball.position.y = ballHome.y + Math.abs(Math.sin(time * 2.3)) * 0.35 * Math.sin(Math.PI * h); ball.rotation.x += dt * 5;
         ballBlock.matrixWorld.setPosition(ball.position.x, ball.position.y, ball.position.z);
       }
-      // smoke and the traffic light
+      // smoke, the fountain and the traffic light
+      if (alive) flow(time); else if (this.flowed) flow(0);
+      this.flowed = alive;
       const st = alive ? time : 0;
       for (const { SM, k, puffs } of smokes) puffs.forEach((m, i) => {
         const f = (i / puffs.length + st * 0.1 + k * 0.37) % 1, sz = (0.18 + f * 0.75) * Math.min(1, (1 - f) / 0.25);

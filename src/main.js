@@ -44,6 +44,7 @@ people.onMeow = (p) => { if (live) audio.meow(nearGain(p, 11)); };
 // the spectators on the bridge: they keep applauding now and then after the finale, heard from nearby
 const crowd = (() => { const w = world.people.filter((p) => p.kind === 'watch'), c = V(0, 0, 0); for (const p of w) c.add(V(p.x, p.y, p.z)); return c.multiplyScalar(1 / Math.max(1, w.length)); })();
 let clapWait = 6;
+const fountainAt = V(world.fountain.x, world.fountain.y + 1.4, world.fountain.z);
 let live = false;
 
 function resize() {
@@ -709,6 +710,7 @@ function tick(dt) {
     clapWait = 9 + Math.random() * 9; const g = nearGain(crowd, 32);
     if (g > 0) { audio.applause(3 + Math.random() * 2, g); people.applaud(); }
   }
+  audio.setFountain(running && shared.uLife.value > 0.5 ? nearGain(fountainAt, 16) : 0);      // the šadrvan, heard close by
   if (running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - 56.5, flight.pos.z - 55) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 18 && Math.random() < dt * 0.25) audio.baa((1 - sd / 18) ** 1.6); }
   freeSingT -= dt;
   bird.root.position.copy(flight.pos);
