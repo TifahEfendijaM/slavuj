@@ -358,7 +358,7 @@ export function buildWorld(scene) {
   shop(28.5, -5.4, 0, { orb: 'ducan', carpets: 1 }); shop(34.2, -5.4, 0); shop(47, -5.4, 0); shop(26.5, 5.4, Math.PI); shop(32.2, 5.4, Math.PI, { awningOrb: 'cilim', carpets: 2 });
   shop(38, 5.4, Math.PI); shop(43.8, 5.4, Math.PI); shop(49.6, 5.4, Math.PI); shop(55.4, 5.4, Math.PI);
   orb('ducan', [28.5, BANK + 2, -5.4], 4.5, ['shop'], 'combo', BANK + 4.3, { front: 0 });
-  orb('cilim', [32.2, BANK + 1.7, 1.4], 3, ['carpet'], 'combo', BANK + 3.4, { requires: ['ducan'], near: { p: [32.2, BANK + 0.6, 0.6], r: 2.6 }, front: Math.PI });
+  orb('cilim', [32.2, BANK + 1.7, 1.4], 3, ['carpet'], 'combo', BANK + 3.4, { requires: ['ducan'], near: { p: [32.2, BANK + 0.6, 0.6], r: 2.6 }, front: Math.PI, visibleFirst: true, secondView: { from: [62.5, BANK + 2.1, 0.2], to: [59.5, BANK + 2.2, 0], look: [40, BANK + 1.6, 0] } });      // the rest: looking down the bazaar street, both rows of shops
 
   // ---------- the bridge towers, the clock tower ----------
   b.object(() => { // Halebija, west

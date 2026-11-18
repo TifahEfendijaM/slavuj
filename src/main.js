@@ -403,8 +403,35 @@ function setShots(o) {      // (framed for the window's shape: worked out again 
   const f = fixedShots.get(o.id); if (f && Math.abs(f.aspect - aspect()) < 0.01) return f.shots;
   const shots = shotsFor(o, birdSpot(o)); fixedShots.set(o.id, { shots, aspect: aspect() }); return shots;
 }
+// visibleFirst: everything of this word the first shot can see is coloured in that shot; a second shot is added only
+// for what is left, framed on those (if nothing is left, it is one close shot)
+const splits = new Map();
+function visibleSplit(o, bird) {
+  const d = o.def, C = S.cutscene, key = o.id + '|' + aspect().toFixed(2); if (splits.has(key)) return splits.get(key);
+  const t = tag(d.tags[0]), s1 = closeShot(o, bird, 4), cam = new THREE.PerspectiveCamera(C.fov, aspect(), 0.1, 3000);
+  cam.position.lerpVectors(s1.from, s1.to, 0.75); cam.lookAt(s1.lookFrom.clone().lerp(s1.lookTo, 0.75)); cam.updateMatrixWorld();
+  const seen = (c) => { const q = c.clone().project(cam); return q.z < 1 && Math.abs(q.x) < 0.92 && Math.abs(q.y) < 0.85 && !blocked(cam.position, c, 0.35); };
+  const vis = [], rest = [];
+  for (const sub of t.subs) (seen(sub.box.getCenter(V(0, 0, 0))) ? vis : rest).push(sub);
+  if (!t.split) {      // their colouring: the ones in view start at once, the rest just after the cut
+    t.split = true; let mesh = null; scene.traverse((m) => { if (!mesh && m.isMesh && m.material?.uniforms?.uT === t.uT && m.geometry.attributes.aAni) mesh = m; });
+    const an = mesh.geometry.attributes.aAni; let nearEnd = 0, end = 0;
+    for (const sub of t.subs) { const first = vis.includes(sub); for (const [v0, cnt] of sub.ranges) for (let i = v0; i < v0 + cnt; i++) { const dl = first ? Math.min(an.getY(i), 0.4) : Math.max(an.getY(i), 2.9); an.setY(i, dl); end = Math.max(end, dl + an.getZ(i)); if (first) nearEnd = Math.max(nearEnd, dl + an.getZ(i)); } }
+    an.needsUpdate = true; t.nearEnd = nearEnd; t.end = end;
+  }
+  let shots;
+  if (!rest.length) shots = [closeShot(o, bird, C.closeDuration)];
+  else {
+    const c = V(0, 0, 0); for (const sub of rest) c.add(sub.box.getCenter(V(0, 0, 0))); c.multiplyScalar(1 / rest.length);
+    const r = Math.max(...rest.map((sub) => sub.box.getCenter(V(0, 0, 0)).distanceTo(c) + sub.box.getSize(V(0, 0, 0)).length() / 2)) + 0.5;
+    const sv = d.secondView;      // (a set view, where no automatic one can see them all: carpets facing each other across a street)
+    shots = [s1, sv ? { from: V(...sv.from), to: V(...sv.to), lookFrom: V(...sv.look), lookTo: V(...sv.look), dur: C.wideDuration - 4, wide: true } : closeShot({ id: '', def: { ...d, focus: c, size: r } }, null, C.wideDuration - 4)];
+  }
+  splits.set(key, shots); return shots;
+}
 function shotsFor(o, bird) {
   const d = o.def, C = S.cutscene;
+  if (d.visibleFirst) return visibleSplit(o, bird);
   if (d.id === 'rijeka') return [{ from: V(7, 20, 70), to: V(-4, 32, 86), lookFrom: V(1, 1, 26), lookTo: V(0, 4, 0), dur: C.wideDuration, wide: true }];
   if (d.shot === 'bridge') return [{ from: V(8.5, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
   if (d.shot === 'close') return [closeShot(o, bird, C.closeDuration)];
