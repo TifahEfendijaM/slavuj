@@ -544,7 +544,15 @@ export function buildWorld(scene) {
   orb('tri', [56.6, BANK + 0.6, 55.2], 4, ['sheep2'], 'close', BANK + 1.1, { requires: ['ovca'], near: { p: [57.5, BANK + 0.5, 52.1], r: 5 }, at: new Vector3(56.6, BANK + 3.2, 55.6) });
   orb('postar', [-24.46, BANK + 1.3, 63.22], 2.4, ['post'], 'close', BANK + 2.6, { near: { p: [-23, BANK + 0.6, 62.6], r: 2.2 } });
   orb('slikati', [-7.3, 1.7, 10.4], 3.6, ['photo'], 'close', 2.8, { near: { p: [-6, 1.2, 10.6], r: 2.6 } });
-  orb('ljudi', [-7.5, deckY(-7.5) + 1.2, 0.7], 3, ['people'], 'combo', deckY(-7.5) + 2.3, { near: { p: [-7.5, deckY(-7.5) + 0.6, -0.4], r: 3.2 } });
+  // ljudi: the spectators on the bridge first, then a close look at each other group of people it colours (each
+  // coloured in its own shot): the bazaar, the mosque courtyard, a man on a west-bank street
+  const ljudiGroups = [{ focus: [39.7, BANK + 1, 0], size: 3.8 }, { focus: [31.7, BANK + 1, -31.9], size: 5.2 }, { focus: [-39.5, BANK + 1, 7], size: 1.6 }];
+  orb('ljudi', [-7.5, deckY(-7.5) + 1.2, 0.7], 3, ['people'], 'combo', deckY(-7.5) + 2.3, { near: { p: [-7.5, deckY(-7.5) + 0.6, -0.4], r: 3.2 }, groups: ljudiGroups });
+  // each person of a later group starts colouring as that group's shot begins (the first shot lasts 4 s, the others 2.8 s)
+  for (const p of people) if (p.tag === 'people') {
+    const k = ljudiGroups.findIndex((gr) => Math.hypot(gr.focus[0] - p.x, gr.focus[2] - p.z) < gr.size + 1);
+    if (k >= 0) p.paintAt = 4 + k * 2.8 - S.cutscene.paintDelay + 0.15;
+  }
   orb('asikovanje', [-28.25, BANK + 3, -5.2], 4.2, ['lovers'], 'close', BANK + 6.2, { near: { p: [-28.25, BANK + 0.6, -3], r: 3 }, at: new Vector3(-28.25, BANK + 6.4, -4.6) });
 
 

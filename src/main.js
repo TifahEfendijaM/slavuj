@@ -432,6 +432,7 @@ function visibleSplit(o, bird) {
 function shotsFor(o, bird) {
   const d = o.def, C = S.cutscene;
   if (d.visibleFirst) return visibleSplit(o, bird);
+  if (d.groups) return [closeShot(o, bird, 4), ...d.groups.map((gr) => closeShot({ id: '', def: { ...d, focus: V(...gr.focus), size: gr.size, front: gr.front } }, null, 2.8))];      // a close look at each group
   if (d.id === 'rijeka') return [{ from: V(7, 20, 70), to: V(-4, 32, 86), lookFrom: V(1, 1, 26), lookTo: V(0, 4, 0), dur: C.wideDuration, wide: true }];
   if (d.shot === 'bridge') return [{ from: V(8.5, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
   if (d.shot === 'close') return [closeShot(o, bird, C.closeDuration)];
