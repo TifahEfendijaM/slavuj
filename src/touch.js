@@ -20,18 +20,6 @@ const ICON = {
 };
 
 // hooks: { canPlay(), onPause(), onSing(), onOpen(), canOpen(), onTakeoff() }
-// both journal pages, whole, on a phone screen: each page's contents shrink until they fit it (no scrolling)
-export function fitJournal() {
-  for (const p of document.querySelectorAll('.book .page')) {
-    p.style.setProperty('--z', 1);
-    for (let n = 0; n < 3; n++) {      // (shrinking can rewrap the text, so measure again)
-      const cs = getComputedStyle(p), pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-      const z = parseFloat(p.style.getPropertyValue('--z')), need = (p.scrollHeight - pad) / z, room = p.clientHeight - pad;
-      p.style.setProperty('--z', Math.min(1, (room - 2) / need).toFixed(3));
-    }
-  }
-}
-
 export function setupTouch(inp, hooks) {
   document.body.classList.add('touch');
   const el = (tag, id, cls, html) => { const e = document.createElement(tag); if (id) e.id = id; if (cls) e.className = cls; if (html) e.innerHTML = html; document.body.append(e); return e; };
@@ -93,7 +81,7 @@ export function setupTouch(inp, hooks) {
 
   document.addEventListener('gesturestart', (e) => e.preventDefault());      // no pinch zoom (iOS)
   // the screen space really visible (phone browsers count their own bars into 100vh): the journal is sized from it
-  const root = document.documentElement, setView = () => { root.style.setProperty('--vh', innerHeight + 'px'); root.style.setProperty('--vw', innerWidth + 'px'); if (!document.getElementById('journal').classList.contains('off')) fitJournal(); };
+  const root = document.documentElement, setView = () => { root.style.setProperty('--vh', innerHeight + 'px'); root.style.setProperty('--vw', innerWidth + 'px') };
   setView(); addEventListener('resize', setView); addEventListener('orientationchange', () => setTimeout(setView, 300)); visualViewport?.addEventListener('resize', setView);
   let n = 0;
   return {

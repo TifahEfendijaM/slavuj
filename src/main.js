@@ -13,7 +13,7 @@ import { rng } from './paper.js';
 import journalArt from '../assets/journal-mostar.webp';
 import { Flight } from './flight.js';
 import * as audio from './audio.js';
-import { isTouch, setupTouch, fitJournal } from './touch.js';
+import { isTouch, setupTouch } from './touch.js';
 import { WORDS, ORDER, CULTURE } from './vocab.js';
 
 const $ = (id) => document.getElementById(id);
@@ -592,7 +592,7 @@ function renderJournal(newId) {
   const known = ORDER.filter((id) => (id === 'sunce' ? save.finale : byId[id]?.done));
   $('count').textContent = `${known.length}/${ORDER.length}`;
   $('jcount').textContent = `${known.length} of ${ORDER.length} words from Mostar`;
-  const list = $('jwords'); list.innerHTML = ''; list.style.gridTemplateRows = `repeat(${Math.ceil(ORDER.length / (touch ? 5 : 2))}, auto)`;      // (five columns of just the words on a phone)
+  const list = $('jwords'); list.innerHTML = ''; list.style.gridTemplateRows = `repeat(${Math.ceil(ORDER.length / 2)}, auto)`;
   for (const id of ORDER) {
     const row = document.createElement('div'), w = WORDS[id];
     if (known.includes(id)) { row.className = 'jw' + (id === newId ? ' new' : ''); row.innerHTML = `<b>${w.word}</b><i>${w.en}</i>`; row.append(sayButton(w.word)); row.title = 'Show its picture'; row.addEventListener('click', () => showCard(id)); }
@@ -623,10 +623,9 @@ function showCard(id) {
   const w = WORDS[id], el = $('card');
   $('cardImg').src = pics[id] || BUNDLED[id] || snapshot(id); el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
   el.classList.remove('off'); audio.page();
-  if (touch) setTimeout(() => audio.pronounce(w.word), 250);      // (on a phone the journal shows only the words, so the card says it)
 }
 $('card').addEventListener('click', () => $('card').classList.add('off'));
-function openJournal(newId) { if (state !== 'play') return; state = 'journal'; document.exitPointerLock?.(); renderJournal(newId); $('journal').classList.remove('off'); if (touch) fitJournal(); audio.page(); hideLearn(); }
+function openJournal(newId) { if (state !== 'play') return; state = 'journal'; document.exitPointerLock?.(); renderJournal(newId); $('journal').classList.remove('off'); audio.page(); hideLearn(); }
 let awakeNote = false;      // after the finale's journal page: tell the player the town is theirs to explore
 function closeJournal() { if (awakeNote) { awakeNote = false; say('Mostar has awakened. You can now explore it freely.', 8); } state = 'play'; $('journal').classList.add('off'); $('card').classList.add('off'); audio.page(); resume(); }
 $('hud').addEventListener('click', () => { if (state === 'play') openJournal(); });
