@@ -68,7 +68,11 @@ const PICS = KEY + '-pics';
 const BUNDLED = Object.fromEntries(Object.entries(import.meta.glob('../assets/photos/*.jpg', { eager: true, query: '?url', import: 'default' })).map(([p, u]) => [p.split('/').pop().slice(0, -4), u]));
 let pics = {}, snapId = null;
 try { if (!fresh) pics = JSON.parse(localStorage.getItem(PICS) || '{}'); } catch (e) { /* no storage */ }
-function keepPic(id, data) { if (!data) return; pics[id] = data; try { localStorage.setItem(PICS, JSON.stringify(pics)); } catch (e) { /* storage full: the photo still shows this session */ } }
+function keepPic(id, data) {
+  if (!data) return; pics[id] = data; try { localStorage.setItem(PICS, JSON.stringify(pics)); } catch (e) { /* storage full: the photo still shows this session */ }
+  // dev only, the main save: each photo also goes straight into assets/photos as the game's default for that word
+  if (import.meta.env.DEV && !params.get('slot')) fetch('/__photo?id=' + id, { method: 'POST', body: data }).catch(() => {});
+}
 function grabFrame() {
   const c = document.createElement('canvas'), W = canvas.width, H = canvas.height; if (!(W > 0 && H > 0)) return '';
   const cw = Math.min(W, H * 1.5), ch = cw / 1.5; c.width = 420; c.height = 280;
@@ -179,8 +183,13 @@ function orbHere() {
 function lock() {
   audio.unlock();
   if (noLock) return;
-  try { const p = canvas.requestPointerLock(); p?.catch?.(() => { noLock = true; paused = false; }); } catch (e) { noLock = true; }
+  // a refused lock (browsers refuse for a moment after Esc) just leaves the game paused: click or press a key again.
+  // Only a browser without pointer lock at all steers with a free cursor (noLock).
+  if (!canvas.requestPointerLock) { noLock = true; return; }
+  try { const p = canvas.requestPointerLock(); p?.catch?.(refused); } catch (e) { refused(); }
 }
+let unlockedAt = -1e9;      // when the mouse was last let go: a refusal soon after is the browser's cooldown, not a missing feature
+function refused() { if (performance.now() - unlockedAt > 2500) { noLock = true; paused = false; } else if (state === 'play') paused = true; updateLegend(); }
 function resume() { paused = false; if (!noLock) { lock(); setTimeout(() => { if (!locked && !noLock && state === 'play') paused = true; }, 250); } }
 $('start').addEventListener('click', (e) => {
   if (e.target.closest('a,button')) return;
@@ -209,11 +218,11 @@ canvas.addEventListener('mousedown', (e) => { if (e.button === 0 && started && s
 addEventListener('mouseup', () => { mouseDown = false; }); addEventListener('blur', () => { mouseDown = false; });
 $('pause').addEventListener('click', resume);
 document.addEventListener('pointerlockchange', () => {
-  locked = document.pointerLockElement === canvas;
+  locked = document.pointerLockElement === canvas; if (!locked) unlockedAt = performance.now();
   if (locked) paused = false; else if (started && state === 'play' && !noLock) paused = true;
   updateLegend();
 });
-document.addEventListener('pointerlockerror', () => { noLock = true; paused = false; updateLegend(); });
+document.addEventListener('pointerlockerror', refused);
 document.addEventListener('mousemove', (e) => {
   if (locked || (noLock && started && state === 'play' && !paused)) { inp.dx += e.movementX; inp.dy += e.movementY; }
   mouse.x = e.clientX; mouse.y = e.clientY;
@@ -225,8 +234,8 @@ addEventListener('keydown', (e) => {
   if (!started) return;
   audio.unlock();
   if (state === 'play') {
-    if (e.code === 'Escape') { paused = !paused; return; }
-    if (paused) { if (e.code === 'Space' || e.code === 'Enter') resume(); return; }
+    if (paused) { if (['Escape', 'Space', 'Enter'].includes(e.code)) resume(); return; }      // Esc toggles: it resumes too, and takes the mouse back
+    if (e.code === 'Escape') { paused = true; document.exitPointerLock?.(); return; }
     if (e.code === 'Space') inp.takeoff = true;
     if (e.code === 'KeyE') { const o = orbHere(); if (o) openWords(o); }
     if (e.code === 'KeyJ' || e.code === 'Tab') openJournal();
