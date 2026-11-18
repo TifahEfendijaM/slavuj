@@ -30,7 +30,7 @@ export function showBosnia() {
     const words = (p.done || []).length + (p.finale ? 1 : 0);
     return { m, x, y, rx, ry, open, done, state: m.soon ? 'soon' : done ? 'done' : open ? 'open' : 'locked', words, n };
   });
-  const route = pins.filter((q) => !q.m.soon).map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join(' ');
+  const route = pins.filter((q) => !q.m.extra).map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join(' ');
   const H = GEO.h;
   el.innerHTML = `
     <div class="bhead"><h1>Slavuj</h1><div class="bsub">Choose where to fly · each town is a season of the year</div></div>
