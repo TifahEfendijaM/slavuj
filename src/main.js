@@ -433,7 +433,9 @@ function visibleSplit(o, bird) {
 function shotsFor(o, bird) {
   const d = o.def, C = S.cutscene;
   if (d.visibleFirst) return visibleSplit(o, bird);
-  if (d.groups) return [closeShot(o, bird, 4), ...d.groups.map((gr) => closeShot({ id: '', def: { ...d, focus: V(...gr.focus), size: gr.size, front: gr.front } }, null, 2.8))];      // a close look at each group
+  // view: a set first shot (where the automatic camera's view would be blocked)
+  const first = (dur) => (d.view ? { from: V(...d.view.from), to: V(...d.view.to), lookFrom: V(...d.view.look), lookTo: V(...d.view.look), dur, c: V(...d.view.look), r: 0.5, set: true } : closeShot(o, bird, dur));
+  if (d.groups) return [first(4), ...d.groups.map((gr) => closeShot({ id: '', def: { ...d, focus: V(...gr.focus), size: gr.size, front: gr.front } }, null, 2.8))];      // a close look at each group
   if (d.id === 'rijeka') return [{ from: V(7, 20, 70), to: V(-4, 32, 86), lookFrom: V(1, 1, 26), lookTo: V(0, 4, 0), dur: C.wideDuration, wide: true }];
   if (d.shot === 'bridge') return [{ from: V(8.5, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
   if (d.shot === 'close') return [closeShot(o, bird, C.closeDuration)];
@@ -451,6 +453,7 @@ function checkShots() {
     for (const [si, s] of shotsFor(o, bird).entries()) for (const e of [0, 0.25, 0.5, 0.75, 1]) {
       cam.position.lerpVectors(s.from, s.to, e); cam.lookAt(s.lookFrom.clone().lerp(s.lookTo, e)); cam.updateMatrixWorld();
       if (inside(cam.position, 0.1)) probs.push(`camera ${e} inside something`);
+      if (s.set) continue;      // a view set by hand (checked by eye)
       if (s.wide) { if (s.pts) { const n = s.pts.filter(inFrame).length; if (n < Math.min(s.pts.length, 2) || n / s.pts.length < 0.6) probs.push(`wide ${e}: only ${n}/${s.pts.length} in frame`); } continue; }
       const right = V(1, 0, 0).applyQuaternion(cam.quaternion), up = V(0, 1, 0).applyQuaternion(cam.quaternion);
       for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!inFrame(s.c.clone().addScaledVector(right, a * s.r).addScaledVector(up, b * s.r))) probs.push(`close ${e}: object cut off`);
@@ -527,7 +530,7 @@ function finishOrb(o) {
   showLearn(o.w); renderJournal(o.id);
   const n = refreshOrbs(true);
   if (o === FIRST && n) say('New orbs have appeared all over Mostar. Find them in any order.', 7);
-  else if (n && byId.most.alive && !byId.most.done && orbs.filter((x) => x.alive).length === 1) say('Only Stari Most is left. Its orb is waiting on the bridge.', 7);
+  else if (n && byId.most.alive && !byId.most.done && orbs.filter((x) => x.alive).length === 1) say('Only the old bridge is left. Its orb is waiting on the bridge.', 7);
   else if (n) say('A new orb has appeared nearby.', 5);
   showFleur();
   if (!noLock && !locked) setTimeout(() => { if (!locked && state === 'play') paused = true; }, 300);

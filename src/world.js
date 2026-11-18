@@ -507,7 +507,7 @@ export function buildWorld(scene) {
     { kind: 'sell', tag: 'people', x: 36, y: street, z: -1.95, ry: 0.3, fes: true }, { kind: 'sell', tag: 'people', x: 42.2, y: street, z: 1.95, ry: Math.PI - 0.3 },
     { kind: 'walk', tag: 'people', x: 41, y: street, z: 0.3, to: [58, -0.3], woman: true }, { kind: 'walk', tag: 'run', x: -57, y: street, z: 0.5, to: [-34, -0.5], speed: 3.3 },
     { kind: 'walk', tag: 'people', x: -39.5, y: street, z: 7, to: [-39.5, 30], dog: true },
-    { kind: 'walk', tag: 'people', x: 27, y: street, z: -32.1, to: [27, -36.2], fes: true }, { kind: 'walk', tag: 'people', x: 36.4, y: street, z: -31.6, to: [29.6, -31.6], woman: true, scarf: true },
+    { kind: 'walk', tag: 'people', x: 27, y: street, z: -32.1, to: [27, -36.2], fes: true, fesAt: 4 - S.cutscene.paintDelay + 0.15 }, { kind: 'walk', tag: 'people', x: 36.4, y: street, z: -31.6, to: [29.6, -31.6], woman: true, scarf: true },
     { kind: 'sit', tag: 'sit', x: 18.5, y: BANK + 0.3, z: 49.45, ry: Math.PI / 2 - 0.3, woman: true }, { kind: 'sit', tag: 'sit', x: 18.5, y: BANK + 0.3, z: 50.55, ry: Math.PI / 2 + 0.3 },
     { kind: 'sit', tag: 'sit', x: 30.4, y: BANK + 0.3, z: -23.92, ry: Math.PI },
     { kind: 'muezzin', tag: 'muezzin', x: 35.2, y: BANK + 17.3, z: -34.7, ry: 0.9, robe: true },
@@ -534,7 +534,10 @@ export function buildWorld(scene) {
   orb('bicikl', [40.5, BANK + 0.6, -56], 2.2, ['bike'], 'close', BANK + 1, { near: { p: [41.6, BANK + 0.6, -57.3], r: 3.2 }, at: new Vector3(40.5, BANK + 1.5, -54.8) });
   orb('voziti', [40.5, BANK + 1.2, -56], 2.4, ['ride'], 'close', BANK + 2.2, { requires: ['bicikl'], near: { p: [41.6, BANK + 0.6, -57.3], r: 3.2 } });
   orb('sjediti', [18.75, BANK + 1, 50], 2.8, ['sit'], 'combo', BANK + 1.9, { near: { p: [20.2, BANK + 0.6, 50], r: 2.6 }, second: { focus: [30.4, BANK + 0.9, -23.92], size: 1.6, front: Math.PI } });      // then a close look at the man on the other bench
-  orb('fes', [36, BANK + 1.9, -1.95], 1.2, ['fes'], 'close', BANK + 2.2, { near: { p: [36.3, BANK + 0.6, -0.4], r: 2.3 }, at: new Vector3(36, BANK + 2.9, -1.95) });
+  // fes: the shopkeeper under his awning, seen from the street in front of him at head height (from above the awning hides
+  // him); then a close look at the other fes, on the man walking in the mosque courtyard, coloured as that shot begins
+  orb('fes', [36, BANK + 1.9, -1.95], 1.2, ['fes'], 'combo', BANK + 2.2, { near: { p: [36.3, BANK + 0.6, -0.4], r: 2.3 }, at: new Vector3(36, BANK + 2.9, -1.95),
+    view: { from: [37.6, BANK + 1.95, 0.75], to: [36.7, BANK + 2.0, 0.9], look: [36, BANK + 1.8, -1.95] }, groups: [{ focus: [27, BANK + 1.8, -32.1], size: 1.1, front: 0 }] });
   orb('plivati', [-3.5, 0.3, 44.6], 2.6, ['swimmer'], 'close', 0.5, { near: { p: [-3.5, 0.2, 43.2], r: 3.4 }, at: new Vector3(-3.5, 2, 44.8) });
   orb('ribar', [-5.4, 1.7, 19.6], 2.6, ['fisher'], 'close', 2.8, { near: { p: [-6.6, 1.2, 19.7], r: 2 } });
   orb('riba', [2.8, 0.6, 14], 1.3, ['fish'], 'close', 0.8, { near: { p: [2.8, 0.2, 15.8], r: 3 }, at: new Vector3(2.8, 1.9, 14) });

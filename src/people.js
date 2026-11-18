@@ -73,7 +73,7 @@ export function createPeople(scene, world, R) {
     if (o.trunks) { const tr = P(G.catBody, '#c0392b', hips, 0, -0.06, 0, '#8f2a20'); tr.scale.set(0.19, 0.17, 0.15); }      // swimming trunks
     const head = grp(torso, 0, 0.85, 0.01); P(G.head, skin, head, 0, 0, 0);
     if (sc < 1) head.scale.setScalar(1.25);                       // children: a bigger head
-    if (o.fes) painter('fes', pos)(G.fes, '#b3312c', head, 0, 0.15, 0, '#8f2420'); else if (o.robe) P(G.cap, '#f3efe6', head, 0, 0.02, 0);
+    if (o.fes) painter('fes', pos, undefined, false, o.fesAt)(G.fes, '#b3312c', head, 0, 0.15, 0, '#8f2420'); else if (o.robe) P(G.cap, '#f3efe6', head, 0, 0.02, 0);
     else if (o.kind === 'post') { P(G.cap, '#23405e', head, 0, 0.03, 0, '#1a2f45'); const v = P(G.box, '#1a2f45', head, 0, 0.05, 0.13); v.scale.set(0.2, 0.025, 0.11); }
     else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl') { const s = P(G.scarf, pick(TOPS), head, 0, 0.012, -0.012); s.rotation.x = -0.25; }
     else {
