@@ -70,8 +70,8 @@ export function createBird() {
   });
 
   let rowPh = 0, walkPh = 0;
-  let prevBeat = 0, phase = 0, cyc = 0, open = 0, amp = 0, t = 0, sing = 0, fl = 0, slow = 0, landT = 9, wasPerched = true, bob = 0;
-  const q = new THREE.Quaternion(), qb = new THREE.Quaternion(), n = new THREE.Vector3(), v = new THREE.Vector3(), fw = new THREE.Vector3(), sx = new THREE.Vector3(), CYC = 1.45;
+  let prevBeat = 0, phase = 0, cyc = 0, open = 0, amp = 0, t = 0, sing = 0, fl = 0, slow = 0, landT = 9, wasPerched = true, bob = 0, nose = 0;
+  const q = new THREE.Quaternion(), q2 = new THREE.Quaternion(), qb = new THREE.Quaternion(), n = new THREE.Vector3(), v = new THREE.Vector3(), fw = new THREE.Vector3(), sx = new THREE.Vector3(), CYC = 1.45;
   const DOWNV = new THREE.Vector3(0, -1, 0), basis = new THREE.Matrix4();
 
   return {
@@ -123,7 +123,8 @@ export function createBird() {
       bob += (bobWant - bob) * k(8, dt);
       const squash = settling ? -Math.sin((landT / 0.3) * Math.PI) * 0.07 : 0;
       tilt.position.y = (bob + squash + (swim ? Math.sin(t * 2.4) * 0.02 : 0) + (wk > 0 ? Math.abs(Math.sin(walkPh)) * 0.018 : 0)) * SC;
-      tilt.rotation.x = -(0.5 * fl + 0.28 * slow) + (perched ? -0.12 : 0);     // nose up when slow or landing
+      nose += ((perched ? -0.12 : 0) - nose) * k(10, dt);      // (eased, so touching down does not tip it at once)
+      tilt.rotation.x = -(0.5 * fl + 0.28 * slow) + nose;     // nose up when slow or landing
 
       // tail: fanned and lowered to brake, twisted into turns, cocked when perched
       const spread = clamp(Math.max(fl, Math.abs(st.turn) * 0.9, st.power ? 0.25 : 0), 0, 1);
@@ -152,7 +153,9 @@ export function createBird() {
           if (wk > 0) { const ph = walkPh + i * Math.PI, sd = Math.sin(ph) * (0.05 + 0.08 * wk) * SC; v.x += Math.sin(st.yaw) * sd; v.z += Math.cos(st.yaw) * sd; v.y += Math.max(0, Math.cos(ph)) * (0.035 + 0.04 * wk) * SC; }     // stepping
           body.worldToLocal(v).sub(l.hip.position);
           len = clamp(v.length(), 0.03, 0.36);
-          l.hip.quaternion.setFromUnitVectors(DOWNV, v.normalize());
+          // just landed: the legs swing down onto the spot over a moment, instead of being set there at once
+          const settle = landT < 0.3 ? k(22, dt) : 1;
+          q2.setFromUnitVectors(DOWNV, v.normalize()); l.hip.quaternion.slerp(q2, settle); len = l.len + (len - l.len) * settle;
           n.copy(ft.n); fw.set(Math.sin(st.yaw), 0, Math.cos(st.yaw)).addScaledVector(n, -Math.sin(st.yaw) * n.x - Math.cos(st.yaw) * n.z).normalize();
           sx.crossVectors(n, fw); basis.makeBasis(sx, n, fw);
           l.foot.quaternion.copy(q.copy(qb).multiply(l.hip.quaternion).invert()).multiply(q.setFromRotationMatrix(basis));

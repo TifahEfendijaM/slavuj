@@ -171,7 +171,7 @@ export class Flight {
     if (this.mode === 'perched') {
       if (this.landEase && (inp.dive || inp.takeoff)) { this.pos.copy(this.landEase.base); this.landEase = null; }      // walking or taking off: from where it stands
       if (this.landEase) {
-        const e = this.landEase; e.t += dt; const u = Math.min(1, e.t / 0.1), w = 1 - u * u * (3 - 2 * u);
+        const e = this.landEase; e.t += dt; const u = Math.min(1, e.t / 0.16), w = 1 - u * u * u * (u * (6 * u - 15) + 10);      // a soft ease, about a sixth of a second
         this.pos.copy(e.base).addScaledVector(e.off, w); if (u >= 1) this.landEase = null;
       }
       this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - (inp.tilt - (ptr ? ptr.y : 0)) * f.keyPitchRate * dt, -0.25, 1.1);
