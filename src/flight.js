@@ -217,7 +217,7 @@ export class Flight {
 
     // ---- flying ----
     this.grace -= dt; this.airT = (this.airT || 0) + dt;
-    this.diving = inp.dive && this.grace <= 0;
+    this.diving = inp.dive && (this.grace <= 0 || this.airT > 0.1);      // diving works right after take-off (the grace only stops it landing again at once)
     this.power = (inp.flap || this.grace > 0) && !this.diving;
     if (this.diving) this.mousePitch = 0;
     else if (ptr && !inp.tilt) this.mousePitch += (clamp(-ptr.y, -1, 1) * rad(ptr.y > 0 ? f.maxPitchDown : f.maxPitchUp) - this.mousePitch) * k(5, dt);
