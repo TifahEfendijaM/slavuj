@@ -296,9 +296,16 @@ export class Flight {
     if (ahead && !ahead.object.userData.water && (!reachable || !this.roomAt(ahead.point))) {      // (no room to stand there: it bumps off)
       const n = new THREE.Vector3(ahead.n.x, 0, ahead.n.z);
       if (n.lengthSq() < 0.01) n.copy(fwd).negate(); n.normalize();
-      const fl = new THREE.Vector3(dir.x, 0, dir.z); fl.addScaledVector(n, -fl.dot(n));
-      if (fl.lengthSq() < 0.02) fl.set(-n.z, 0, n.x);
-      fl.normalize().addScaledVector(n, 0.25).normalize();
+      // the smallest turn that leads into open space: directions further and further from where it was heading,
+      // 10 degrees at a time on each side (first the side the wall deflects it to), until one is clear for 1.5 m
+      const head = Math.atan2(dir.x, dir.z), slide = new THREE.Vector3(dir.x, 0, dir.z).addScaledVector(n, -(dir.x * n.x + dir.z * n.z));
+      const side = Math.sign(Math.sin(head) * slide.z - Math.cos(head) * slide.x) || 1;
+      const fl = new THREE.Vector3(-Math.sin(head), 0, -Math.cos(head));       // nothing clear at all: back the way it came
+      _o.copy(this.pos).addScaledVector(n, 0.05);
+      search: for (let deg = 10; deg <= 180; deg += 10) for (const sgn of [-side, side]) {
+        const yw = head + sgn * rad(deg), c = new THREE.Vector3(Math.sin(yw), dir.y * 0.5, Math.cos(yw)).normalize();
+        if (!this.cast(_o, c, 1.5)) { fl.set(c.x, 0, c.z).normalize(); break search; }
+      }
       this.yaw = this.camYaw = Math.atan2(fl.x, fl.z);
       this.speed = Math.max(f.minSpeed, this.speed * 0.8);
       this.pos.addScaledVector(n, Math.max(0, R0 - ahead.distance) + 0.05);

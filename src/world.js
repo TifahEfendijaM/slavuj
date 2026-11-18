@@ -526,7 +526,7 @@ export function buildWorld(scene) {
     { kind: 'walk', tag: 'kids', x: 26.5, y: street, z: 73.6, to: [35, 78.4], speed: 2.7, sc: kid, ball: 0 }, { kind: 'walk', tag: 'kids', x: 36, y: street, z: 73.8, to: [28, 79.4], speed: 2.4, sc: kid, woman: true, sport: true, ball: 1 },
     { kind: 'keeper', tag: 'kids', x: 23.5, y: street, z: 76, ry: Math.PI / 2, sc: kid },
     { kind: 'slide', tag: 'kids', x: SL.x - 0.45, y: SL.y + 1.96, z: SL.z, ry: -Math.PI / 2, sc: kid }, { kind: 'cheer', tag: 'kids', x: SL.x + 2.7, y: SL.y, z: SL.z - 0.9, ry: -1.9, sc: kid, woman: true },
-    { kind: 'swing', tag: 'kids', x: 53.2, y: BANK + 2.5, z: 76.4, ry: 0, sc: kid, woman: true },
+    { kind: 'swing', tag: 'kids', x: 53.2, y: BANK + 2.5, z: 76.4, ry: 0, sc: kid, woman: true, first: true },
     { kind: 'post', tag: 'post', x: -24.46, y: BANK + 0.3, z: 63.22, ry: 0, top: '#2f5578' },
   ];
   orb('pas', [-39, BANK + 0.5, 7.8], 1.6, ['dog'], 'close', BANK + 0.8, { near: { p: [-38.2, BANK + 0.6, 8.2], r: 2.2 }, at: new Vector3(-38.9, BANK + 1.7, 7.9) });
@@ -701,7 +701,7 @@ export function buildWorld(scene) {
   orb('tobogan', [55, BANK + 1.3, 72.5], 4.5, ['slide'], 'close', BANK + 3);
   orb('ljuljacka', [52.6, BANK + 1.4, 76.4], 3.2, ['swing'], 'close', BANK + 2.6, { near: { p: [52.6, BANK + 0.6, 74.6], r: 2.2 } });
   orb('igraliste', [55.5, BANK + 0.5, 72.5], 9, ['park'], 'close', BANK + 1, { at: new Vector3(52.2, BANK + 2.7, 69.6) });
-  orb('djeca', [58.6, BANK + 0.9, 72.2], 3.4, ['kids'], 'combo', BANK + 1.7, { near: { p: [59.8, BANK + 0.6, 71.2], r: 3.2 }, at: new Vector3(59.2, BANK + 3.6, 71.8) });
+  orb('djeca', [56.4, BANK + 1.2, 74.0], 4.6, ['kids'], 'combo', BANK + 1.7, { near: { p: [59.8, BANK + 0.6, 71.2], r: 3.2 }, at: new Vector3(59.2, BANK + 3.6, 71.8), second: { focus: [29.7, BANK + 0.7, 76.5], size: 6.4 } });      // first the slide and the swing, then a close look at the football
 
   // the kayak on the river: it floats low in the water and the bird can land on it (the paddler is built in people.js)
   b.object(() => {

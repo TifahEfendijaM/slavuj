@@ -29,8 +29,8 @@ const sm = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x);
 export function createPeople(scene, world, R) {
   const pick = (a) => a[Math.floor(R() * a.length)], list = [], mats = {};
   const matOf = (t) => mats[t] ||= washMat(t);
-  const timing = (tagName, pos) => {
-    const src = tag(tagName).source, d = src ? pos.distanceTo(src) : 0;
+  const timing = (tagName, pos, first) => {      // first: coloured at once with the ones at the orb, wherever it is
+    const src = tag(tagName).source, d = first ? 0 : src ? pos.distanceTo(src) : 0;
     tag(tagName).subs.push({ box: new THREE.Box3().setFromCenterAndSize(pos.clone().setY(pos.y + 1), new THREE.Vector3(1, 2, 1)), ranges: [], hranges: [] });
     const tm = d < 5 ? { delay: 0, dur: 3.2 } : { delay: 2.6 + Math.min(d, 150) / 150 * 2.5, dur: 2.2 };
     const T = tag(tagName); T.end = Math.max(T.end || 0, tm.delay + tm.dur); if (!tm.delay) T.nearEnd = Math.max(T.nearEnd || 0, tm.dur); return tm;
@@ -40,8 +40,8 @@ export function createPeople(scene, world, R) {
     c.matrixWorld.copy(c.matrix); c.userData = data; world.colliders.push(c); return c;
   };
   // a painter for one figure: every part shares the figure's place and moment in the colouring wave
-  const painter = (tagName, pos, radius = 2.6) => {
-    const tm = timing(tagName, pos), seed = [pos.x, pos.y + 1.2, pos.z];
+  const painter = (tagName, pos, radius = 2.6, first) => {
+    const tm = timing(tagName, pos, first), seed = [pos.x, pos.y + 1.2, pos.z];
     return (geo, col, parent, x, y, z, bleed, otherTag) => {
       const m = new THREE.Mesh(paintGeo(geo, { col, bleed: bleed ?? col, seed, radius, delay: tm.delay, dur: tm.dur, hatch: 0.5 }), matOf(otherTag || tagName));
       m.position.set(x, y, z); addHull(m, 1.3); parent.add(m); return m;
@@ -55,7 +55,7 @@ export function createPeople(scene, world, R) {
   };
 
   function person(o) {
-    const pos = new THREE.Vector3(o.x, o.y, o.z), sc = o.sc || 1, P = painter(o.tag, pos);
+    const pos = new THREE.Vector3(o.x, o.y, o.z), sc = o.sc || 1, P = painter(o.tag, pos, undefined, o.first);
     const root = new THREE.Group(); root.position.copy(pos); root.rotation.y = o.ry || 0; root.scale.setScalar(1.05 * sc); scene.add(root);
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : bottom0, gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
