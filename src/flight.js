@@ -199,6 +199,10 @@ export class Flight {
         _o.copy(this.pos); _o.y += 0.15;
         const h = this.cast(_o, move.clone().normalize(), 0.3 + 0.45 * S.bird.scale);
         if (h && !h.object.userData.water) move.set(0, 0, 0);
+        // and only onto more water: at the end of it (the top of the waterfall) it stops, as walking stops at a ledge
+        _o.copy(this.pos).addScaledVector(move, dt).addScaledVector(_d.copy(move).normalize(), 0.3 * S.bird.scale); _o.y = this.waterY + 0.5;
+        const w = this.cast(_o, DOWN, 1.0);
+        if (!w || !w.object.userData.water || Math.abs(w.point.y - this.waterY) > 0.3) move.set(0, 0, 0);
       }
       this.pos.addScaledVector(move, dt); this.pos.y = this.waterY + 0.14 * S.bird.scale + Math.sin(this.swimT * 2.4) * 0.03;
       this.makeWay();      // the swimmer (or the diver) comes past: the floating bird is nudged aside, never swum through
