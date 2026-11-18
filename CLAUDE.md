@@ -5,11 +5,18 @@ A promo mini game for easybosnian.com. A nightingale flies over a sketched, colo
 Three.js + Vite. Live at https://tifahefendijam.github.io/slavuj/ (repo TifahEfendijaM/slavuj; every push to `main` republishes).
 
 ## Status
-Level 1, Mostar, is complete and playable on desktop and phone: 82 words, the finale, the living town, the journal with culture pages.
-Waiting on: the default journal photos (see below). Then the user reviews the finished map.
+Level 1, Mostar (summer), is approved: 82 words, the finale, the living town, the journal with culture pages, desktop and phone controls.
+Now building: the Bosnia map (level select) and three more maps, one per season.
+
+## Maps
+- Summer: Mostar (done). Autumn: Sarajevo old town (Baščaršija) with Žuta tabija on the hill. Winter: Jahorina. Spring: Jajce.
+- Later: Neum (a second summer map). Also liked, for later: Trebević, Igman, Vrelo Bosne, Blagaj.
+- About 40 words per new map. New words use the browser's synthetic voice until the user records them (record.html).
+- Maps unlock in season order on the Bosnia map; finished maps can be replayed. "Skip to the finale" stays available on every map for testing.
+- Each finished map is published straight away.
 
 ## Rules from the user
-- No new maps (including the Bosnia level map) until the user has reviewed and approved this one.
+- A new map is started only when the user says so (Mostar was approved on 2026-11-18).
 - Assets must be CC0 or commercially usable; log each in `assets/CREDITS.md`.
 - A word colours only what it names. Everything stays frozen until the finale.
 - No clipping: people, animals, the bird and the cameras keep clear of solid things.
