@@ -653,8 +653,8 @@ function applyAlive() { paint('sky', true); paint('sun', true); shared.uSun.valu
 if (save.finale) applyAlive();
 const FIN_SHOTS = [
   { t0: 0, t1: 7.5, from: V(30, 30, 50), to: V(24, 35, 44), lookFrom: V(-60, 62, -80), lookTo: V(-75, 60, -92) },
-  { t0: 7.5, t1: 14, from: V(34, 60, 98), to: V(8, 48, 82), lookFrom: V(0, 12, 0), lookTo: V(0, 10, -8) },
-  { t0: 14, t1: 22.8, from: V(-2.6, 7.2, 31.5), to: V(0.6, 5.2, 27.5), diver: true },
+  { t0: 7.5, t1: 13.4, from: V(34, 60, 98), to: V(8, 48, 82), lookFrom: V(0, 12, 0), lookTo: V(0, 10, -8) },
+  { t0: 13.4, t1: 22.8, from: V(-2.6, 7.2, 31.5), to: V(0.6, 5.2, 27.5), diver: true },
   { t0: 22.8, t1: 26, from: V(3, 26, 66), to: V(0, 33, 80), lookFrom: V(0, 13, 0), lookTo: V(0, 14, 0) },
 ];
 function startFinale() {
@@ -688,7 +688,12 @@ function updateFinale(dt) {
   const s = FIN_SHOTS.find((x) => t < x.t1) || FIN_SHOTS[FIN_SHOTS.length - 1], e = smooth((t - s.t0) / (s.t1 - s.t0));
   if (f.shot !== s) f.shot = s;      // a straight cut between the finale's shots
   camera.position.lerpVectors(s.from, s.to, e);
-  if (s.diver) { const d = diver.state === 'jump' ? diver.root.position : diver.state === 'stand' ? world.diverPos : diver.splashPos; f.look = (f.look || world.diverPos.clone()).lerp(V(d.x, d.y + 1, d.z), k(5, dt)); camera.lookAt(f.look); }
+  if (s.diver) {      // the diver's shot: the camera turns with him, aimed a little ahead along his leap and fall, so it never trails him
+    const d = diver.state === 'jump' ? diver.root.position : diver.state === 'stand' ? world.diverPos : diver.splashPos, aim = V(d.x, d.y + 1, d.z);
+    if (diver.state === 'jump' && f.lastD && dt > 0) aim.addScaledVector(V(d.x - f.lastD.x, d.y - f.lastD.y, d.z - f.lastD.z), 0.2 / dt);
+    f.lastD = diver.state === 'jump' ? d.clone() : null;
+    f.look = (f.look || world.diverPos.clone()).lerp(aim, k(9, dt)); camera.lookAt(f.look);
+  }
   else camera.lookAt(look.lerpVectors(s.lookFrom, s.lookTo, e));
   if (camera.fov !== 46) { camera.fov = 46; camera.updateProjectionMatrix(); }
   if (t >= 26 && !f.ending) {
