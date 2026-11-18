@@ -83,16 +83,22 @@ function grabFrame() {
 const paint = (name, instant) => { const t = tag(name); t.painted = true; if (instant) t.uT.value = 1e5; else { t.uT.value = 0; painting.add(t); } };
 
 // ---------- orbs ----------
+// the golden glow, worked out pixel by pixel (a canvas gradient is dithered by phone browsers, and at the faint edge
+// that noise turns into coloured specks once it becomes a texture)
 function blobTexture(soft) {
-  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
-  const grad = g.createRadialGradient(64, 64, 4, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(255,214,60,0.95)'); grad.addColorStop(0.35, 'rgba(255,196,30,0.5)'); grad.addColorStop(1, 'rgba(255,190,30,0)');
-  g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
-  if (!soft) { // a ragged edge, so the glow seems to dissolve as it spreads
-    g.globalCompositeOperation = 'destination-out';
-    for (let i = 0; i < 46; i++) { const a = Math.random() * 6.28, r = 30 + Math.random() * 34, s = 4 + Math.random() * 11; g.beginPath(); g.arc(64 + Math.cos(a) * r, 64 + Math.sin(a) * r, s, 0, 6.28); g.fill(); }
+  const N = 128, d = new Uint8Array(N * N * 4), holes = [];
+  if (!soft) for (let i = 0; i < 46; i++) { const a = Math.random() * 6.28, r = 30 + Math.random() * 34; holes.push([64 + Math.cos(a) * r, 64 + Math.sin(a) * r, 4 + Math.random() * 11]); }      // a ragged edge, so the glow seems to dissolve as it spreads
+  const stops = [[4 / 64, 0.95, 214, 60], [0.35, 0.5, 196, 30], [1, 0, 190, 30]];      // [radius, alpha, green, blue] (red is 255)
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const t = Math.hypot(x + 0.5 - 64, y + 0.5 - 64) / 64; let A, G, B;
+    if (t <= stops[0][0]) [, A, G, B] = stops[0];
+    else if (t >= 1) [A, G, B] = [0, 190, 30];
+    else { const j = t < stops[1][0] ? 0 : 1, [t0, a0, g0, b0] = stops[j], [t1, a1, g1, b1] = stops[j + 1], f = (t - t0) / (t1 - t0); A = a0 + (a1 - a0) * f; G = g0 + (g1 - g0) * f; B = b0 + (b1 - b0) * f; }
+    if (holes.some(([hx, hy, hr]) => Math.hypot(x + 0.5 - hx, y + 0.5 - hy) < hr)) A = 0;
+    const k = (y * N + x) * 4; d[k] = 255; d[k + 1] = G; d[k + 2] = B; d[k + 3] = Math.round(A * 255);
   }
-  return new THREE.CanvasTexture(c);
+  const tex = new THREE.DataTexture(d, N, N); tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.generateMipmaps = true; tex.needsUpdate = true;
+  return tex;
 }
 const haloTex = blobTexture(true), wispTex = blobTexture(false);
 const coreGeo = new THREE.SphereGeometry(0.3, 20, 14), shineGeo = new THREE.SphereGeometry(0.17, 14, 10);
