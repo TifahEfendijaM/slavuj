@@ -145,6 +145,7 @@ export class Flight {
   roomAt(point) { _o.copy(point); _o.y += 0.03; return !this.cast(_o, UP, 0.42 * S.bird.scale + this.perchH); }
   land(hit) {
     if (!this.roomAt(hit.point)) return false;          // no room: it does not land here
+    this.landHit = Math.max(0, -this.vel.y) + this.speed * 0.15;      // how hard it comes down (for the give in its legs)
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
     this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
     // it stands exactly where it touched. A touch by a feeler off to the side is moved back onto its own line, so it
@@ -307,10 +308,11 @@ export class Flight {
     this.pos.addScaledVector(this.vel, dt);
 
     // ---- below: land, skim the water, or flare when the ground is close ----
+    this.gapBelow = 9;
     const below = this.cast(this.pos, DOWN, 3.4);
     let flare = 0;
     if (below) {
-      const h = below.distance - this.perchH;
+      const h = below.distance - this.perchH; this.gapBelow = h;      // (the bird's wing-beat bob fades out close to a surface)
       if (below.object.userData.water) {
         if (h < 0.2 && this.grace <= 0) {   // into the water: a splash as big as the arrival, then it floats
           this.splashPower = clamp((Math.abs(this.vel.y) + this.speed * 0.25) / 16, 0.2, 1);

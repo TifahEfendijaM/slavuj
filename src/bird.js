@@ -119,10 +119,13 @@ export function createBird() {
       }
 
       // the whole body rides up on the burst and dips while the wings are closed
-      const bobWant = perched ? 0 : (steady || st.diving ? 0 : Math.sin((cyc / CYC) * Math.PI * 2 - 0.6) * 0.09) - beat * 0.03 * amp;
+      const nearGround = clamp(((st.gap ?? 9) - 0.15) / 1.0, 0, 1);      // about to touch down: level out, so the landing is not followed by a settle
+      const bobWant = perched ? 0 : ((steady || st.diving ? 0 : Math.sin((cyc / CYC) * Math.PI * 2 - 0.6) * 0.09) - beat * 0.03 * amp) * nearGround;
       bob += (bobWant - bob) * k(8, dt);
-      const squash = settling ? -Math.sin((landT / 0.3) * Math.PI) * 0.07 : 0;
-      tilt.position.y = (bob + squash + (swim ? Math.sin(t * 2.4) * 0.02 : 0) + (wk > 0 ? Math.abs(Math.sin(walkPh)) * 0.018 : 0)) * SC;
+      // touchdown: a short give in the legs, quick down and gentle back up, as deep as the landing was hard
+      const giveD = clamp(0.02 + (st.landHit || 0) * 0.012, 0.02, 0.05), gu = landT / 0.2;
+      const give = perched && !swim && gu < 1 ? -giveD * (gu < 0.3 ? Math.sin((gu / 0.3) * Math.PI / 2) : 0.5 + 0.5 * Math.cos(((gu - 0.3) / 0.7) * Math.PI)) : 0;
+      tilt.position.y = (bob + give + (swim ? Math.sin(t * 2.4) * 0.02 : 0) + (wk > 0 ? Math.abs(Math.sin(walkPh)) * 0.018 : 0)) * SC;
       nose += ((perched ? -0.12 : 0) - nose) * k(10, dt);      // (eased, so touching down does not tip it at once)
       tilt.rotation.x = -(0.5 * fl + 0.28 * slow) + nose;     // nose up when slow or landing
 
