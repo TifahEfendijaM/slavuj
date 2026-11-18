@@ -1,5 +1,5 @@
 // Phone and tablet controls. Only used on a touch-only device (no mouse); desktop is untouched.
-//  - Steer: a floating joystick. Wherever a thumb lands on the left part of the screen becomes its centre;
+//  - Steer: a floating joystick. Wherever a thumb lands (anywhere but a button) becomes its centre;
 //    pushing sideways turns, up and down tilts. Let go and the bird flies level.
 //  - Flap (Space) and Dive (hold the mouse button) as two big round buttons on the right.
 //  - Small buttons for pause, sing, and "Open" when the bird is at an orb.

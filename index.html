@@ -130,7 +130,7 @@
 
   /* ---- phones (body.touch, set by src/touch.js) ---- */
   body.touch { touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
-  #tzone { position: fixed; left: 0; top: 0; bottom: 0; width: 58%; z-index: 1; }
+  #tzone { position: fixed; inset: 0; z-index: 1; }      /* the stick starts wherever a thumb lands; the buttons sit above it */
   #tring, #tknob { position: fixed; border-radius: 50%; pointer-events: none; z-index: 2; opacity: 0; transition: opacity .15s; }
   #tring { width: 132px; height: 132px; margin: -66px; border: 2.5px dashed rgba(59, 53, 47, .55); background: rgba(245, 239, 223, .25); }
   #tknob { width: 58px; height: 58px; margin: -29px; border: 2.5px solid var(--ink); background: rgba(255, 250, 240, .85); box-shadow: 2px 3px 0 rgba(59, 53, 47, .2); }

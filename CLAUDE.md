@@ -18,7 +18,7 @@ Waiting on: the default journal photos (see below). Then the user reviews the fi
 
 ## Controls
 - Desktop: mouse steers, Space flaps, hold the mouse button to dive (walk on the ground, paddle on water), E opens an orb, J journal, F sing, Esc pause.
-- Phone (detected automatically, landscape only): a floating joystick on the left half, flap and dive buttons on the right, Open at an orb, pause and sing buttons. Code in `src/touch.js`.
+- Phone (detected automatically, landscape only): a floating joystick that starts wherever the thumb lands, flap and dive buttons on the right, Open at an orb, pause and sing buttons. Code in `src/touch.js`.
 
 ## Where things are
 - `src/settings.js`: values to tweak (flight, joystick, camera, audio).
