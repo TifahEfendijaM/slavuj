@@ -426,7 +426,7 @@ export function buildWorld(scene) {
   orb('dzamija', [27, BANK + 6, -41], 10, ['mosque'], 'close', BANK + 14, { requires: ['munara'], front: 0 });
   orb('munara', [34, BANK + 14, -35.6], 10, ['minaret'], 'close', BANK + 27.2);
   orb('mujezin', [35.2, BANK + 18.4, -34.7], 2.2, ['muezzin'], 'close', BANK + 19.6, { requires: ['munara'], at: new Vector3(36.6, BANK + 20.6, -33.6),
-    view: { from: [37.55, M_FEET + 2.05, -34.25], to: [36.9, M_FEET + 1.85, -33.35], look: [35.2, M_FEET + 1.15, -34.7] } });      // close, in front of him, the whole of him above the balcony wall in frame
+    view: { from: [38.5, M_FEET + 2.3, -34.05], to: [37.7, M_FEET + 2.1, -32.85], look: [35.2, M_FEET + 1.35, -34.7] } });      // close, in front of him, the whole of him above the balcony wall in frame
   orb('cesma', [24, BANK + 2, -28], 4, ['fountain'], 'close', BANK + 4.7);
   const wallNoOrb = (...a) => wall(...a, 1.3, 'dvoriste', 'yard');
   wallNoOrb(17.3, 37.6, -53, -52.5); wallNoOrb(17.3, 17.8, -52.5, -21.5); wallNoOrb(17.3, 37.6, -21.5, -21); wallNoOrb(37.1, 37.6, -52.5, -40); wallNoOrb(37.1, 37.6, -31, -21.5);
