@@ -13,6 +13,8 @@ export const isTouch = (() => {
 const ICON = {
   flap: '<svg viewBox="0 0 48 48"><path d="M7 38 C 15 24, 27 19, 42 21 C 34 26, 30 30, 27 40 C 21 36, 13 36, 7 38 Z" fill="#2466e8" stroke="#3b352f" stroke-width="2.4" stroke-linejoin="round"/><path d="M24 15 V 4 M18 10 l6 -6 6 6" fill="none" stroke="#3b352f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   dive: '<svg viewBox="0 0 48 48"><path d="M24 6 C 30 16, 32 26, 24 42 C 16 26, 18 16, 24 6 Z" fill="#2466e8" stroke="#3b352f" stroke-width="2.4" stroke-linejoin="round"/><path d="M14 30 l10 12 10 -12" fill="none" stroke="#3b352f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  walk: '<svg viewBox="0 0 48 48"><g fill="none" stroke="#3b352f" stroke-width="2.6" stroke-linecap="round"><path d="M15 34 V 25 M15 34 L 9 27 M15 34 L 21 27 M15 34 V 40"/><path d="M33 22 V 13 M33 22 L 27 15 M33 22 L 39 15 M33 22 V 28"/></g></svg>',
+  paddle: '<svg viewBox="0 0 48 48"><path d="M24 8 L 14 24 Q 24 30, 34 24 Z" fill="#2466e8" stroke="#3b352f" stroke-width="2.2" stroke-linejoin="round"/><path d="M6 34 q 4.5 -4 9 0 t 9 0 t 9 0 t 9 0 M6 41 q 4.5 -4 9 0 t 9 0 t 9 0 t 9 0" fill="none" stroke="#2f9a80" stroke-width="2.6" stroke-linecap="round"/></svg>',
   pause: '<svg viewBox="0 0 32 32"><path d="M11 8 V 24 M21 8 V 24" stroke="#3b352f" stroke-width="3.4" stroke-linecap="round"/></svg>',
   sing: '<svg viewBox="0 0 32 32"><path d="M12 24 V 8 L 24 5 V 21" fill="none" stroke="#3b352f" stroke-width="2.6" stroke-linejoin="round"/><circle cx="9" cy="24" r="3.6" fill="#2466e8" stroke="#3b352f" stroke-width="2"/><circle cx="21" cy="21" r="3.6" fill="#2466e8" stroke="#3b352f" stroke-width="2"/></svg>',
 };
@@ -24,6 +26,9 @@ export function setupTouch(inp, hooks) {
   const zone = el('div', 'tzone'), ring = el('div', 'tring'), knob = el('div', 'tknob');
   const flapB = el('button', 'tflap', 'tbtn big wobbly', ICON.flap + '<span>flap</span>');
   const diveB = el('button', 'tdive', 'tbtn big wobbly', ICON.dive + '<span>dive</span>');
+  // the same button walks on the ground and paddles on the water: it shows what holding it does right now
+  const HOLD = { flying: ['dive', ICON.dive], perched: ['walk', ICON.walk], swim: ['paddle', ICON.paddle] };
+  let shown = 'flying';
   const openB = el('button', 'topen', 'tbtn wobbly off', 'Open');
   const pauseB = el('button', 'tpause', 'tbtn small wobbly', ICON.pause);
   const singB = el('button', 'tsing', 'tbtn small wobbly', ICON.sing);
@@ -67,7 +72,9 @@ export function setupTouch(inp, hooks) {
   return {
     get flap() { return state.flap; }, get dive() { return state.dive; },
     // each frame: hide the controls when they can't be used, show Open at an orb
-    update(show) {
+    update(show, mode) {
+      const m = HOLD[mode] ? mode : 'flying';
+      if (m !== shown) { shown = m; diveB.innerHTML = HOLD[m][1] + '<span>' + HOLD[m][0] + '</span>'; }
       document.body.classList.toggle('tidle', !show);
       if (!show) { if (stick.id !== null) release(); state.flap = state.dive = false; flapB.classList.remove('down'); diveB.classList.remove('down'); }
       if (++n % 6 === 0) openB.classList.toggle('off', !(show && hooks.canOpen()));

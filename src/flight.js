@@ -33,6 +33,13 @@ export class Flight {
     if (hit) hit.n = hit.face.normal.clone().applyMatrix3(_nm.getNormalMatrix(hit.object.matrixWorld)).normalize();
     return hit;
   }
+  // into the water: a splash as big as the arrival, then it floats
+  intoWater(p) {
+    this.splashPower = clamp((Math.abs(this.vel.y) + this.speed * 0.25) / 16, 0.2, 1);
+    this.mode = 'swim'; this.waterY = p.y; this.speed = Math.min(this.speed, 6) * 0.5; this.vel.set(0, 0, 0);
+    this.power = this.diving = false; this.flare = 0; this.feet = null; this.landedOn = null; this.camElev = 0.3; this.mousePitch = 0;
+    this.clearL = this.clearR = 1; this.pos.y = this.waterY + 0.14 * S.bird.scale; this.events.push('splash');
+  }
   landable(hit) { return hit.n.y > S.flight.maxLandSlope && !hit.object.userData.water && !hit.object.userData.wall; }
 
   placeAt(x, z, yaw) {
@@ -316,6 +323,13 @@ export class Flight {
       this.vel.set(fl.x * this.speed, Math.max(this.vel.y, ahead.n.y > 0.2 ? 2 : 0), fl.z * this.speed);
       if (this.bumpCool <= 0) { this.events.push('bump'); this.bumpCool = 0.5; }
     }
+    // the water surface anywhere along this frame's move: a steep dive covers more than a metre a frame (more still
+    // on a phone running slower), which could carry it from above the surface to below it between two looks down
+    const mv = this.vel.length() * dt;
+    if (this.grace <= 0 && this.vel.y < 0 && mv > 0.001) {
+      const w = this.cast(this.pos, _d.copy(this.vel).normalize(), mv + this.perchH + 0.2);
+      if (w && w.object.userData.water) { this.pos.x = w.point.x; this.pos.z = w.point.z; return this.intoWater(w.point); }
+    }
     this.pos.addScaledVector(this.vel, dt);
 
     // ---- below: land, skim the water, or flare when the ground is close ----
@@ -325,12 +339,7 @@ export class Flight {
     if (below) {
       const h = below.distance - this.perchH; this.gapBelow = h;      // (the bird's wing-beat bob fades out close to a surface)
       if (below.object.userData.water) {
-        if (h < 0.2 && this.grace <= 0) {   // into the water: a splash as big as the arrival, then it floats
-          this.splashPower = clamp((Math.abs(this.vel.y) + this.speed * 0.25) / 16, 0.2, 1);
-          this.mode = 'swim'; this.waterY = below.point.y; this.speed = Math.min(this.speed, 6) * 0.5; this.vel.set(0, 0, 0);
-          this.power = this.diving = false; this.flare = 0; this.feet = null; this.landedOn = null; this.camElev = 0.3; this.mousePitch = 0;
-          this.clearL = this.clearR = 1; this.pos.y = this.waterY + 0.14 * S.bird.scale; this.events.push('splash'); return;
-        }
+        if (h < 0.2 && this.grace <= 0) return this.intoWater(below.point);
       } else if (this.landable(below)) {
         // never lower than standing height over a surface it could stand on (a bounce off a wall can push it down
         // into a roof): kept there at once, so landing finds it already in place

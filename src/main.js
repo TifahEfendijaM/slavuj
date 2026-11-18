@@ -261,7 +261,7 @@ const touch = isTouch ? setupTouch(inp, {
 if (touch) {
   noLock = true;
   $('start').querySelector('.controls').innerHTML = '<table><tr><th></th><th>Flying</th></tr><tr><td><kbd>Drag left side</kbd></td><td>steer · up to climb</td></tr><tr><td><kbd>Flap</kbd></td><td>take off · flap to climb</td></tr>'
-    + '<tr><td><kbd>Hold dive</kbd></td><td>dive<i> · walk · paddle</i></td></tr></table><table><tr><th></th><th>Words</th></tr><tr><td><kbd>Open</kbd></td><td>an orb\'s word list</td></tr><tr><td><kbd>Feather</kbd></td><td>journal</td></tr></table>';
+    + '<tr><td><kbd>Hold dive</kbd></td><td>dive<i> · walk · paddle (it changes)</i></td></tr></table><table><tr><th></th><th>Words</th></tr><tr><td><kbd>Open</kbd></td><td>an orb\'s word list</td></tr><tr><td><kbd>Feather</kbd></td><td>journal</td></tr></table>';
   $('start').querySelector('.go').textContent = 'Tap to fly';
   $('pause').querySelector('.card').firstChild.textContent = 'Paused · tap to keep flying';
   $('pause').querySelector('table').innerHTML = '<tr><td>Drag on the left</td><td>steer</td></tr><tr><td>Flap</td><td>flap hard to climb</td></tr><tr><td>Hold dive</td><td>dive</td></tr>'
@@ -746,11 +746,12 @@ function updateHint() {
   $('pause').classList.toggle('off', !(started && paused && state === 'play'));
   if (!started || state !== 'play' || paused) return hint('');
   if (toastT > 0) return hint(toast);
-  const [OPEN, HOLD, UP] = touch ? ['tap <b>Open</b> for the word list', 'hold <b>dive</b> to', 'tap <b>flap</b> to take off'] : ['<kbd>E</kbd> open the word list', 'hold the mouse button to', '<kbd>Space</kbd> take off'];
-  if (flight.mode === 'swim') return hint((orbHere() ? OPEN + ' · ' : '') + HOLD + ' paddle · ' + UP);
+  const [OPEN, UP] = touch ? ['tap <b>Open</b> for the word list', 'tap <b>flap</b> to take off'] : ['<kbd>E</kbd> open the word list', '<kbd>Space</kbd> take off'];
+  const HOLD = (verb) => (touch ? `hold <b>${verb}</b>` : `hold the mouse button to ${verb}`);      // (on a phone the button is named after what it does)
+  if (flight.mode === 'swim') return hint((orbHere() ? OPEN + ' · ' : '') + HOLD('paddle') + ' · ' + UP);
   if (flight.mode === 'perched') {
-    if (orbHere()) return hint(OPEN + ' · ' + HOLD + ' walk');
-    return hint(UP + (!FIRST.done ? ' · fly to the glowing orb and land on the roof' : ' · ' + HOLD + ' walk'));
+    if (orbHere()) return hint(OPEN + ' · ' + HOLD('walk'));
+    return hint(UP + (!FIRST.done ? ' · fly to the glowing orb and land on the roof' : ' · ' + HOLD('walk')));
   }
   hint('');
 }
@@ -765,7 +766,7 @@ function tick(dt) {
   inp.turn = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
   inp.tilt = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
   inp.flap = keys.has('Space') || !!touch?.flap; inp.dive = mouseDown || !!touch?.dive;
-  touch?.update(started && state === 'play' && !paused);
+  touch?.update(started && state === 'play' && !paused, flight.mode);
   // without mouse capture the cursor can run out of room: resting it on the very edge of the window keeps turning
   if (noLock && !locked && !touch && innerWidth > 0 && !inp.turn) inp.turn = (mouse.x > innerWidth - 14 ? 1 : mouse.x < 14 ? -1 : 0) * S.flight.edgeTurnRate / S.flight.keyTurnRate;
 
