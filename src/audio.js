@@ -86,7 +86,6 @@ function startLoops() {
     ramp(waterL.flt.frequency, 800 + 300 * Math.sin(t * 1.7) + 150 * Math.sin(t * 5.1), 0.2);
     if (birds && Math.random() < 0.16) { const f = 2600 + Math.random() * 2200, n = 1 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.11, [[0, f], [0.05, f * 1.2], [0.09, f * 0.95]], 0.035, { bus: amb }); }
     ramp(murmurL.g.gain, murmur * (0.012 + 0.03 * Math.random()), 0.12); ramp(murmurL.flt.frequency, 380 + Math.random() * 320, 0.15);   // voices, far off
-    if (city > 0.25 && Math.random() < 0.05 * city) { const n = 2 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.21, [[0, 1560], [0.3, 1550]], 0.004 + 0.012 * city, { bus: amb, decay: true, attack: 0.012 }); }
   }, 250);
 }
 // wind past the bird: when it is fast (a dive) and while it is gaining speed. It stops at once when the bird does.
