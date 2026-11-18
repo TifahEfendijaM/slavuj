@@ -49,4 +49,5 @@ const saveWords = {
   },
 };
 
-export default defineConfig({ plugins: [savePhotos, saveWords], server: { watch: { ignored: ['**/assets/audio/words/**', '**/assets/photos/**'] } } });
+// base './': the built game uses relative paths, so it runs from any folder (itch.io serves it from a sub-folder)
+export default defineConfig({ base: './', plugins: [savePhotos, saveWords], server: { watch: { ignored: ['**/assets/audio/words/**', '**/assets/photos/**'] } } });
