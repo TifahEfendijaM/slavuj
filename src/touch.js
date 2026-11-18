@@ -32,7 +32,7 @@ export function setupTouch(inp, hooks) {
   const openB = el('button', 'topen', 'tbtn wobbly off', 'Open');
   const pauseB = el('button', 'tpause', 'tbtn small wobbly', ICON.pause);
   const singB = el('button', 'tsing', 'tbtn small wobbly', ICON.sing);
-  el('div', 'turn', 'overlay', '<div class="card wobbly">Turn your phone sideways to fly</div>');
+  el('div', 'turn', 'overlay', '<div class="card wobbly">Turn your phone sideways to play</div>');
 
   const stick = { id: null, x0: 0, y0: 0 }, state = { flap: false, dive: false };
   inp.pointer = { x: 0, y: 0 };       // always there on a phone: a released stick means level flight

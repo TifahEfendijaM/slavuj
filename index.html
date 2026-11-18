@@ -99,7 +99,7 @@
 
   /* ---- feather journal ---- */
   #journal { z-index: 7; background: rgba(59, 53, 47, .35); }
-  .book { width: min(1060px, 95vw); height: min(660px, 88vh); display: grid; grid-template-columns: 1fr 1fr; position: relative; transform: rotate(-.6deg);
+  .book { width: min(1060px, 95vw); height: min(660px, 88vh); height: min(660px, 88dvh); display: grid; grid-template-columns: 1fr 1fr; position: relative; transform: rotate(-.6deg);
     box-shadow: 0 18px 40px rgba(59, 53, 47, .4); border: 2.5px solid var(--ink); border-radius: 10px 14px 12px 16px; background: var(--paper); }
   .book::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 46px; margin-left: -23px; pointer-events: none;
     background: linear-gradient(90deg, transparent, rgba(59, 53, 47, .16) 46%, rgba(59, 53, 47, .28) 50%, rgba(59, 53, 47, .16) 54%, transparent); }
@@ -152,6 +152,12 @@
   #turn { display: none; z-index: 20; background: var(--paper); } #turn .card { font-size: 26px; max-width: 70vw; padding: 20px 24px; }
   @media (orientation: portrait) { body.touch #turn { display: grid; } }
   body:not(.touch) #tzone, body:not(.touch) .tbtn, body:not(.touch) #tring, body:not(.touch) #tknob { display: none; }
+  /* the journal on a phone: the whole visible screen (dvh: without the browser's bars), close always in the corner */
+  body.touch .book { width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)); height: calc(100dvh - 16px); transform: none; }
+  body.touch #jclose { position: fixed; top: 8px; right: calc(8px + env(safe-area-inset-right)); z-index: 9; font-size: 20px; padding: 6px 16px 8px;
+    background: #fffaf0; border: 2px solid var(--ink); border-radius: 14px; box-shadow: 2px 3px 0 rgba(59, 53, 47, .2); }
+  body.touch .page { padding: 12px 18px; } body.touch #culture { padding-top: 46px; }
+  body.touch #card img { width: min(540px, 76vw, calc((100dvh - 110px) * 1.5)); }
   #wclose { font-size: 20px; padding: 2px 16px 4px; background: #fffaf0; }
   /* a phone held sideways is short: everything on the cards shrinks to fit */
   @media (max-height: 520px) {
