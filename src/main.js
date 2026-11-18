@@ -37,6 +37,7 @@ document.body.prepend(renderer.domElement);
 const canvas = renderer.domElement;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(S.camera.fov, 1, 0.1, 2000);
+if (M.bounds) Object.assign(S.world, M.bounds);      // how far out and up this map lets the bird fly
 const world = M.build(scene);
 const bird = createBird(); scene.add(bird.root);
 const diver = world.diverPos ? createDiver(world.diverPos) : null; if (diver) scene.add(diver.root);      // (Mostar's diver)

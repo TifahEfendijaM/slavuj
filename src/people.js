@@ -86,7 +86,7 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : bottom0, gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read'].includes(o.kind), skirtC = o.woman && !o.robe && !o.sport && o.kind !== 'girl' ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled'].includes(o.kind), skirtC = o.woman && !o.robe && !o.sport && o.kind !== 'girl' ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
     if ((!gown || seated || (skirtC && sc < 1)) && o.kind !== 'girl' && o.kind !== 'raft') for (const s of [-1, 1]) {
@@ -109,7 +109,7 @@ export function createPeople(scene, world, R) {
     }
     const arms = [-1, 1].map((s) => { const sh = grp(torso, s * 0.2, 0.56, 0); P(G.uarm, top, sh, 0, -0.135, 0); const el = grp(sh, 0, -0.27, 0); P(G.farm, top, el, 0, -0.14, 0); const hand = P(G.hand, skin, el, 0, -0.3, 0); return { sh, el, hand, s }; });
     const p = { o, root, hips, torso, head, legs, arms, phase: R() * 6, clap: 0, s: 0, dir: 1, P, sc, y0: o.y };
-    const moving = o.kind === 'walk' || o.kind === 'bike' || o.kind === 'keeper' || o.kind === 'swimmer';
+    const moving = o.kind === 'walk' || o.kind === 'bike' || o.kind === 'keeper' || o.kind === 'swimmer' || o.kind === 'skate';
     if (o.kind === 'swimmer') p.block = block(o.x, 0.3, o.z, 1.0, 1.1, 2.3, { wall: true, person: true });
     else if (o.kind !== 'girl' && o.kind !== 'swing') p.block = block(o.x, o.y + sc, o.z, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), 2 * sc, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), { wall: true, person: true });
     if (moving && o.to) { p.from = pos.clone(); p.to = new THREE.Vector3(o.to[0], o.y, o.to[1]); root.rotation.y = Math.atan2(p.to.x - p.from.x, p.to.z - p.from.z); }
@@ -194,6 +194,23 @@ export function createPeople(scene, world, R) {
       const np = p.paper = TP(G.box, '#f2eee4', torso, 0, 0.5, 0.38, '#d9d2c2'); np.scale.set(0.5, 0.34, 0.012); np.rotation.x = -0.25;
       for (const a of arms) { a.sh.rotation.set(-1.0, 0, a.s * -0.32); a.el.rotation.x = -0.75; }
     }
+    // Jahorina's people: a sledding child, a skier, a woodcutter, someone shovelling snow, a skater
+    if (o.kind === 'sled') { const sl = TP(G.box, o.toolCol || '#b8452c', root, 0, 0.3, 0.15, '#8a3020'); sl.scale.set(0.5, 0.08, 1.2); for (const a of arms) { a.sh.rotation.set(-0.5, 0, a.s * -0.2); a.el.rotation.x = -0.4; } }
+    if (o.kind === 'ski') {
+      for (const s of [-1, 1]) { const sk = TP(G.box, o.toolCol || '#d9453a', root, s * 0.12, 0.03, 0.15, '#a8302a'); sk.scale.set(0.08, 0.03, 1.75); rod(TP, arms[s > 0 ? 1 : 0].el, [0, -0.3, 0], [0, -1.15, -0.25], 0.012, '#3a3e42'); }
+      for (const l of legs) { l.hip.rotation.x = -0.35; l.knee.rotation.x = 0.6; } hips.position.y = 0.82; torso.rotation.x = 0.28;
+      for (const a of arms) { a.sh.rotation.set(-0.45, 0, a.s * -0.25); a.el.rotation.x = -0.5; }
+    }
+    if (o.kind === 'chop') {      // an axe held in both hands
+      rod(TP, arms[1].el, [0, -0.3, 0], [0, -0.3, 0.6], 0.02, '#8a6a44');
+      const hd = TP(G.box, '#6a6e72', arms[1].el, 0, -0.27, 0.62, '#4a4e52'); hd.scale.set(0.04, 0.2, 0.12);
+    }
+    if (o.kind === 'shovel') {
+      const g = p.tool = grp(root, 0, 0, 0.52);
+      rod(TP, g, [0, 1.05, -0.2], [0, 0.1, 0.12], 0.02, '#8a6a44');
+      const bl = TP(G.box, '#5d7b8a', g, 0, 0.06, 0.2, '#3f5a68'); bl.scale.set(0.32, 0.04, 0.34);
+      for (const a of arms) { a.sh.rotation.set(-0.85, 0, a.s * -0.12); a.el.rotation.x = -0.5; }
+    }
     if (o.kind === 'umbrella') {      // standing under an open umbrella
       const g = p.tool = grp(root, 0.17, 0, 0.22);
       rod(TP, g, [0, 0.95, 0], [0, 2.12, 0], 0.016, '#3a3632');
@@ -213,7 +230,15 @@ export function createPeople(scene, world, R) {
     const pos = new THREE.Vector3(o.x, o.y, o.z), P = painter(o.tag, pos, 2), root = new THREE.Group(); root.position.copy(pos); root.rotation.y = o.ry; scene.add(root);
     const E = (col, parent, x, y, z, sx, sy, sz, bleed) => { const m = P(G.catBody, col, parent, x, y, z, bleed); m.scale.set(sx, sy, sz); return m; };
     const a = { o, root, legs: [] };
-    if (o.kind === 'horse') {
+    if (o.kind === 'deer') {      // a red deer: like the horse, slighter, with antlers
+      const C = '#8a5530', C2 = '#5f3a20', D = '#e8dcc4';
+      E(C, root, 0, 1.0, 0, 0.26, 0.3, 0.62, C2);
+      a.neck = grp(root, 0, 1.18, 0.5); E(C, a.neck, 0, 0.28, 0.16, 0.11, 0.34, 0.15, C2).rotation.x = 0.45; E(C, a.neck, 0, 0.56, 0.36, 0.09, 0.1, 0.22, C2).rotation.x = 0.4;
+      for (const s of [-1, 1]) { rod(P, a.neck, [s * 0.05, 0.64, 0.3], [s * 0.3, 1.05, 0.22], 0.018, '#6a4a30'); rod(P, a.neck, [s * 0.2, 0.86, 0.26], [s * 0.34, 0.98, 0.42], 0.014, '#6a4a30'); }
+      for (const [x, z] of [[0.13, 0.4], [-0.13, 0.4], [0.13, -0.4], [-0.13, -0.4]]) { const g = grp(root, x, 0.85, z); const m = P(G.catLeg, C, g, 0, 0, 0, C2); m.scale.set(1.1, 3.3, 1.1); a.legs.push(g); }
+      a.tail = grp(root, 0, 1.12, -0.6); P(G.catTail, D, a.tail, 0, 0, 0).scale.set(0.8, 0.35, 0.8);
+      a.block = block(o.x, o.y + 0.9, o.z, 1.2, 1.8, 1.4, { wall: true, person: true });
+    } else if (o.kind === 'horse') {
       const C = '#8a5a34', C2 = '#5f3a20', D = '#2f241c';
       E(C, root, 0, 1.2, 0, 0.34, 0.38, 0.8, C2);
       a.neck = grp(root, 0, 1.4, 0.62); E(C, a.neck, 0, 0.32, 0.2, 0.15, 0.42, 0.2, C2).rotation.x = 0.55; E(C, a.neck, 0, 0.68, 0.52, 0.12, 0.14, 0.3, C2).rotation.x = 0.5;
@@ -228,7 +253,7 @@ export function createPeople(scene, world, R) {
       for (const [x, z] of [[0.13, 0.26], [-0.13, 0.26], [0.13, -0.26], [-0.13, -0.26]]) { const g = grp(root, x, 0.44, z); const m = P(G.catLeg, D, g, 0, 0, 0); m.scale.set(1, 1.7, 1); a.legs.push(g); }
       a.block = block(o.x, o.y + 0.5, o.z, 1, 1, 1, { wall: true, person: true });
     }
-    a.size = o.kind === 'horse' ? 1.1 : 0.55;      // how close another animal may come (about half its length)
+    a.size = o.kind === 'horse' ? 1.1 : o.kind === 'deer' ? 0.8 : 0.55;      // how close another animal may come (about half its length)
     a.phase = R() * 6; a.home = pos.clone(); a.to = pos.clone(); a.rest = 2 + R() * 5; a.walk = 0; return a;
   });
   // (each map has its own set of these features; a map without one simply does not get it)
@@ -392,7 +417,7 @@ export function createPeople(scene, world, R) {
       const alive = life > 0.5;
       for (const p of list) {
         const t = time * (alive ? 1 : 0) + p.phase, [a0, a1] = p.arms, o = p.o;
-        if (o.kind === 'walk' || o.kind === 'bike') {
+        if (o.kind === 'walk' || o.kind === 'bike' || o.kind === 'skate') {
           const speed = o.speed || 1.25;
           if (alive) {
             p.s += p.dir * dt * speed / p.from.distanceTo(p.to); if (p.s > 1 || p.s < 0) { p.dir *= -1; p.s = Math.min(1, Math.max(0, p.s)); }
@@ -410,6 +435,11 @@ export function createPeople(scene, world, R) {
             const run = speed > 2, cad = 5.2 * Math.sqrt(speed / 1.25) / Math.sqrt(p.sc), sw = alive ? Math.sin(t * cad) * (run ? 0.85 : 0.5) : run ? 0.85 : 0.42;
             p.legs.forEach((l, i) => { const s = i ? sw : -sw; l.hip.rotation.x = s - (run ? 0.15 : 0); l.knee.rotation.x = Math.max(0, -s) * (run ? 1.5 : 0.9) + (run ? 0.35 : 0); });
             a0.sh.rotation.x = sw * (run ? 1 : 0.6); if (!o.dog) a1.sh.rotation.x = -sw * (run ? 1 : 0.6); // the hips sit as high as the lower foot reaches (bent knees: lower), so a foot is always on the ground; then the stride's bounce
+            if (o.kind === 'skate') {      // skating: a long push to one side, then the other, arms out for balance
+              const g = alive ? Math.sin(t * 2.2) : 0.6;
+              p.legs.forEach((l, k) => { const s = k ? 1 : -1, push = Math.max(0, g * s); l.hip.rotation.set(0.25 * push, 0, s * 0.32 * push); l.knee.rotation.x = 0.35 - 0.2 * push; });
+              for (const a of p.arms) { a.sh.rotation.set(-0.2, 0, a.s * 0.7); a.el.rotation.x = -0.3; } p.torso.rotation.x = 0.25; p.torso.rotation.y = g * 0.2;
+            }
             if (run) {      // a run: push off behind, heel kicks up as the knee folds, the leg swings through and reaches to land;
               // arms pump against the legs, shoulders twist with them, the head stays steady, a slight forward lean
               const cyc = (Z_LAND - Z_OFF) * p.root.scale.x / STANCE;      // metres per cycle (two steps): the planted foot moves back exactly as fast as he runs
@@ -519,9 +549,23 @@ export function createPeople(scene, world, R) {
           const c = alive ? (time + p.phase) % 3.2 : 0.2, beat = c < 2 ? Math.max(0, Math.sin(c * Math.PI * 3)) : 0;
           a1.sh.rotation.set(-0.55 - 1.1 * beat, 0, 0.05); a1.el.rotation.x = -0.6 - 0.5 * beat;
           p.head.rotation.x = 0.35; p.torso.rotation.x = 0.18; p.head.rotation.y = alive && c > 2.2 ? Math.sin(c * 3) * 0.2 : 0;
-        } else if (o.kind === 'sweep' || o.kind === 'rake') {      // the tool goes side to side (sweeping) or is drawn back towards him (raking)
+        } else if (o.kind === 'sled' || o.kind === 'ski') {      // down the slope (the skier in long turns), a pause at the bottom, then from the top again
+          const run = o.run, total = run.dur + 2.5, u = alive ? Math.min(1, ((time * 1 + p.phase * 3) % total) / run.dur) : o.still ?? 0.5;
+          const e = u * u * (3 - 2 * u) * 0.25 + u * 0.75, side = o.kind === 'ski' ? Math.sin(e * Math.PI * 5) * 3.2 : 0;
+          tmpA.set(run.from[0] + (run.to[0] - run.from[0]) * e + side, run.from[1] + (run.to[1] - run.from[1]) * e, run.from[2] + (run.to[2] - run.from[2]) * e);
+          p.root.position.copy(tmpA); p.root.position.y += (o.lift ?? 0.05);
+          const dir = Math.atan2(run.to[0] - run.from[0], run.to[2] - run.from[2]), turn = o.kind === 'ski' ? Math.cos(e * Math.PI * 5) * 0.55 : 0;
+          p.root.rotation.y = dir + turn; p.root.rotation.z = -turn * 0.35;
+          p.block.matrixWorld.setPosition(tmpA.x, tmpA.y + p.sc, tmpA.z);
+          if (o.kind === 'sled') { a0.sh.rotation.x = alive ? -0.5 + Math.sin(t * 9) * 0.05 : -0.5; p.head.rotation.x = -0.1; }
+        } else if (o.kind === 'chop') {      // the axe up over his head, down onto the log, again
+          const c = alive ? (time + p.phase) % 2.4 : 0.4, up = c < 1.3 ? Math.sin(c / 1.3 * Math.PI / 2) : Math.max(0, 1 - (c - 1.3) / 0.18);
+          for (const a of p.arms) { a.sh.rotation.set(-0.55 - 2.1 * up, 0, a.s * -0.25); a.el.rotation.x = -0.3 - 0.5 * up; }
+          p.torso.rotation.x = 0.1 + 0.25 * (1 - up); p.head.rotation.x = 0.3;
+        } else if (o.kind === 'sweep' || o.kind === 'rake' || o.kind === 'shovel') {      // the tool goes side to side (sweeping) or is drawn back towards him (raking)
           const w = alive ? Math.sin(t * (o.kind === 'sweep' ? 2.6 : 1.5)) : 0.4;
           if (o.kind === 'sweep') { p.tool.rotation.y = w * 0.5; p.torso.rotation.y = w * 0.25; }
+          else if (o.kind === 'shovel') { p.tool.position.z = 0.52 + w * 0.12; p.tool.rotation.x = -Math.max(0, w) * 0.5; p.torso.rotation.x = 0.2 + w * 0.12; }
           else { p.tool.position.z = 0.52 + w * 0.16; p.torso.rotation.x = 0.12 + w * 0.08; }
           p.head.rotation.x = 0.3;
         } else if (o.kind === 'read') {      // reading; now and then he looks up over the paper
@@ -582,7 +626,7 @@ export function createPeople(scene, world, R) {
       for (const l of lamps) l.on.visible = l.i === light;
       // the horse and the sheep graze
       for (const a of animals) {
-        const t = time * (alive ? 1 : 0) + a.phase, horse = a.o.kind === 'horse', sp = horse ? 0.7 : 0.45;
+        const t = time * (alive ? 1 : 0) + a.phase, horse = a.o.kind === 'horse' || a.o.kind === 'deer', sp = horse ? 0.7 : 0.45;      // (the deer moves and grazes like the horse)
         let moving = false;
         if (alive) {       // a few steps to a new patch of grass, then graze there for a while
           a.rest -= dt;
@@ -601,7 +645,7 @@ export function createPeople(scene, world, R) {
         }
         a.walk += ((moving ? 1 : 0) - a.walk) * k(4, dt);
         // now and then the horse lifts its head high and neighs (the sound is played in main.js)
-        if (horse && alive && !moving && !(a.neigh > 0) && R() < dt / 16) { a.neigh = 2.8; this.onNeigh?.(a.root.position); }
+        if (a.o.kind === 'horse' && alive && !moving && !(a.neigh > 0) && R() < dt / 16) { a.neigh = 2.8; this.onNeigh?.(a.root.position); }
         if (a.neigh > 0) a.neigh -= dt;
         const proud = a.neigh > 0 ? sm(Math.min(1, (2.8 - a.neigh) / 0.3, a.neigh / 0.6)) : 0, toss = a.neigh > 0 ? Math.sin((2.8 - a.neigh) * 8) * 0.14 * proud : 0;
         const down = alive ? (1 - a.walk) * sm(Math.sin(t * 0.5) * 2 + 1.1) * (1 - proud) : 0.3;

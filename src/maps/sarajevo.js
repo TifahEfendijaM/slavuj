@@ -305,6 +305,7 @@ function respawn(l, world, around) {
 
 export default {
   id: 'sarajevo', name: 'Sarajevo', WORDS, ORDER, CULTURE, art,
+  bounds: { boundsRadius: 178, ceiling: 100 },      // (the fortress is 160 m north of the square)
   build(scene) {
     const w = build(scene);
     w.leafTrees = [];

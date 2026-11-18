@@ -57,7 +57,8 @@ import '@fontsource/patrick-hand/latin-400.css';
 import '@fontsource/patrick-hand/latin-ext-400.css';
 import { WORDS as MOSTAR } from './src/vocab.js';
 import { WORDS as SARAJEVO } from './src/maps/sarajevo-words.js';
-const WORDS = { ...Object.fromEntries(Object.entries(MOSTAR).map(([k, v]) => ['m-' + k, v])), ...Object.fromEntries(Object.entries(SARAJEVO).map(([k, v]) => ['s-' + k, v])) };      // every map's words
+import { WORDS as JAHORINA } from './src/maps/jahorina-words.js';
+const WORDS = { ...Object.fromEntries(Object.entries(MOSTAR).map(([k, v]) => ['m-' + k, v])), ...Object.fromEntries(Object.entries(SARAJEVO).map(([k, v]) => ['s-' + k, v])), ...Object.fromEntries(Object.entries(JAHORINA).map(([k, v]) => ['j-' + k, v])) };      // every map's words
 
 // every word the game can say: the words themselves and the answer choices (which have speaker buttons too)
 const en = {}; for (const w of Object.values(WORDS)) en[w.word] = w.en;
