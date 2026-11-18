@@ -1,10 +1,11 @@
 // The maps, in the order they unlock on the Bosnia map (one per season), and which one is being played.
 // ?map=<id> plays a map; without it the Bosnia map is shown (src/boot.js). ?slot=<name> keeps a separate set of saves.
+// (soon: shown on the map but not playable yet)
 export const MAPS = [
   { id: 'mostar', name: 'Mostar', season: 'Ljeto', en: 'summer', lat: 43.343, lon: 17.808 },
-  { id: 'sarajevo', name: 'Sarajevo', season: 'Jesen', en: 'autumn', lat: 43.859, lon: 18.431 },
-  { id: 'jahorina', name: 'Jahorina', season: 'Zima', en: 'winter', lat: 43.738, lon: 18.567 },
-  { id: 'jajce', name: 'Jajce', season: 'Proljeće', en: 'spring', lat: 44.342, lon: 17.270 },
+  { id: 'sarajevo', name: 'Sarajevo', season: 'Jesen', en: 'autumn', lat: 43.859, lon: 18.431, soon: true },
+  { id: 'jahorina', name: 'Jahorina', season: 'Zima', en: 'winter', lat: 43.738, lon: 18.567, soon: true },
+  { id: 'jajce', name: 'Jajce', season: 'Proljeće', en: 'spring', lat: 44.342, lon: 17.270, soon: true },
   { id: 'neum', name: 'Neum', season: 'Ljeto', en: 'summer', lat: 42.923, lon: 17.615, soon: true },
 ];
 

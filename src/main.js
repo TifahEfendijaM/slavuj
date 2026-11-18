@@ -7,7 +7,7 @@ import S from './settings.js';
 import { shared, setResolution, tags, tag, SUN_DIR, paintGeo, washMat, addHull } from './paper.js';
 import { BANK } from './world.js';
 import M from './maps/current.js';
-import { saveKey, mapUrl } from './maps/index.js';
+import { saveKey, mapUrl, MAPS } from './maps/index.js';
 import { createBird } from './bird.js';
 import { createDiver } from './diver.js';
 import { createPeople } from './people.js';
@@ -16,6 +16,12 @@ import { Flight } from './flight.js';
 import * as audio from './audio.js';
 import { isTouch, setupTouch } from './touch.js';
 const { WORDS, ORDER, CULTURE, text: TEXT, finale: FIN, ambience: AMB = {} } = M;      // the map being played (src/maps/)
+// the town's name where the page mentions it, the way back to the Bosnia map, and (after the finale) the way on to the next town
+document.title = 'Slavuj · ' + M.name; for (const e of document.querySelectorAll('.town')) e.textContent = M.name;
+document.getElementById('backMap').href = mapUrl(null);
+document.getElementById('toMap').addEventListener('click', () => { location.href = mapUrl(null); });
+{ const i = MAPS.findIndex((m) => m.id === M.id), nx = MAPS[i + 1];
+  if (nx) document.getElementById('nextMap').innerHTML = nx.soon ? `Next: ${nx.name}, coming later` : `<a href="${mapUrl(nx.id)}">Fly on to ${nx.name} →</a>`; }
 
 const $ = (id) => document.getElementById(id);
 const clamp = THREE.MathUtils.clamp, V = (x, y, z) => new THREE.Vector3(x, y, z);
