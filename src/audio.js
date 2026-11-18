@@ -3,7 +3,6 @@
 // assets/audio/words/<id>.(mp3|m4a|ogg|wav) when one exists, and otherwise falls back to the
 // browser's own speech voice for Croatian/Bosnian/Serbian (a placeholder, see CREDITS.md).
 import S from './settings.js';
-import { WORDS } from './vocab.js';
 
 let ctx = null, master, sfx, mus, amb, noiseBuf;
 const wait = (s) => new Promise((r) => setTimeout(r, s * 1000));

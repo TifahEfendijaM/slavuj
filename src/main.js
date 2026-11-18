@@ -5,16 +5,17 @@ import '@fontsource/patrick-hand/latin-400.css';
 import '@fontsource/patrick-hand/latin-ext-400.css';
 import S from './settings.js';
 import { shared, setResolution, tags, tag, SUN_DIR, paintGeo, washMat, addHull } from './paper.js';
-import { buildWorld, BANK } from './world.js';
+import { BANK } from './world.js';
+import M from './maps/current.js';
+import { saveKey, mapUrl } from './maps/index.js';
 import { createBird } from './bird.js';
 import { createDiver } from './diver.js';
 import { createPeople } from './people.js';
 import { rng } from './paper.js';
-import journalArt from '../assets/journal-mostar.webp';
 import { Flight } from './flight.js';
 import * as audio from './audio.js';
 import { isTouch, setupTouch } from './touch.js';
-import { WORDS, ORDER, CULTURE } from './vocab.js';
+const { WORDS, ORDER, CULTURE, text: TEXT, finale: FIN, ambience: AMB = {} } = M;      // the map being played (src/maps/)
 
 const $ = (id) => document.getElementById(id);
 const clamp = THREE.MathUtils.clamp, V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -30,9 +31,9 @@ document.body.prepend(renderer.domElement);
 const canvas = renderer.domElement;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(S.camera.fov, 1, 0.1, 2000);
-const world = buildWorld(scene);
+const world = M.build(scene);
 const bird = createBird(); scene.add(bird.root);
-const diver = createDiver(world.diverPos); scene.add(diver.root);
+const diver = world.diverPos ? createDiver(world.diverPos) : null; if (diver) scene.add(diver.root);      // (Mostar's diver)
 const people = createPeople(scene, world, rng(41));
 const flight = new Flight(world.colliders, bird);
 people.onScatter = () => audio.flutter();
@@ -45,7 +46,8 @@ people.onMeow = (p) => { if (live) audio.meow(nearGain(p, 11)); };
 // the spectators on the bridge: they keep applauding now and then after the finale, heard from nearby
 const crowd = (() => { const w = world.people.filter((p) => p.kind === 'watch'), c = V(0, 0, 0); for (const p of w) c.add(V(p.x, p.y, p.z)); return c.multiplyScalar(1 / Math.max(1, w.length)); })();
 let clapWait = 6, wasDiving = false;
-const fountainAt = V(world.fountain.x, world.fountain.y + 1.4, world.fountain.z);
+const fountainAt = world.fountain ? V(world.fountain.x, world.fountain.y + 1.4, world.fountain.z) : null;
+const crowdN = world.people.filter((p) => p.kind === 'watch').length;
 let live = false;
 
 function resize() {
@@ -57,7 +59,7 @@ addEventListener('resize', resize); resize();
 
 // ---------- progress (kept between visits) ----------
 const params = new URLSearchParams(location.search), fresh = params.has('fresh');
-const KEY = 'slavuj-mostar-1' + (params.get('slot') ? '-' + params.get('slot') : '');   // ?slot=name keeps a separate save
+const KEY = saveKey(M.id);   // ?slot=name keeps a separate save
 let save = { done: [], finale: false };
 try { if (!fresh) save = { ...save, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { /* no storage */ }
 const store = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* no storage */ } };
@@ -130,7 +132,7 @@ function refreshOrbs(announce) {
   return n;
 }
 const allDone = () => orbs.every((o) => o.done);
-function showFleur() { if (allDone() && !save.finale && !fleur.visible) { fleur.visible = true; fleurGrow = 0; audio.orbsAppear(); say('Something golden is shining high above the bridge. Fly through it.', 9); } }
+function showFleur() { if (allDone() && !save.finale && !fleur.visible) { fleur.visible = true; fleurGrow = 0; audio.orbsAppear(); say(TEXT.fleur, 9); } }
 
 // the golden fleur-de-lis that starts the finale
 const fleur = new THREE.Group();
@@ -148,8 +150,8 @@ const fleur = new THREE.Group();
 }
 
 // the hands of the clock tower: they appear once the clock has been coloured, showing half past eight
-const hands = new THREE.Group(); hands.visible = byId.sat.done; scene.add(hands);
-{
+const hands = new THREE.Group(); hands.visible = !!byId.sat?.done; scene.add(hands);
+if (byId.sat && byId.pola) {
   const mat = washMat('time'), f = byId.pola.def.focus, seed = [f.x, f.y, f.z];
   for (const ry of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
     const g = new THREE.Group(); g.position.set(59.5, BANK + 18.5, -15); g.rotation.y = ry; hands.add(g);
@@ -582,8 +584,9 @@ function finishOrb(o) {
   if (!save.done.includes(o.id)) save.done.push(o.id); store();
   showLearn(o.w); renderJournal(o.id);
   const n = refreshOrbs(true);
-  if (o === FIRST && n) say('New orbs have appeared all over Mostar. Find them in any order.', 7);
-  else if (n && byId.most.alive && !byId.most.done && orbs.filter((x) => x.alive).length === 1) say('Only the old bridge is left. Its orb is waiting on the bridge.', 7);
+  const last = TEXT.last && byId[TEXT.last.id];
+  if (o === FIRST && n) say(TEXT.first, 7);
+  else if (n && last?.alive && !last.done && orbs.filter((x) => x.alive).length === 1) say(TEXT.last.msg, 7);
   else if (n) say('A new orb has appeared nearby.', 5);
   showFleur();
   if (!noLock && !locked) setTimeout(() => { if (!locked && state === 'play') paused = true; }, 300);
@@ -595,9 +598,9 @@ function say(text, seconds) { toast = text; toastT = seconds; }
 
 // ---------- feather journal ----------
 function renderJournal(newId) {
-  const known = ORDER.filter((id) => (id === 'sunce' ? save.finale : byId[id]?.done));
+  const known = ORDER.filter((id) => (id === FIN.word ? save.finale : byId[id]?.done));
   $('count').textContent = `${known.length}/${ORDER.length}`;
-  $('jcount').textContent = `${known.length} of ${ORDER.length} words from Mostar`;
+  $('jcount').textContent = `${known.length} of ${ORDER.length} words from ${M.name}`;
   const list = $('jwords'); list.innerHTML = ''; list.style.gridTemplateRows = `repeat(${Math.ceil(ORDER.length / 2)}, auto)`;
   for (const id of ORDER) {
     const row = document.createElement('div'), w = WORDS[id];
@@ -615,7 +618,7 @@ function snapshot(id) {
   if (!(canvas.width > 0)) return '';
   const keep = { p: camera.position.clone(), q: camera.quaternion.clone(), fov: camera.fov }, vis = bird.root.visible;
   let from, to;
-  if (id === 'sunce') { from = V(30, 30, 50); to = V(-60, 62, -80); }
+  if (id === FIN.word) { from = FIN.photo.from; to = FIN.photo.to; }
   else { const sh = setShots(byId[id])[0]; from = sh.from.clone().lerp(sh.to, 0.7); to = sh.lookFrom.clone().lerp(sh.lookTo, 0.7); }
   camera.position.copy(from); camera.lookAt(to); camera.fov = S.cutscene.fov; camera.updateProjectionMatrix(); bird.root.visible = false;
   const shown = orbs.filter((o) => o.vis.visible); for (const o of shown) o.vis.visible = false;
@@ -633,48 +636,46 @@ function showCard(id) {
 $('card').addEventListener('click', () => $('card').classList.add('off'));
 function openJournal(newId) { if (state !== 'play') return; state = 'journal'; document.exitPointerLock?.(); renderJournal(newId); $('journal').classList.remove('off'); audio.page(); hideLearn(); }
 let awakeNote = false;      // after the finale's journal page: tell the player the town is theirs to explore
-function closeJournal() { if (awakeNote) { awakeNote = false; say('Mostar has awakened. You can now explore it freely.', 8); } state = 'play'; $('journal').classList.add('off'); $('card').classList.add('off'); audio.page(); resume(); }
+function closeJournal() { if (awakeNote) { awakeNote = false; say(TEXT.awake, 8); } state = 'play'; $('journal').classList.add('off'); $('card').classList.add('off'); audio.page(); resume(); }
 $('hud').addEventListener('click', () => { if (state === 'play') openJournal(); });
 $('jclose').addEventListener('click', closeJournal);
 $('journal').addEventListener('click', (e) => { if (e.target === $('journal')) closeJournal(); });
-$('cart').src = journalArt;
+$('cart').src = M.art;
 renderJournal();
 
 // ---------- the finale ----------
 const dropBlock = (test) => { const i = world.colliders.findIndex(test); if (i >= 0) world.colliders.splice(i, 1); };
-function wake() { dropBlock((c) => c.userData.diver); }
+function wake() { dropBlock((c) => c.userData.diver); M.onWake?.(ctx()); }
 let swimBlock = null;
 function diverInWater() {   // the bird cannot swim or fly through him
   const p = diver.splashPos;
   if (!swimBlock) { swimBlock = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1)); swimBlock.matrixAutoUpdate = false; swimBlock.userData = { wall: true, swimmer: true }; world.colliders.push(swimBlock); }
   swimBlock.matrix.compose(V(p.x, 0.2, p.z + 1.2), new THREE.Quaternion(), V(1.1, 2, 1.1)); swimBlock.matrixWorld.copy(swimBlock.matrix);
 }
-function applyAlive() { paint('sky', true); paint('sun', true); shared.uSun.value = 1; shared.uLife.value = 1; audio.setMusic(0.9, true); diver.swimAt(V(0, 0, 10.2)); wake(); diverInWater(); people.applaud(); }
+function applyAlive() { paint('sky', true); paint('sun', true); shared.uSun.value = 1; shared.uLife.value = 1; audio.setMusic(0.9, true); if (diver) { diver.swimAt(V(0, 0, 10.2)); diverInWater(); } wake(); people.applaud(); M.onAlive?.(ctx()); }
+// what a map's own finale and awakening code gets to work with
+const ctx = () => ({ scene, world, people, audio, fx, splashFx, time, paint, flight, camera, V });
 if (save.finale) applyAlive();
-const FIN_SHOTS = [
-  { t0: 0, t1: 7.5, from: V(30, 30, 50), to: V(24, 35, 44), lookFrom: V(-60, 62, -80), lookTo: V(-75, 60, -92) },
-  { t0: 7.5, t1: 13.4, from: V(34, 60, 98), to: V(8, 48, 82), lookFrom: V(0, 12, 0), lookTo: V(0, 10, -8) },
-  { t0: 13.4, t1: 22.8, from: V(-2.6, 7.2, 31.5), to: V(0.6, 5.2, 27.5), diver: true },
-  { t0: 22.8, t1: 26, from: V(3, 26, 66), to: V(0, 33, 80), lookFrom: V(0, 13, 0), lookTo: V(0, 14, 0) },
-];
+const FIN_SHOTS = FIN.shots;
 function startFinale() {
   state = 'finale'; hideLearn(); toastT = 0; document.body.classList.add('cine'); audio.pickup(); audio.duckMusic(true);
-  const P = [[0, flight.pos.x, flight.pos.y, flight.pos.z], [2, -14, 64, -6], [4.5, -26, 56, 10], [7, -18, 46, 34], [9.5, 2, 38, 48], [12, 14, 30, 36], [14, 10, 25, 16], [15.6, 4.5, 22.5, 6.5],
-    [16.6, -2.5, 22, 5], [17.4, -4, 18.5, 9], [18.3, -2, 12.5, 13], [19.6, 6.5, 10, 22], [21.5, 7.5, 11, 40], [23.5, -2, 17, 56], [26, 0, 26, 68], [28, 2, 30, 80]];
+  const P = [[0, flight.pos.x, flight.pos.y, flight.pos.z], ...FIN.P];
   fin = { t: 0, P, curve: new THREE.CatmullRomCurve3(P.map((p) => V(p[1], p[2], p[3]))), ev: new Set(), wind: 0, water: 0 };
   flight.mode = 'script'; flight.feet = null; flight.flare = 0; flight.diving = false; flight.clearL = flight.clearR = 1;
-  diver.onSplash = (p) => { audio.splash(); splashFx(p, 1); audio.setMusic(0.9, true); setTimeout(() => { people.applaud(); audio.applause(8); }, 600); };
-  diver.onSurface = (p) => { splashFx(V(p.x, 0, p.z + 1.2), 0.35); audio.birdSplash(0.3); diverInWater(); };
+  if (diver) {
+    diver.onSplash = (p) => { audio.splash(); splashFx(p, 1); audio.setMusic(0.9, true); setTimeout(() => { people.applaud(); audio.applause(8); }, 600); };
+    diver.onSurface = (p) => { splashFx(V(p.x, 0, p.z + 1.2), 0.35); audio.birdSplash(0.3); diverInWater(); };
+  }
 }
 function updateFinale(dt) {
   const f = fin; f.t += dt; const t = f.t;
   const once = (name, at, fn) => { if (t >= at && !f.ev.has(name)) { f.ev.add(name); fn(); } };
-  once('sing', 0.4, () => { singing = true; audio.speak('sunce').then(() => { singing = false; }); });
+  once('sing', 0.4, () => { singing = true; audio.speak(FIN.word).then(() => { singing = false; }); });
   once('sky', 1.2, () => { paint('sky'); paint('sun'); audio.swell(true, 7); audio.paintWash(6); });
-  once('photo', 8, () => { snapId = 'sunce'; });
+  once('photo', 8, () => { snapId = FIN.word; });
   once('birds', 11, () => audio.setLife({ birds: true })); once('city', 12.5, () => audio.setLife({ city: true }));
   once('murmur', 12.5, () => audio.setLife({ murmur: 0.5 }));
-  once('jump', 15, () => { diver.jump(); people.fishJumpAt(time + 4.3); wake(); singing = true; audio.song('sunce', 7.3, 1).then(() => { singing = false; }); });   // the whole melody, once; the fish leaps just after the diver's splash, while the camera looks down at the water
+  once('jump', 15, () => { diver?.jump(); people.fishJumpAt(time + 4.3); wake(); FIN.climax?.(ctx()); singing = true; audio.song(FIN.word, 7.3, 1).then(() => { singing = false; }); });   // the whole melody, once; the fish leaps just after the diver's splash, while the camera looks down at the water
   shared.uSun.value = smooth((t - 3) / 7); shared.uLife.value = smooth((t - 8.5) / 3);
   f.wind = smooth((t - 6) / 4); f.water = smooth((t - 9.5) / 3); audio.setLife({ wind: f.wind, water: f.water });
   // the bird flies itself through the scene
@@ -688,7 +689,8 @@ function updateFinale(dt) {
   const s = FIN_SHOTS.find((x) => t < x.t1) || FIN_SHOTS[FIN_SHOTS.length - 1], e = smooth((t - s.t0) / (s.t1 - s.t0));
   if (f.shot !== s) f.shot = s;      // a straight cut between the finale's shots
   camera.position.lerpVectors(s.from, s.to, e);
-  if (s.diver) {      // the diver's shot: the camera turns with him, aimed a little ahead along his leap and fall, so it never trails him
+  FIN.step?.(t, dt, ctx());      // the map's own moving parts in its finale
+  if (s.diver && diver) {      // the diver's shot: the camera turns with him, aimed a little ahead along his leap and fall, so it never trails him
     const d = diver.state === 'jump' ? diver.root.position : diver.state === 'stand' ? world.diverPos : diver.splashPos, aim = V(d.x, d.y + 1, d.z);
     if (diver.state === 'jump' && f.lastD && dt > 0) aim.addScaledVector(V(d.x - f.lastD.x, d.y - f.lastD.y, d.z - f.lastD.z), 0.2 / dt);
     f.lastD = diver.state === 'jump' ? d.clone() : null;
@@ -702,7 +704,7 @@ function updateFinale(dt) {
       fin = null; save.finale = true; store(); document.body.classList.remove('cine'); audio.swell(false, 9); audio.setMusic(0.9, true); audio.duckMusic(false);
       camera.fov = S.camera.fov; camera.updateProjectionMatrix(); camSnap = true;
       flight.mode = 'flying'; flight.mousePitch = 0; flight.grace = 0.5; fleur.visible = false;
-      state = 'play'; awakeNote = true; openJournal('sunce');
+      state = 'play'; awakeNote = true; openJournal(FIN.word);
     });
   }
 }
@@ -762,7 +764,7 @@ function updateHint() {
   if (flight.mode === 'swim') return hint((orbHere() ? OPEN + ' · ' : '') + HOLD('paddle') + ' · ' + UP);
   if (flight.mode === 'perched') {
     if (orbHere()) return hint(OPEN + ' · ' + HOLD('walk'));
-    return hint(UP + (!FIRST.done ? ' · fly to the glowing orb and land on the roof' : ' · ' + HOLD('walk')));
+    return hint(UP + (!FIRST.done ? ' · ' + TEXT.firstHint : ' · ' + HOLD('walk')));
   }
   hint('');
 }
@@ -793,20 +795,21 @@ function tick(dt) {
   }
   flight.events.length = 0; inp.dx = inp.dy = 0; inp.takeoff = false;
   if (fin) updateFinale(dt);
-  diver.update(dt, time); people.update(dt, time, shared.uLife.value, flight);
+  diver?.update(dt, time); people.update(dt, time, shared.uLife.value, flight);
   if (shared.uLife.value > 0 && !fin) { // the living town is heard from where the bird is
     const p = flight.pos, low = clamp(1 - (p.y - BANK) / 50, 0.15, 1), near = (x, z, r) => clamp(1 - Math.hypot(p.x - x, p.z - z) / r, 0, 1) * low;
-    audio.setLife({ wind: 0.45 + 0.55 * clamp((p.y - BANK) / 40, 0, 1), water: clamp(1 - (Math.abs(p.x) - 8) / 42, 0.08, 1) * clamp(1 - p.y / 70, 0.2, 1), birds: true,
-      city: near(42, 0, 60), murmur: Math.max(near(42, 0, 34), near(-7, 0, 22), near(19, 50, 20), near(-28, -4, 16), near(31, 76, 22), near(55, 72, 20)) });
+    const water = AMB.water ? AMB.water(p) : clamp(1 - (Math.abs(p.x) - 8) / 42, 0.08, 1) * clamp(1 - p.y / 70, 0.2, 1);      // (Mostar: the Neretva runs along x = 0)
+    audio.setLife({ wind: 0.45 + 0.55 * clamp((p.y - BANK) / 40, 0, 1), water, birds: true,
+      city: AMB.city ? near(...AMB.city) : 0, murmur: Math.max(0, ...(AMB.murmur || []).map((m) => near(...m))) });
   }
 
   // the sheep bleat now and then, heard only when the bird is close to the meadow
-  if (running && shared.uLife.value > 0.5 && !fin && (clapWait -= dt) < 0) {      // the bridge crowd claps again every so often
+  if (crowdN && running && shared.uLife.value > 0.5 && !fin && (clapWait -= dt) < 0) {      // the bridge crowd claps again every so often
     clapWait = 9 + Math.random() * 9; const g = nearGain(crowd, 32);
     if (g > 0) { audio.applause(3 + Math.random() * 2, g); people.applaud(); }
   }
-  audio.setFountain(running && shared.uLife.value > 0.5 ? nearGain(fountainAt, 16) : 0);      // the šadrvan, heard close by
-  if (running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - 56.5, flight.pos.z - 55) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 18 && Math.random() < dt * 0.25) audio.baa((1 - sd / 18) ** 1.6); }
+  audio.setFountain(fountainAt && running && shared.uLife.value > 0.5 ? nearGain(fountainAt, 16) : 0);      // the šadrvan, heard close by
+  if (AMB.sheep && running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - AMB.sheep[0], flight.pos.z - AMB.sheep[1]) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 18 && Math.random() < dt * 0.25) audio.baa((1 - sd / 18) ** 1.6); }
   freeSingT -= dt;
   bird.root.position.copy(flight.pos);
   bird.root.rotation.set(-flight.pitch, flight.yaw, flight.roll);

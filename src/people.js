@@ -207,8 +207,9 @@ export function createPeople(scene, world, R) {
     a.size = o.kind === 'horse' ? 1.1 : 0.55;      // how close another animal may come (about half its length)
     a.phase = R() * 6; a.home = pos.clone(); a.to = pos.clone(); a.rest = 2 + R() * 5; a.walk = 0; return a;
   });
-  const PG = world.pigeons, pcentre = new THREE.Vector3(PG.x, PG.y, PG.z), pigeons = [];
-  for (let i = 0; i < 8; i++) {
+  // (each map has its own set of these features; a map without one simply does not get it)
+  const PG = world.pigeons || { x: 0, y: -999, z: 0 }, pcentre = new THREE.Vector3(PG.x, PG.y, PG.z), pigeons = [];
+  for (let i = 0; i < (world.pigeons ? 8 : 0); i++) {
     const ang = (i / 8) * 6.28 + R(), rad = 0.5 + R() * 1.5, home = new THREE.Vector3(PG.x + Math.cos(ang) * rad, PG.y, PG.z + Math.sin(ang) * rad);
     const P = painter('pigeon', home, 1.2), g = new THREE.Group(); g.position.copy(home); g.rotation.y = R() * 6.28; scene.add(g);
     const col = ['#8f9aa6', '#a7aeb5', '#7d8794', '#c9c4bc'][i % 4], b = P(G.catBody, col, g, 0, 0.11, 0, '#6a7480'); b.scale.set(0.07, 0.075, 0.13);
@@ -218,19 +219,19 @@ export function createPeople(scene, world, R) {
     pigeons.push({ g, hd, wings, home, mode: 'ground', t: 0, phase: R() * 6, r: 3 + R() * 2.5, h: 3 + R() * 2.5, yaw: g.rotation.y });
   }
   let fishT0 = 0;      // the fish's jumps count from here (the finale sets it so one comes early in the diver's shot)
-  const FS = world.fish, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), FP = painter('fish', fishHome, 1), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7; scene.add(fish);
-  FP(G.catBody, '#9fb6c2', fish, 0, 0, 0, '#6f8a9a').scale.set(0.05, 0.1, 0.24); { const t = FP(G.ear, '#6f8a9a', fish, 0, 0, -0.27); t.scale.set(0.5, 1.3, 1.6); t.rotation.x = Math.PI / 2; }
+  const FS = world.fish || { x: 0, z: 0 }, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), FP = painter('fish', fishHome, 1), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7; if (world.fish) scene.add(fish);
+  if (world.fish) FP(G.catBody, '#9fb6c2', fish, 0, 0, 0, '#6f8a9a').scale.set(0.05, 0.1, 0.24); if (world.fish) { const t = FP(G.ear, '#6f8a9a', fish, 0, 0, -0.27); t.scale.set(0.5, 1.3, 1.6); t.rotation.x = Math.PI / 2; }
   const birdD = new THREE.Vector3();
 
   // ---- smoke from a chimney: still curls in the sketch, then it rises and drifts ----
-  const smokes = world.smoke.map((SM, k) => {
+  const smokes = (world.smoke || []).map((SM, k) => {
     const SMP = painter('smoke', new THREE.Vector3(SM.x, SM.y + 1.6, SM.z), 3.6);
     return { SM, k, puffs: Array.from({ length: 9 }, (_, i) => SMP(G.ball, i % 2 ? '#e2dfd8' : '#d0ccc4', scene, 0, 0, 0, '#b4b0a8')) };
   });
   // ---- the šadrvan: eight thin streams fall from the rim of its upper bowl into the basin (still in the sketch) ----
-  const FT = world.fountain, FTP = painter('fountain', new THREE.Vector3(FT.x, FT.y + 1.6, FT.z), 2.4);
+  const FT = world.fountain || { x: 0, y: 0, z: 0 }, FTP = painter('fountain', new THREE.Vector3(FT.x, FT.y + 1.6, FT.z), 2.4);
   const FALL = 0.574, DROPS = 16, R0F = 0.86, R1F = 1.3, Y0F = FT.y + 2.29, VY0 = 0.25;      // seconds to fall; from the rim to the water
-  const streams = Array.from({ length: 8 }, (_, i) => {
+  const streams = Array.from({ length: world.fountain ? 8 : 0 }, (_, i) => {
     const a = (i + 0.5) * Math.PI / 4, dx = Math.sin(a), dz = Math.cos(a);
     return { dx, dz, drops: Array.from({ length: DROPS }, () => { const m = FTP(G.ball, '#bfe4ea', scene, 0, 0, 0, '#7fc0cc'); m.clear(); m.scale.set(0.024, 0.075, 0.024); return m; }) };
   });
@@ -242,10 +243,12 @@ export function createPeople(scene, world, R) {
   };
   flow(0);
   // ---- the traffic light by the road: red until the town wakes, then it cycles ----
+  const lamps = [];
+  if (world.light) {
   const TL = world.light, tlp = new THREE.Vector3(TL.x, TL.y, TL.z), TLP = painter('light', tlp, 2.6), tlg = new THREE.Group(); tlg.position.copy(tlp); scene.add(tlg);
   rod(TLP, tlg, [0, 0, 0], [0, 3, 0], 0.06, '#3a3e42');
   { const h = TLP(G.box, '#2e3236', tlg, 0, 3.45, 0, '#1e2124'); h.scale.set(0.34, 1.05, 0.3); }
-  const lamps = [], DIM = ['#5a2a26', '#5a4a22', '#22482e'], ON = ['#ee3a2a', '#f6c22a', '#3fcf62'];
+  const DIM = ['#5a2a26', '#5a4a22', '#22482e'], ON = ['#ee3a2a', '#f6c22a', '#3fcf62'];
   for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) {
     const y = 3.45 + (1 - i) * 0.32, z = sd * 0.15;
     TLP(G.disc, DIM[i], tlg, 0, y, z).scale.set(0.11, 0.11, 0.02);
@@ -253,11 +256,14 @@ export function createPeople(scene, world, R) {
     TLP(G.box, '#2e3236', tlg, 0, y + 0.13, z + sd * 0.07).scale.set(0.24, 0.02, 0.13);
   }
   block(TL.x, TL.y + 1.5, TL.z, 0.2, 3, 0.2, { wall: true }); block(TL.x, TL.y + 3.45, TL.z, 0.36, 1.07, 0.34, { orb: 'semafor' });
+  }
   // ---- the flag in front of the school: hangs still in the sketch, then waves ----
+  const cloth = []; let waveFlag = () => {};
+  if (world.flag) {
   const FL = world.flag, flp = new THREE.Vector3(FL.x, FL.y, FL.z), FLP = painter('flag', flp.clone().setY(FL.y + FL.h - 0.7), 2.4), flg = new THREE.Group(); flg.position.copy(flp); scene.add(flg);
   rod(FLP, flg, [0, 0, 0], [0, FL.h + 0.1, 0], 0.06, '#d9d6cf');
   FLP(G.ball, '#c9a23a', flg, 0, FL.h + 0.14, 0, '#a07a25').scale.setScalar(0.11);
-  const FW = 2.1, FH = 1.05, ftop = FL.h - 0.08, cloth = [];
+  const FW = 2.1, FH = 1.05, ftop = FL.h - 0.08;
   // a piece of the cloth: a fine grid bent into shape (u across, v down), so it can ripple with the rest
   const piece = (shape, col, bleed, z, nu = 12, nv = 6) => {
     const geo = new THREE.PlaneGeometry(1, 1, nu, nv), pa = geo.attributes.position;
@@ -292,7 +298,7 @@ export function createPeople(scene, world, R) {
     const ripple = alive ? Math.sin(x * 2.6 - t * 5.2 + y * 0.6) * 0.16 + Math.sin(x * 4.1 - t * 7.9) * 0.05 : Math.sin(x * 2.6 + y * 0.6) * 0.07;
     return [y - (alive ? 0.04 : 0.12) * u * u, ripple * u];
   };
-  const waveFlag = (t, alive) => {
+  waveFlag = (t, alive) => {
     for (const { m, base, z } of cloth) {
       const pa = m.geometry.attributes.position;
       for (let i = 0; i < pa.count; i++) { const [y, dz] = bend(base[i * 3], base[i * 3 + 1], t, alive); pa.setY(i, y); pa.setZ(i, z + dz); }
@@ -306,16 +312,17 @@ export function createPeople(scene, world, R) {
     ra.needsUpdate = true;
   };
   waveFlag(0, false);
+  }
 
   // ---- the football ----
   const kickers = list.filter((p) => p.o.ball !== undefined).sort((a, b) => a.o.ball - b.o.ball);
-  const ballHome = new THREE.Vector3(31.2, 12.29, 76.2), BP = painter('ball', ballHome, 1), ball = BP(G.ball, '#f8f4ea', scene, 0, 0, 0, '#cfd6d8');
+  const ballHome = new THREE.Vector3(...(world.ball || [31.2, 12.29, 76.2])), BP = painter('ball', ballHome, 1), ball = kickers.length ? BP(G.ball, '#f8f4ea', scene, 0, 0, 0, '#cfd6d8') : new THREE.Object3D();
   ball.scale.setScalar(0.17); ball.position.copy(ballHome);
-  const ballBlock = block(ballHome.x, ballHome.y, ballHome.z, 0.4, 0.4, 0.4, { wall: true, person: true }), dogP = new THREE.Vector3();
+  const ballBlock = kickers.length ? block(ballHome.x, ballHome.y, ballHome.z, 0.4, 0.4, 0.4, { wall: true, person: true }) : new THREE.Object3D(), dogP = new THREE.Vector3();
   const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3();
 
   // ---- the slide: where the sliding child is at each moment of its round ----
-  const SLD = world.slide, kidS = 1.05 * 0.66, seatDrop = 0.36 * 0.66;
+  const SLD = world.slide || { x: 0, y: 0, z: 0 }, kidS = 1.05 * 0.66, seatDrop = 0.36 * 0.66;
   const WALK = [[-6.1, 0, 0], [-6.1, 0, 1.7], [2.3, 0, 1.7], [2.0, 0, 0]].map((a) => new THREE.Vector3(...a));
   const TOPSEAT = new THREE.Vector3(-0.45, 1.96 - seatDrop, 0), FOOT = new THREE.Vector3(-5.35, 0.28 - seatDrop, 0), LAND = new THREE.Vector3(0.45, 1.96, 0);
   // the climb: the foot of the ladder, each of its five rungs, then the platform (the rungs are built in world.js)
@@ -338,8 +345,8 @@ export function createPeople(scene, world, R) {
   }
 
   // ---- the cat ----
-  const C = world.cat, cpos = new THREE.Vector3(C.x, C.y, C.z), ctm = timing('cat', cpos), cmat = washMat('cat');
-  const cat = new THREE.Group(); cat.position.copy(cpos); scene.add(cat);
+  const C = world.cat || { x: 0, y: -999, z: 0, x0: 0, x1: 0 }, cpos = new THREE.Vector3(C.x, C.y, C.z), ctm = timing('cat', cpos), cmat = washMat('cat');
+  const cat = new THREE.Group(); cat.position.copy(cpos); if (world.cat) scene.add(cat);
   const CP = (geo, parent, x, y, z, sx = 1, sy = 1, sz = 1, col = '#e39a4a') => {
     const m = new THREE.Mesh(paintGeo(geo, { col, bleed: '#c9752f', seed: [C.x, C.y + 0.4, C.z], radius: 1.4, delay: ctm.delay, dur: 3, hatch: 0.4 }), cmat);
     m.position.set(x, y, z); m.scale.set(sx, sy, sz); addHull(m, 1.5); parent.add(m); return m;
@@ -567,7 +574,7 @@ export function createPeople(scene, world, R) {
       }
       // pigeons peck about; once the town is alive they scatter when the nightingale comes close, circle, and come back
       const near = bird ? bird.pos.distanceTo(pcentre) : 99, scare = alive && (near < 3 || (near < 5.5 && bird.mode === 'perched'));
-      if (scare && pigeons[0].mode === 'ground') this.onScatter?.();
+      if (scare && pigeons[0]?.mode === 'ground') this.onScatter?.();
       for (const q of pigeons) {
         const t = time + q.phase;
         if (q.mode === 'ground') {
@@ -583,8 +590,9 @@ export function createPeople(scene, world, R) {
         }
       }
       // the fish jumps now and then
-      if (alive) { const u = ((((time - fishT0) % 5.5) + 5.5) % 5.5) / 1.1; fish.visible = u < 1; if (u < 1) { fish.position.set(fishHome.x + (u - 0.5) * 1.3, Math.sin(Math.PI * u) * 0.95 - 0.12, fishHome.z); fish.rotation.set(-1.1 + u * 2.2, Math.PI / 2, 0, 'YXZ'); } }
+      if (alive && world.fish) { const u = ((((time - fishT0) % 5.5) + 5.5) % 5.5) / 1.1; fish.visible = u < 1; if (u < 1) { fish.position.set(fishHome.x + (u - 0.5) * 1.3, Math.sin(Math.PI * u) * 0.95 - 0.12, fishHome.z); fish.rotation.set(-1.1 + u * 2.2, Math.PI / 2, 0, 'YXZ'); } }
       // the cat sits until the town wakes, then strolls along its wall with pauses
+      if (world.cat) {
       const c = catS;
       if (alive) { c.rest -= dt; if (c.rest < 0) { c.x += c.dir * dt * 0.9; if (c.x > C.x1 || c.x < C.x0) { c.dir *= -1; c.rest = 1.5 + R() * 3; c.x = Math.min(C.x1, Math.max(C.x0, c.x)); } else if (R() < dt * 0.12) c.rest = 1 + R() * 2.5; } }
       const moving = alive && c.rest < 0; c.walk += ((moving ? 1 : 0) - c.walk) * k(5, dt);
@@ -595,6 +603,7 @@ export function createPeople(scene, world, R) {
       clegs.forEach((l, i) => { l.rotation.z = (i === 0 || i === 3 ? sw : -sw); l.scale.y = 0.35 + 0.65 * c.walk; });
       ctail.rotation.z = 0.5 + (alive ? Math.sin(time * 1.7) * 0.35 : 0); ctail.rotation.x = alive ? Math.sin(time * 1.1) * 0.3 : 0;
       chead.rotation.y = alive && !moving ? Math.sin(time * 0.8) * 0.5 : 0;
+      }
     },
   };
 }
