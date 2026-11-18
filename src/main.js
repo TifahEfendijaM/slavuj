@@ -260,8 +260,8 @@ const touch = isTouch ? setupTouch(inp, {
 }) : null;
 if (touch) {
   noLock = true;
-  $('start').querySelector('table').innerHTML = '<tr><td>Drag on the left</td><td>steer (push up to climb, down to sink)</td></tr><tr><td>Flap button</td><td>take off · flap hard to climb</td></tr>'
-    + '<tr><td>Hold dive</td><td>dive in flight · walk on the ground · paddle on water</td></tr><tr><td>Open</td><td>the word list, when you land at an orb</td></tr>';
+  $('start').querySelector('.controls').innerHTML = '<table><tr><th></th><th>Flying</th></tr><tr><td><kbd>Drag left side</kbd></td><td>steer · up to climb</td></tr><tr><td><kbd>Flap</kbd></td><td>take off · flap to climb</td></tr>'
+    + '<tr><td><kbd>Hold dive</kbd></td><td>dive<i> · walk · paddle</i></td></tr></table><table><tr><th></th><th>Words</th></tr><tr><td><kbd>Open</kbd></td><td>an orb\'s word list</td></tr><tr><td><kbd>Feather</kbd></td><td>journal</td></tr></table>';
   $('start').querySelector('.go').textContent = 'Tap to fly';
   $('pause').querySelector('.card').firstChild.textContent = 'Paused · tap to keep flying';
   $('pause').querySelector('table').innerHTML = '<tr><td>Drag on the left</td><td>steer</td></tr><tr><td>Flap</td><td>flap hard to climb</td></tr><tr><td>Hold dive</td><td>dive</td></tr>'

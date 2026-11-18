@@ -21,8 +21,11 @@
   #start { cursor: pointer; }
   #start h1 { font-family: 'Caveat', cursive; font-size: 74px; margin: 0; line-height: .95; color: var(--blue); }
   #start .sub { font-size: 22px; margin: 6px 0 14px; }
-  #start table { margin: 0 auto 14px; font-size: 19px; border-spacing: 14px 4px; text-align: left; }
-  #start td:first-child { text-align: right; white-space: nowrap; }
+  #start .controls { display: flex; justify-content: center; align-items: flex-start; gap: 18px; margin: 4px auto 14px; }
+  #start .controls table + table { border-left: 2px dashed rgba(59, 53, 47, .25); padding-left: 18px; }
+  #start table { font-size: 19px; border-spacing: 12px 6px; text-align: left; }
+  #start th { font-family: 'Caveat', cursive; font-size: 25px; font-weight: 700; color: var(--blue); text-align: left; padding-bottom: 2px; }
+  #start td:first-child { text-align: right; white-space: nowrap; } #start td i { font-style: normal; opacity: .6; }
   #start .go { font-size: 30px; font-family: 'Caveat', cursive; font-weight: 700; }
   #start .foot { font-size: 16px; margin-top: 10px; opacity: .8; }
   #start .foot button { background: none; border: 0; text-decoration: underline; cursor: pointer; font-size: 16px; padding: 0; }
@@ -211,13 +214,20 @@
   <div class="card wobbly">
     <h1>Slavuj</h1>
     <div class="sub">A nightingale colours Mostar in, one Bosnian word at a time.</div>
-    <table>
-      <tr><td>Mouse</td><td>steer</td></tr>
-      <tr><td><kbd>Space</kbd></td><td>take off · flap hard to climb</td></tr>
-      <tr><td>Hold the mouse button</td><td>dive in flight · walk on the ground · paddle on water</td></tr>
-      <tr><td><kbd>E</kbd></td><td>open the word list when you land at an orb</td></tr>
-      <tr><td><kbd>J</kbd> · <kbd>F</kbd> · <kbd>Esc</kbd></td><td>journal · sing · pause</td></tr>
-    </table>
+    <div class="controls">
+      <table>
+        <tr><th></th><th>Flying</th></tr>
+        <tr><td><kbd>Mouse</kbd></td><td>steer</td></tr>
+        <tr><td><kbd>Space</kbd></td><td>take off · flap to climb</td></tr>
+        <tr><td><kbd>Hold click</kbd></td><td>dive<i> · walk · paddle</i></td></tr>
+      </table>
+      <table>
+        <tr><th></th><th>Words</th></tr>
+        <tr><td><kbd>E</kbd></td><td>open an orb's word list</td></tr>
+        <tr><td><kbd>J</kbd></td><td>journal</td></tr>
+        <tr><td><kbd>F</kbd> <kbd>Esc</kbd></td><td>sing · pause</td></tr>
+      </table>
+    </div>
     <div class="go">Click to fly</div>
     <div class="foot"><a href="https://easybosnian.com" target="_blank" rel="noopener" id="brand">easybosnian.com</a><span id="resetWrap" style="display:none"> · <button id="reset">start over</button></span></div>
   </div>
