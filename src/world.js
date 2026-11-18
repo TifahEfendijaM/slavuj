@@ -330,7 +330,7 @@ export function buildWorld(scene) {
   const winP = local(hWin, 6.5 * 0.12, 3.9, 3.7);
   orb('prozor', [winP.x, winP.y, winP.z], 3.5, ['window'], 'combo', winP.y + 1, { near: { p: [winP.x, BANK + 1, winP.z - 2.5], r: 3.2 }, front: Math.PI });
   const doorP = local(hDoor, 0, 1.1, 3.6);
-  orb('vrata', [doorP.x, doorP.y, doorP.z], 3.2, ['door'], 'combo', doorP.y + 1.3, { at: new Vector3(doorP.x + 0.9, BANK + 3, doorP.z), near: { p: [doorP.x + 1.5, BANK + 0.6, doorP.z], r: 3 }, front: Math.PI / 2 });
+  orb('vrata', [doorP.x, doorP.y, doorP.z], 3.2, ['door'], 'combo', doorP.y + 1.3, { at: new Vector3(doorP.x + 0.9, BANK + 2.55, doorP.z), near: { p: [doorP.x + 1.5, BANK + 0.6, doorP.z], r: 3 }, front: Math.PI / 2, frame: { focus: [doorP.x - 0.3, BANK + 1.15, doorP.z], r: 1.65 } });      // (frame: the whole door and its step)
   for (const t of ['house', 'chimney', 'window', 'door', 'tree', 'flower', 'lamp', 'bench', 'wall', 'tower', 'shop', 'carpet', 'cloud', 'roof']) tag(t).waveDelay = 2.6;
   orb('kuca', [47, BANK + 4, 19], 6.5, ['house'], 'combo', hKuca.top);
   { const c = hSmoke.chimTop;      // dim: the smoke rising from this chimney (the puffs are built in people.js)

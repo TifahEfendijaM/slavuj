@@ -306,6 +306,7 @@ function fitDist(r) { const t = Math.tan(THREE.MathUtils.degToRad(S.cutscene.fov
 const aspect = () => (camera.aspect > 0 ? camera.aspect : 1.6);
 function ownSphere(o) {
   const d = o.def, box = new THREE.Box3();
+  if (d.frame) return new THREE.Sphere(V(...d.frame.focus), d.frame.r);      // a set framing (the part that is solid is not all of the thing)
   for (const c of world.colliders) if (idsOf(c)[0] === o.id && !c.userData.person) { c.geometry.boundingBox || c.geometry.computeBoundingBox(); box.union(_box.copy(c.geometry.boundingBox).applyMatrix4(c.matrixWorld)); }
   const s = box.isEmpty() ? null : box.getBoundingSphere(new THREE.Sphere());
   return s && s.radius < d.size * 2.2 && s.radius > d.size * 0.35 ? s : new THREE.Sphere(d.focus.clone(), d.size);
