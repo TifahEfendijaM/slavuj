@@ -43,7 +43,7 @@ people.onNeigh = (p) => { if (live) audio.neigh(nearGain(p, 22)); };
 people.onMeow = (p) => { if (live) audio.meow(nearGain(p, 11)); };
 // the spectators on the bridge: they keep applauding now and then after the finale, heard from nearby
 const crowd = (() => { const w = world.people.filter((p) => p.kind === 'watch'), c = V(0, 0, 0); for (const p of w) c.add(V(p.x, p.y, p.z)); return c.multiplyScalar(1 / Math.max(1, w.length)); })();
-let clapWait = 6;
+let clapWait = 6, wasDiving = false;
 const fountainAt = V(world.fountain.x, world.fountain.y + 1.4, world.fountain.z);
 let live = false;
 
@@ -720,6 +720,8 @@ function tick(dt) {
   const running = started && !paused && state === 'play' && (locked || noLock); live = running;
   if (running) {
     flight.update(dt, inp);
+    if (flight.diving && !wasDiving) audio.cancelTakeoff();      // diving straight after taking off: the take-off wingbeats stop
+    wasDiving = flight.diving;
     for (const ev of flight.events) { if (ev === 'splash') { splashFx(V(flight.pos.x, flight.waterY + 0.05, flight.pos.z), flight.splashPower); audio.birdSplash(flight.splashPower); } else audio[ev]?.(); }
     flight.drift = flight.waterY < 1 ? 0.5 * shared.uLife.value : 0;
     if (fleur.visible && flight.mode === 'flying' && flight.pos.distanceTo(fleur.position) < 3.6) startFinale();

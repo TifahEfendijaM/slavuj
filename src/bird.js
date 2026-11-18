@@ -102,7 +102,7 @@ export function createBird() {
       amp += (wantAmp - amp) * k(6, dt);
       phase += dt * freq * Math.PI * 2;
       const beat = Math.sin(phase), up = Math.max(0, Math.cos(phase));
-      if (prevBeat > 0 && beat <= 0 && !perched && amp * open > 0.4) this.downstroke = amp;
+      if (prevBeat > 0 && beat <= 0 && !perched && !st.diving && amp * open > 0.4) this.downstroke = amp;      // (no wingbeat sound while diving, even as the wings fold in)
       prevBeat = beat;
 
       for (const w of wings) {

@@ -62,6 +62,7 @@ function noise(t, dur, o = {}) {
   const g = ctx.createGain(), a = o.attack ?? 0.01, v = o.vol ?? 0.2;
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   src.connect(flt).connect(g).connect(o.bus || sfx); src.start(t, Math.random()); src.stop(t + dur + 0.05);
+  return { src, g };
 }
 function loop(type, freq, q) {
   const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
@@ -131,7 +132,10 @@ export function setFountain(g) {
 }
 // a knuckle on a wooden door
 export function knock(g = 1) { if (!ctx || g <= 0) return; const t = now(); tone(t, [[0, 190], [0.07, 120]], 0.2 * g, { decay: true, attack: 0.002, bus: amb }); noise(t, 0.05, { f0: 1100, q: 1.3, vol: 0.12 * g, attack: 0.002, bus: amb }); }
-export function takeoff() { if (!ctx) return; const t = now(); for (let i = 0; i < 4; i++) noise(t + i * 0.07, 0.09, { f0: 1700, f1: 600, q: 0.7, vol: 0.13 }); }
+let takeoffNodes = [];
+export function takeoff() { if (!ctx) return; const t = now(); takeoffNodes = []; for (let i = 0; i < 4; i++) takeoffNodes.push(noise(t + i * 0.07, 0.09, { f0: 1700, f1: 600, q: 0.7, vol: 0.13 })); }
+// a dive straight after taking off: the take-off wingbeats still to come are cut off at once
+export function cancelTakeoff() { if (!ctx) return; const t = now(); for (const n of takeoffNodes) { n.g.gain.cancelScheduledValues(t); n.g.gain.setValueAtTime(Math.max(0.0001, n.g.gain.value), t); n.g.gain.exponentialRampToValueAtTime(0.0001, t + 0.02); try { n.src.stop(t + 0.03); } catch (e) { /* already ended */ } } takeoffNodes = []; }
 export function land() { if (!ctx) return; const t = now(); tone(t, [[0, 150], [0.09, 70]], 0.2, { decay: true, attack: 0.004 }); noise(t, 0.12, { f0: 900, f1: 300, vol: 0.1 }); noise(t + 0.08, 0.1, { f0: 1600, f1: 700, vol: 0.06 }); }
 export function bump() { if (ctx) { const t = now(); tone(t, [[0, 120], [0.12, 60]], 0.22, { decay: true, attack: 0.004 }); noise(t, 0.1, { f0: 500, f1: 200, vol: 0.1 }); } }
 // the bird meets the water: p is 0..1, from a gentle touch to a full dive
