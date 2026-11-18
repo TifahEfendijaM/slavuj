@@ -88,16 +88,17 @@ function startLoops() {
     ramp(murmurL.g.gain, murmur * (0.012 + 0.03 * Math.random()), 0.12); ramp(murmurL.flt.frequency, 380 + Math.random() * 320, 0.15);   // voices, far off
   }, 250);
 }
-// wind past the bird: when it is fast (a dive) and while it is gaining speed. It stops at once when the bird does.
 let lastSpeed = 0, accel = 0;
+// wind past the bird, by its speed: it starts at about take-off speed, is clearly there at full cruising speed and
+// strongest in a dive; gaining speed adds a little more. It stops at once when the bird lands.
 export function setRush(speed, flying, dt = 0.016) {
   if (!ctx) return;
   const t = now();
   if (!flying) { lastSpeed = 0; accel = 0; for (const l of [rush, rushLow]) { l.g.gain.cancelScheduledValues(t); l.g.gain.setTargetAtTime(0, t, 0.035); } return; }
   const a = lastSpeed ? (speed - lastSpeed) / Math.max(dt, 0.001) : 0; lastSpeed = speed;
-  accel += (Math.min(1, Math.max(0, a / 5)) - accel) * Math.min(1, dt * 5);
-  const x = Math.min(1, Math.max(0, (speed - 15) / 15) + accel * 0.6), gust = 0.75 + 0.17 * Math.sin(t * 1.7) + 0.08 * Math.sin(t * 4.1);
-  ramp(rush.g.gain, x ** 1.6 * 0.16 * gust * S.audio.wind, 0.18); ramp(rush.flt.frequency, 330 + 380 * x + 70 * Math.sin(t * 2.3), 0.3);
+  accel += (Math.min(1, Math.max(0, a / 3)) - accel) * Math.min(1, dt * 6);
+  const x = Math.min(1, Math.max(0, (speed - 8) / 18) + accel * 0.35), gust = 0.75 + 0.17 * Math.sin(t * 1.7) + 0.08 * Math.sin(t * 4.1);
+  ramp(rush.g.gain, x ** 1.3 * 0.16 * gust * S.audio.wind, 0.18); ramp(rush.flt.frequency, 330 + 380 * x + 70 * Math.sin(t * 2.3), 0.3);
   ramp(rushLow.g.gain, x * 0.2 * S.audio.wind, 0.2);
 }
 export function setLife(o) { if ('wind' in o) wind = o.wind; if ('water' in o) water = o.water; if ('birds' in o) birds = o.birds; if ('city' in o) city = +o.city; if ('murmur' in o) murmur = o.murmur; }

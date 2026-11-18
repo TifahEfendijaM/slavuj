@@ -235,7 +235,7 @@ addEventListener('keydown', (e) => {
   if (!started) return;
   audio.unlock();
   if (state === 'play') {
-    if (paused) { if (['Escape', 'Space', 'Enter'].includes(e.code)) resume(); return; }      // Esc toggles: it resumes too, and takes the mouse back
+    if (paused) return;      // only a click resumes (it is what takes the mouse back)
     if (e.code === 'Escape') { paused = true; document.exitPointerLock?.(); return; }
     if (e.code === 'Space') inp.takeoff = true;
     if (e.code === 'KeyE') { const o = orbHere(); if (o) openWords(o); }
@@ -467,14 +467,29 @@ function shotsFor(o, bird) {
   if (d.visibleFirst) return visibleSplit(o, bird);
   // view: a set first shot (where the automatic camera's view would be blocked)
   const first = (dur) => (d.view ? { from: V(...d.view.from), to: V(...d.view.to), lookFrom: V(...d.view.look), lookTo: V(...d.view.look), dur, c: V(...d.view.look), r: 0.5, set: true } : closeShot(o, bird, dur));
-  if (d.groups) return [first(4), ...d.groups.map((gr) => closeShot({ id: '', def: { ...d, focus: V(...gr.focus), size: gr.size, front: gr.front } }, null, 2.8))];      // a close look at each group
+  if (d.groups) { if (d.groupPaint) groupPaint(o); return [first(4), ...d.groups.map((gr) => closeShot({ id: '', def: { ...d, focus: V(...gr.focus), size: gr.size, front: gr.front } }, null, 2.8))]; }      // a close look at each group
   if (d.id === 'rijeka') return [{ from: V(7, 20, 70), to: V(-4, 32, 86), lookFrom: V(1, 1, 26), lookTo: V(0, 4, 0), dur: C.wideDuration, wide: true }];
   if (d.shot === 'bridge') return [{ from: V(8.5, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
-  if (d.shot === 'close') return [closeShot(o, bird, C.closeDuration)];
+  if (d.shot === 'close') return [first(C.closeDuration)];
   if (d.shot === 'wide') return [wideShot(o, C.wideDuration)];
   // the rest is in one other small spot: a second close look there instead of a wide view from above
   if (d.second) { const s2 = d.second; return [closeShot(o, bird, 4), closeShot({ id: '', def: { ...d, focus: V(...s2.focus), size: s2.size, front: s2.front } }, null, C.wideDuration - 4)]; }
-  return [closeShot(o, bird, 4), wideShot(o, C.wideDuration - 4)];
+  const wv = d.wideView;      // a set wide view (a pan across the whole town, for something that is everywhere)
+  return [closeShot(o, bird, 4), wv ? { from: V(...wv.from), to: V(...wv.to), lookFrom: V(...wv.look), lookTo: V(...wv.lookTo), dur: C.wideDuration - 4, wide: true } : wideShot(o, C.wideDuration - 4)];
+}
+// groupPaint: each piece colours while its own close shot is on screen (the one by the orb in the first shot)
+function groupPaint(o) {
+  const d = o.def, t = tag(d.tags[0]); if (t.grouped) return; t.grouped = true;
+  let mesh = null; scene.traverse((m) => { if (!mesh && m.isMesh && m.material?.uniforms?.uT === t.uT && m.geometry.attributes.aAni) mesh = m; });
+  const an = mesh.geometry.attributes.aAni, P = S.cutscene.paintDelay; let end = 0, nearEnd = 0;
+  for (const sub of t.subs) {
+    const c = sub.box.getCenter(V(0, 0, 0)), k = d.groups.findIndex((gr) => Math.hypot(gr.focus[0] - c.x, gr.focus[2] - c.z) < gr.size + 2);
+    for (const [v0, cnt] of sub.ranges) for (let i = v0; i < v0 + cnt; i++) {
+      const dur = Math.min(an.getZ(i), 2), dl = k < 0 ? Math.min(an.getY(i), 0.4) : 4 - P + 2.8 * k + 0.3;
+      an.setY(i, dl); an.setZ(i, k < 0 ? Math.min(an.getZ(i), 4 - P - 0.3) : dur);      // (each finishes before its shot ends) end = Math.max(end, dl + an.getZ(i)); if (k < 0) nearEnd = Math.max(nearEnd, dl + an.getZ(i));
+    }
+  }
+  an.needsUpdate = true; t.nearEnd = nearEnd; t.end = end;
 }
 // used from the console to check every orb's camera without playing through it
 function checkShots() {
@@ -653,7 +668,7 @@ function updateFinale(dt) {
   once('photo', 8, () => { snapId = 'sunce'; });
   once('birds', 11, () => audio.setLife({ birds: true })); once('city', 12.5, () => audio.setLife({ city: true }));
   once('murmur', 12.5, () => audio.setLife({ murmur: 0.5 }));
-  once('jump', 15, () => { diver.jump(); wake(); singing = true; audio.song('sunce', 7.3, 1).then(() => { singing = false; }); });   // the whole melody, once
+  once('jump', 15, () => { diver.jump(); people.fishJumpAt(time + 4.3); wake(); singing = true; audio.song('sunce', 7.3, 1).then(() => { singing = false; }); });   // the whole melody, once; the fish leaps just after the diver's splash, while the camera looks down at the water
   shared.uSun.value = smooth((t - 3) / 7); shared.uLife.value = smooth((t - 8.5) / 3);
   f.wind = smooth((t - 6) / 4); f.water = smooth((t - 9.5) / 3); audio.setLife({ wind: f.wind, water: f.water });
   // the bird flies itself through the scene

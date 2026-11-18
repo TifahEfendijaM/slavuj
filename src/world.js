@@ -57,6 +57,8 @@ function cliffGeo(side, z0, z1, R) {
 const WALLS = [['#f3e7cd', '#e9d3a8'], ['#ecd29f', '#e0b97c'], ['#f4dccd', '#eac3ab'], ['#f6f1e6', '#e6dccb'], ['#efdf9c', '#e2c874'], ['#e6cbaa', '#d6b189'], ['#dde3d3', '#c5d0bb'], ['#f0c9a8', '#e3ad8a']];
 const STONES = [['#d9ceb6', '#bfb092'], ['#c4beb4', '#a29c94'], ['#d6ba90', '#b3956a'], ['#bcafa2', '#978a7c'], ['#e6dfd0', '#cbc2ad']];   // masonry
 const BOULDERS = [['#8f8578', '#6d665d'], ['#b39468', '#8a6e4a'], ['#6f7f8c', '#55626e'], ['#a8785e', '#84584a'], ['#8b8f72', '#667052'], ['#a59a8c', '#7d7468'], ['#7b6a5e', '#5a4c44'], ['#c2b08a', '#9c8a62'], ['#66696b', '#4a4d50']];   // natural rock: ochre, slate, rust, moss, grey
+// the bazaar shops' stone-slab roofs: a wider range, weathered and mossy, taken in turn so neighbours differ
+const SHOP_SLABS = [['#9c978c', '#827e76'], ['#b39a76', '#93795a'], ['#7e8790', '#646d78'], ['#a8826a', '#86634e'], ['#8f9a7c', '#737e62'], ['#6f6a64', '#57524d'], ['#c2b49a', '#a1927a']];
 const SLABS = [['#9c978c', '#827e76'], ['#8d9197', '#757b85'], ['#a79f90', '#8e8474'], ['#96958a', '#7c8076']];
 const TILES = [['#cf5433', '#a8452f'], ['#c7643c', '#a44b2c'], ['#b9482f', '#96392a'], ['#d4734a', '#b4552f']];
 const TRIMS = ['#4f8068', '#3f6f9a', '#8a4b2c', '#a3402f', '#c69a3a', '#5d7b8a'];
@@ -124,7 +126,7 @@ export function buildWorld(scene) {
   tag('creek').mode = 'one'; tag('creek').radius = 70; tag('waterfall').mode = 'one'; tag('waterfall').radius = 6; tag('foam').hullWidth = 1.3;
   box(290.3, 0.1, 8, -154.85, 3.45, 37, { ...WATER, tag: 'creek', col: '#3fa3a0', bleed: '#2b8793' });
   box(0.5, 3.6, 7.4, -9.75, 1.75, 37, { tag: 'waterfall', col: '#9fd6d2', bleed: '#4fa9ac', pat: PAT.fall, hatch: 0, solid: false, ink: false });
-  for (let i = 0; i < 10; i++) A(ICO, -9.25 + R2() * 0.8, 0.1, 33.8 + i * 0.72, { tag: 'foam', col: '#f4fbf8', bleed: '#cfe9e6', hull: true, hatch: 0, solid: false, sway: 0.05 }, R2() * 6, 0, 0, [0.34 + R2() * 0.25, 0.2, 0.36 + R2() * 0.25]);
+  for (let i = 0; i < 10; i++) A(ICO, -9.25 + R2() * 0.8, 0.1, 33.8 + i * 0.72, { tag: 'foam', col: '#f4fbf8', bleed: '#cfe9e6', hull: true, hatch: 0, solid: false, sway: 10.1 }, R2() * 6, 0, 0, [0.34 + R2() * 0.25, 0.2, 0.36 + R2() * 0.25]);
   A(DODE, -5.9, 0.25, 37.4, { tag: 'rock', col: BOULDERS[2][0], bleed: '#6f7a66', orb: 'vodopad' }, 1.1, 0, 0, [1.9, 0.85, 1.6]);
   orb('vodopad', [-9.5, 1.8, 37], 4.6, ['waterfall'], 'close', 1.4, { near: { p: [-5.9, 1.1, 37.4], r: 3 }, at: new Vector3(-8.4, 4.4, 37.6) });
   orb('pjena', [-8.8, 0.3, 35.6], 3.4, ['foam'], 'close', 0.4, { near: { p: [-7.7, 0.2, 35], r: 2.6 }, at: new Vector3(-8.2, 1.7, 34.8) });
@@ -194,7 +196,7 @@ export function buildWorld(scene) {
     [-36, -14, 41.2, 76], [-72, -43, 41.2, 76], [-72, -62, -30, -4], [-30, -15, 26.5, 32.5], [22, 37, 46, 64], [64, 78, -68, 66]]) grass(...r);
   R();   // (keeps the older colours as they were)
   grass(40, 62, 36, 60, 'trava');
-  orb('trava', [46, BANK, 54], 8, ['grass'], 'combo', BANK + 1);
+  orb('trava', [46, BANK, 54], 8, ['grass'], 'combo', BANK + 1, { wideView: { from: [88, BANK + 82, 135], to: [-88, BANK + 82, 135], look: [42, BANK, 38], lookTo: [-42, BANK, 38] } });      // then a pan across the whole town: grass is everywhere
   tag('grass').holdRest = 2.9;      // the fenced meadow first; the rest of the grass starts just after the cut to the wide shot
   // far hills: Hum to the south-west, the long ridge of Velež to the east
   tag('grass').hullWidth = 1.8;
@@ -339,10 +341,10 @@ export function buildWorld(scene) {
   // ---------- Kujundžiluk: the bazaar shops with stone-slab roofs ----------
   let shopN = 0;
   function shop(x, z, rot, o = {}) {
-    const lift = (shopN++ % 2) * 0.05;      // neighbouring roofs overlap: every other one sits a little higher, so they never flicker
+    const idx = shopN++, lift = (idx % 2) * 0.05;      // neighbouring roofs overlap: every other one sits a little higher, so they never flicker
     b.push(mat4(x, BANK, z, rot));
     b.object(() => {
-      const st = pick(STONES), sl = pick(SLABS), Sh = { tag: 'shop', orb: o.orb }, aw = pick(['#b8452c', '#d9a23a', '#3f6b4a', '#2f5f7a', '#c9b48a']);
+      const st = pick(STONES), sl = (pick(SLABS), SHOP_SLABS[(idx * 3) % SHOP_SLABS.length]), Sh = { tag: 'shop', orb: o.orb }, aw = pick(['#b8452c', '#d9a23a', '#3f6b4a', '#2f5f7a', '#c9b48a']);
       box(5.2, 3.1, 4.4, 0, 1.55, 0, { ...Sh, col: st[0], bleed: st[1], pat: PAT.blocks, ps: 0.6, pool: 1 });
       A(roofGeo(5.4, 6.4, 1.1, 2.2), 0, 3.1 + lift, 0.35, { ...Sh, tag: 'roof', col: sl[0], bleed: sl[1], pat: PAT.roof, ps: 0.8 }, Math.PI / 2);
       box(3.7, 1.9, 0.1, 0, 1.75, 2.22, { ...Sh, col: '#5a4030', bleed: '#3a2a20', pool: 1, solid: false });
@@ -420,9 +422,11 @@ export function buildWorld(scene) {
     for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; A(CYL, 24 + Math.cos(a) * 2.2, BANK + 1.6, -28 + Math.sin(a) * 2.2, { tag: 'fountain', orb: 'cesma', col: '#7a5636', edge: 60 }, 0, 0, 0, [0.09, 3.2, 0.09]); }
     A(new THREE.ConeGeometry(1, 1, 6), 24, BANK + 3.85, -28, { ...F, col: SLABS[3][0], bleed: SLABS[3][1] }, 0, 0, 0, [2.9, 1.3, 2.9]);
   });
+  const M_FEET = BANK + 17.3;      // the muezzin's feet, on the minaret balcony
   orb('dzamija', [27, BANK + 6, -41], 10, ['mosque'], 'close', BANK + 14, { requires: ['munara'], front: 0 });
   orb('munara', [34, BANK + 14, -35.6], 10, ['minaret'], 'close', BANK + 27.2);
-  orb('mujezin', [35.2, BANK + 18.4, -34.7], 2.2, ['muezzin'], 'close', BANK + 19.6, { requires: ['munara'], at: new Vector3(36.6, BANK + 20.6, -33.6) });
+  orb('mujezin', [35.2, BANK + 18.4, -34.7], 2.2, ['muezzin'], 'close', BANK + 19.6, { requires: ['munara'], at: new Vector3(36.6, BANK + 20.6, -33.6),
+    view: { from: [37.55, M_FEET + 2.05, -34.25], to: [36.9, M_FEET + 1.85, -33.35], look: [35.2, M_FEET + 1.15, -34.7] } });      // close, in front of him, the whole of him above the balcony wall in frame
   orb('cesma', [24, BANK + 2, -28], 4, ['fountain'], 'close', BANK + 4.7);
   const wallNoOrb = (...a) => wall(...a, 1.3, 'dvoriste', 'yard');
   wallNoOrb(17.3, 37.6, -53, -52.5); wallNoOrb(17.3, 17.8, -52.5, -21.5); wallNoOrb(17.3, 37.6, -21.5, -21); wallNoOrb(37.1, 37.6, -52.5, -40); wallNoOrb(37.1, 37.6, -31, -21.5);
@@ -436,7 +440,8 @@ export function buildWorld(scene) {
   for (const [x, z, id] of [[-29.5, 3.4], [-46, -3.3], [-60, 3.2, 'lampa'], [-36.3, 18], [-45.6, -30], [-45.6, -50], [22.5, 3.3], [43.3, -3.3], [62, 3.2], [43.7, -26], [43.7, -48], [21.6, 22], [21.6, 44], [-36.4, 55]]) lamp(x, z, id);
   orb('lampa', [-60, BANK + 3.8, 3.2], 3.5, ['lamp'], 'combo', BANK + 4.7, { near: { p: [-60, BANK + 0.6, 3.2], r: 2.6 } });
   bench(18.6, 34, Math.PI / 2, 'klupa'); bench(18.6, 50, Math.PI / 2); bench(-52, 17.6, Math.PI); bench(-57, 16.5, Math.PI); bench(60, -10, Math.PI); bench(30, -24, Math.PI); bench(-35.5, 60, -Math.PI / 2);
-  orb('klupa', [18.6, BANK + 0.8, 34], 2.6, ['bench'], 'combo', BANK + 1.4, { near: { p: [18.6, BANK + 0.6, 34], r: 2.2 } });
+  orb('klupa', [18.6, BANK + 0.8, 34], 2.6, ['bench'], 'combo', BANK + 1.4, { near: { p: [18.6, BANK + 0.6, 34], r: 2.2 }, groupPaint: true,      // a close look at every other bench, each coloured in its own shot
+    groups: [[18.6, 50, 1.6], [-35.5, 60, 1.6], [-54.5, 17, 3.4], [30, -24, 1.6], [60, -10, 1.6]].map(([x, z, size]) => ({ focus: [x, BANK + 0.6, z], size })) });
 
   // ---------- trees, bushes, flowers ----------
   tree(-53, 11, 1.5, { big: true, orb: 'drvo' });
@@ -550,7 +555,8 @@ export function buildWorld(scene) {
   // ljudi: the spectators on the bridge first, then a close look at each other group of people it colours (each
   // coloured in its own shot): the bazaar, the mosque courtyard, a man on a west-bank street
   const ljudiGroups = [{ focus: [39.7, BANK + 1, 0], size: 3.8 }, { focus: [31.7, BANK + 1, -31.9], size: 5.2 }, { focus: [-39.5, BANK + 1, 7], size: 1.6 }];
-  orb('ljudi', [-7.5, deckY(-7.5) + 1.2, 0.7], 3, ['people'], 'combo', deckY(-7.5) + 2.3, { near: { p: [-7.5, deckY(-7.5) + 0.6, -0.4], r: 3.2 }, groups: ljudiGroups });
+  orb('ljudi', [-7.5, deckY(-7.5) + 1.2, 0.7], 3, ['people'], 'combo', deckY(-7.5) + 2.3, { near: { p: [-7.5, deckY(-7.5) + 0.6, -0.4], r: 3.2 }, groups: ljudiGroups,
+    view: { from: [-3.4, deckY(-3.4) + 1.7, -1.7], to: [-4.0, deckY(-4.0) + 1.55, -1.9], look: [-7.6, deckY(-7.6) + 1.0, 0.8] } });      // (the first shot from the bridge deck at head height, so the people are seen, not only their heads)
   // each person of a later group starts colouring as that group's shot begins (the first shot lasts 4 s, the others 2.8 s)
   for (const p of people) if (p.tag === 'people') {
     const k = ljudiGroups.findIndex((gr) => Math.hypot(gr.focus[0] - p.x, gr.focus[2] - p.z) < gr.size + 1);
@@ -833,7 +839,7 @@ export function buildWorld(scene) {
     }
     b.block(BOX, mat4(lx, Y + 0.02, zm, 0, 0, 0, [0.3, 0.06, Math.abs(z1 - z0) - 0.2]), { orb: 'ves' });     // easier to land on than the bare string
     const CL = ['#d2302c', '#f2c230', '#3f6f9a', '#f6f1e6', '#4f8068', '#e0567f', '#8a5a8a', '#f08fb0'];
-    const items = [['shirt', 0.62], ['sock', 0.14], ['sock', 0.14], ['towel', 0.6], ['trousers', 0.5], ['shirt', 0.58], ['dress', 0.5], ['towel', 0.7], ['sock', 0.14]];
+    const items = [['shirt', 0.62], ['sock', 0.14], ['sock', 0.14], ['towel', 0.6], ['trousers', 0.5], ['shirt', 0.58], ['dress', 0.5], ['towel', 0.7]];      // (all of it fits between the two posts)
     let z = z0 - 0.3, n = 0;
     for (const [kind, wd] of items) {
       const zc = z - wd / 2, top = yAt(zc) - 0.02, col = CL[n++ % CL.length], C = { tag: 'laundry', col, bleed: col, solid: false, hatch: 0.6, sway: (v) => 0.08 * Math.max(0, Y - v.y) };
@@ -843,7 +849,7 @@ export function buildWorld(scene) {
       else if (kind === 'trousers') for (const s of [-1, 1]) box(0.03, 0.8, wd * 0.42, lx, top - 0.4, zc + s * wd * 0.25, { ...C, col: '#3d5066', bleed: '#2d3d50' });
       else { box(0.03, 0.2, wd * 0.7, lx, top - 0.1, zc, C); A(triGeo([0, 0, -wd * 0.35], [0, 0, wd * 0.35], [0, -0.75, 0]).rotateY(0), lx, top - 0.2, zc, C); for (const s of [-1, 1]) A(triGeo([0, 0, -wd * 0.35], [0, -0.75, -wd * 0.55], [0, -0.75, 0]), lx, top - 0.2, zc, C, s > 0 ? 0 : Math.PI); }
       box(0.06, 0.08, 0.03, lx, top + 0.02, zc - wd * 0.3, { tag: 'laundry', col: '#b9834a', solid: false, ink: false }); box(0.06, 0.08, 0.03, lx, top + 0.02, zc + wd * 0.3, { tag: 'laundry', col: '#b9834a', solid: false, ink: false });
-      z -= wd + 0.32;
+      z -= wd + 0.22;
     }
     b.block(BOX, mat4(lx, Y - 0.6, zm, 0, 0, 0, [0.12, 0.9, Math.abs(z1 - z0) - 0.3]), { wall: true });     // the clothes are an obstacle; the bird perches on the line above them
   });

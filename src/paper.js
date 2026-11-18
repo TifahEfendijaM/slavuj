@@ -67,7 +67,12 @@ export const shared = {
 export const PAT = { none: 0, kilim: 1, cobble: 2, roof: 3, blocks: 4, planks: 5, water: 6, grass: 7, fall: 8, sky: 9 };
 
 const SWAY = /* glsl */`
-  if (aAni.w > 0.0) {
+  if (aAni.w >= 10.0) {                   // 10 + size: churning foam, the surface boils and heaves in place
+    float a = (aAni.w - 10.0) * uLife, q = uTime * 3.2;
+    w.y += (sin(q + w.x * 5.1 + w.z * 3.7) * 0.6 + sin(q * 1.7 - w.z * 6.3) * 0.4) * a;
+    w.x += sin(q * 1.3 + w.z * 4.4 + w.y * 7.0) * a * 0.55;
+    w.z += cos(q * 1.1 + w.x * 4.9) * a * 0.55;
+  } else if (aAni.w > 0.0) {
     float ph = aSeed.x * 0.37 + aSeed.z * 0.51;
     w.x += sin(uTime * 1.4 + ph) * aAni.w * uLife;
     w.z += cos(uTime * 1.1 + ph * 1.3) * aAni.w * 0.6 * uLife;

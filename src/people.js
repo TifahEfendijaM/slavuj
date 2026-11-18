@@ -217,6 +217,7 @@ export function createPeople(scene, world, R) {
     const wings = [-1, 1].map((s) => { const w = grp(g, s * 0.05, 0.14, 0); const m = P(G.box, col, w, s * 0.11, 0, 0, '#6a7480'); m.scale.set(0.22, 0.012, 0.12); w.visible = false; return w; });
     pigeons.push({ g, hd, wings, home, mode: 'ground', t: 0, phase: R() * 6, r: 3 + R() * 2.5, h: 3 + R() * 2.5, yaw: g.rotation.y });
   }
+  let fishT0 = 0;      // the fish's jumps count from here (the finale sets it so one comes early in the diver's shot)
   const FS = world.fish, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), FP = painter('fish', fishHome, 1), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7; scene.add(fish);
   FP(G.catBody, '#9fb6c2', fish, 0, 0, 0, '#6f8a9a').scale.set(0.05, 0.1, 0.24); { const t = FP(G.ear, '#6f8a9a', fish, 0, 0, -0.27); t.scale.set(0.5, 1.3, 1.6); t.rotation.x = Math.PI / 2; }
   const birdD = new THREE.Vector3();
@@ -354,6 +355,7 @@ export function createPeople(scene, world, R) {
   return {
     flagCloth: cloth, animals,
     list, cat, ball,
+    fishJumpAt(t) { fishT0 = t; },
     applaud() { for (const p of list) if (p.o.kind === 'watch') p.cheer = true; },
     update(dt, time, life, bird) {
       const alive = life > 0.5;
@@ -581,7 +583,7 @@ export function createPeople(scene, world, R) {
         }
       }
       // the fish jumps now and then
-      if (alive) { const u = (time % 5.5) / 1.1; fish.visible = u < 1; if (u < 1) { fish.position.set(fishHome.x + (u - 0.5) * 1.3, Math.sin(Math.PI * u) * 0.95 - 0.12, fishHome.z); fish.rotation.set(-1.1 + u * 2.2, Math.PI / 2, 0, 'YXZ'); } }
+      if (alive) { const u = ((((time - fishT0) % 5.5) + 5.5) % 5.5) / 1.1; fish.visible = u < 1; if (u < 1) { fish.position.set(fishHome.x + (u - 0.5) * 1.3, Math.sin(Math.PI * u) * 0.95 - 0.12, fishHome.z); fish.rotation.set(-1.1 + u * 2.2, Math.PI / 2, 0, 'YXZ'); } }
       // the cat sits until the town wakes, then strolls along its wall with pauses
       const c = catS;
       if (alive) { c.rest -= dt; if (c.rest < 0) { c.x += c.dir * dt * 0.9; if (c.x > C.x1 || c.x < C.x0) { c.dir *= -1; c.rest = 1.5 + R() * 3; c.x = Math.min(C.x1, Math.max(C.x0, c.x)); } else if (R() < dt * 0.12) c.rest = 1 + R() * 2.5; } }
