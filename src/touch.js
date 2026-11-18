@@ -70,11 +70,23 @@ export function setupTouch(inp, hooks) {
   addEventListener('touchend', end); addEventListener('touchcancel', end);
 
   // hold buttons: they stay pressed while the finger is on them, even if it slides a little
+  // the finger holding each button is followed by its id over the whole page: the dive button swaps its icon while
+  // held (dive / walk / paddle), and a phone sends the release to the element first touched, which may be gone by then
+  const fingers = new Map();      // touch id -> [button, key]
   const hold = (b, key, down) => {
-    b.addEventListener('touchstart', (e) => { e.preventDefault(); if (!hooks.canPlay()) return; state[key] = true; b.classList.add('down'); down?.(); }, { passive: false });
-    const up = (e) => { e.preventDefault(); state[key] = false; b.classList.remove('down'); };
-    b.addEventListener('touchend', up); b.addEventListener('touchcancel', up);
+    b.addEventListener('touchstart', (e) => {
+      e.preventDefault(); if (!hooks.canPlay()) return;
+      for (const t of e.changedTouches) fingers.set(t.identifier, [b, key]);
+      state[key] = true; b.classList.add('down'); down?.();
+    }, { passive: false });
   };
+  const lift = (e) => {
+    for (const t of e.changedTouches) {
+      const f = fingers.get(t.identifier); if (!f) continue; fingers.delete(t.identifier);
+      if (![...fingers.values()].some(([, k]) => k === f[1])) { state[f[1]] = false; f[0].classList.remove('down'); }
+    }
+  };
+  addEventListener('touchend', lift); addEventListener('touchcancel', lift);
   hold(flapB, 'flap', () => hooks.onTakeoff()); hold(diveB, 'dive');
   const tap = (b, fn) => b.addEventListener('touchend', (e) => { e.preventDefault(); fn(); });
   tap(pauseB, () => hooks.onPause()); tap(singB, () => hooks.onSing()); tap(openB, () => hooks.onOpen());
@@ -91,7 +103,7 @@ export function setupTouch(inp, hooks) {
       const m = HOLD[mode] ? mode : 'flying';
       if (m !== shown) { shown = m; diveB.innerHTML = HOLD[m][1] + '<span>' + HOLD[m][0] + '</span>'; }
       document.body.classList.toggle('tidle', !show);
-      if (!show) { if (stick.id !== null) release(); state.flap = state.dive = false; flapB.classList.remove('down'); diveB.classList.remove('down'); }
+      if (!show) { if (stick.id !== null) release(); state.flap = state.dive = false; fingers.clear(); flapB.classList.remove('down'); diveB.classList.remove('down'); }
       if (++n % 6 === 0) openB.classList.toggle('off', !(show && hooks.canOpen()));
     },
     // ask for full screen and landscape where the phone allows it (Android; an iPhone keeps its browser bars)

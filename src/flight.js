@@ -325,12 +325,17 @@ export class Flight {
     }
     // the water surface anywhere along this frame's move: a steep dive covers more than a metre a frame (more still
     // on a phone running slower), which could carry it from above the surface to below it between two looks down
+    // (also in the moment after taking off: a dive straight back down must still meet the surface; the grace only
+    // keeps it from dropping back in while it is still rising)
     const mv = this.vel.length() * dt;
-    if (this.grace <= 0 && this.vel.y < 0 && mv > 0.001) {
+    if (this.vel.y < 0 && mv > 0.001) {
       const w = this.cast(this.pos, _d.copy(this.vel).normalize(), mv + this.perchH + 0.2);
       if (w && w.object.userData.water) { this.pos.x = w.point.x; this.pos.z = w.point.z; return this.intoWater(w.point); }
     }
     this.pos.addScaledVector(this.vel, dt);
+    // and should it ever end up under a water surface all the same, it comes up and floats on it
+    const over = this.cast(this.pos, UP, 40);
+    if (over && over.object.userData.water) return this.intoWater(over.point);
 
     // ---- below: land, skim the water, or flare when the ground is close ----
     this.gapBelow = 9;
@@ -339,7 +344,7 @@ export class Flight {
     if (below) {
       const h = below.distance - this.perchH; this.gapBelow = h;      // (the bird's wing-beat bob fades out close to a surface)
       if (below.object.userData.water) {
-        if (h < 0.2 && this.grace <= 0) return this.intoWater(below.point);
+        if (h < 0.2 && (this.grace <= 0 || this.vel.y < 0)) return this.intoWater(below.point);
       } else if (this.landable(below)) {
         // never lower than standing height over a surface it could stand on (a bounce off a wall can push it down
         // into a roof): kept there at once, so landing finds it already in place
