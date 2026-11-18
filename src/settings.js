@@ -29,7 +29,7 @@ export default {
     maxPitchUp: 45,       // degrees
     maxPitchDown: 35,     // degrees (without diving)
     diveAngle: 70,        // degrees; 90 would be straight down
-    takeoffSpeed: 9,
+    takeoffSpeed: 6.5,    // speed right after taking off (just above the slowest it can fly); it builds up to cruising speed from there
     takeoffPitch: 12,      // degrees
     takeoffLift: 6,       // height gained per second right at take-off; it builds up to flapClimb while Space is held
     bodyRadius: 0.3,     // how close the body may come to a wall

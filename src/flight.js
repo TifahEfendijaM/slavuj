@@ -243,7 +243,7 @@ export class Flight {
     this.yaw += diff * k(f.turnSmooth, dt);
 
     this.speed -= (this.pitch < 0 ? (this.diving ? f.diveGravity : f.glideGravity) : f.gravity) * Math.sin(this.pitch) * dt;      // gliding down builds speed gently; a dive is the fast way
-    if (this.power) { if (this.speed < f.cruiseSpeed) this.speed += f.flapAccel * dt; }
+    if (this.power) { if (this.speed < f.cruiseSpeed) this.speed += f.flapAccel * Math.min(1, 0.35 + this.airT / 1.6) * dt; }      // (gently at first, just after taking off)
     else if (this.speed < f.cruiseSpeed && this.pitch <= 0.03) this.speed += f.glideRecover * dt;
     if (this.speed > f.cruiseSpeed) this.speed -= f.drag * (this.speed - f.cruiseSpeed) * dt;
     if (this.flare > 0.1 && this.speed > 7.5) this.speed += (7.5 - this.speed) * this.flare * k(3, dt);

@@ -153,10 +153,18 @@
   @media (orientation: portrait) { body.touch #turn { display: grid; } }
   body:not(.touch) #tzone, body:not(.touch) .tbtn, body:not(.touch) #tring, body:not(.touch) #tknob { display: none; }
   /* the journal on a phone: the whole visible screen (dvh: without the browser's bars), close always in the corner */
-  body.touch .book { width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)); height: calc(100dvh - 16px); transform: none; }
+  body.touch #journal { place-items: start center; padding-top: 8px; bottom: auto; height: var(--vh, 100dvh); box-sizing: border-box; }
+  body.touch .book { width: calc(var(--vw, 100vw) - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)); height: calc(var(--vh, 100dvh) - 16px); transform: none; }
+  body.touch .page { overflow: hidden; } body.touch .page > * { zoom: var(--z, 1); }      /* (src/touch.js shrinks each page's contents to fit) */
+  body.touch #jwords { grid-template-columns: repeat(5, 1fr); gap: 0 10px; }      /* just the words: tapping one shows its card, in English, and says it */
+  body.touch .jw { min-height: 0; padding: 1px 0; } body.touch .jw b { font-size: 17px; } body.touch .jw i, body.touch .jw .say { display: none; }
+  body.touch #culture:not(.locked) .art { float: right; width: 42%; margin: 2px 0 4px 10px; }      /* the story beside a small picture */
+  body.touch #culture p { font-size: 15px; line-height: 1.2; margin: 0 0 4px; } body.touch #culture p b { font-size: 19px; }
+  body.touch #endcard { margin: 4px 0 6px; padding: 3px 10px 4px; font-size: 16px; } body.touch #endcard a { font-size: 26px; }
+  body.touch .page h2 { font-size: 30px; } body.touch .page .small { margin: 0 0 4px; font-size: 14px; }
   body.touch #jclose { position: fixed; top: 8px; right: calc(8px + env(safe-area-inset-right)); z-index: 9; font-size: 20px; padding: 6px 16px 8px;
     background: #fffaf0; border: 2px solid var(--ink); border-radius: 14px; box-shadow: 2px 3px 0 rgba(59, 53, 47, .2); }
-  body.touch .page { padding: 12px 18px; } body.touch #culture { padding-top: 46px; }
+  body.touch .page { padding: 12px 18px; } body.touch #culture h2 { margin-right: 84px; }
   body.touch #card img { width: min(540px, 76vw, calc((100dvh - 110px) * 1.5)); }
   #wclose { font-size: 20px; padding: 2px 16px 4px; background: #fffaf0; }
   /* a phone held sideways is short: everything on the cards shrinks to fit */
