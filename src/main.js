@@ -658,7 +658,7 @@ function diverInWater() {   // the bird cannot swim or fly through him
   if (!swimBlock) { swimBlock = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1)); swimBlock.matrixAutoUpdate = false; swimBlock.userData = { wall: true, swimmer: true }; world.colliders.push(swimBlock); }
   swimBlock.matrix.compose(V(p.x, 0.2, p.z + 1.2), new THREE.Quaternion(), V(1.1, 2, 1.1)); swimBlock.matrixWorld.copy(swimBlock.matrix);
 }
-function applyAlive() { paint('sky', true); paint('sun', true); shared.uSun.value = 1; shared.uLife.value = 1; audio.setMusic(0.9, true); if (diver) { diver.swimAt(V(0, 0, 10.2)); diverInWater(); } wake(); people.applaud(); M.onAlive?.(ctx()); }
+function applyAlive() { paint('sky', true); paint('sun', true); for (const t of FIN.paints || []) paint(t, true); shared.uSun.value = 1; shared.uLife.value = 1; audio.setMusic(0.9, true); if (diver) { diver.swimAt(V(0, 0, 10.2)); diverInWater(); } wake(); people.applaud(); M.onAlive?.(ctx()); }
 // what a map's own finale and awakening code gets to work with
 const ctx = () => ({ scene, world, people, audio, fx, splashFx, time, paint, flight, camera, V });
 if (save.finale) applyAlive();
@@ -677,7 +677,8 @@ function updateFinale(dt) {
   const f = fin; f.t += dt; const t = f.t;
   const once = (name, at, fn) => { if (t >= at && !f.ev.has(name)) { f.ev.add(name); fn(); } };
   once('sing', 0.4, () => { singing = true; audio.speak(FIN.word).then(() => { singing = false; }); });
-  once('sky', 1.2, () => { paint('sky'); paint('sun'); audio.swell(true, 7); audio.paintWash(6); });
+  once('sky', 1.2, () => { paint('sky'); paint('sun'); for (const t of FIN.paints || []) paint(t);      // (and whatever in this map has no word of its own)
+ audio.swell(true, 7); audio.paintWash(6); });
   once('photo', 8, () => { snapId = FIN.word; });
   once('birds', 11, () => audio.setLife({ birds: true })); once('city', 12.5, () => audio.setLife({ city: true }));
   once('murmur', 12.5, () => audio.setLife({ murmur: 0.5 }));
@@ -801,6 +802,7 @@ function tick(dt) {
   }
   flight.events.length = 0; inp.dx = inp.dy = 0; inp.takeoff = false;
   if (fin) updateFinale(dt);
+  M.update?.(dt, time, shared.uLife.value, ctx());      // the map's own moving parts
   diver?.update(dt, time); people.update(dt, time, shared.uLife.value, flight);
   if (shared.uLife.value > 0 && !fin) { // the living town is heard from where the bird is
     const p = flight.pos, low = clamp(1 - (p.y - BANK) / 50, 0.15, 1), near = (x, z, r) => clamp(1 - Math.hypot(p.x - x, p.z - z) / r, 0, 1) * low;
@@ -847,7 +849,7 @@ audio.setMusic(0.2 + 0.6 * (save.done.length / orbs.length), save.finale);
 updateLegend(); frame();
 
 // for testing from the console
-window.__game = { flight, inp, keys, mouse, bird, orbs, byId, world, camera, S, tags, shared, diver, fleur, audio,
+window.__game = { renderer, scene, flight, inp, keys, mouse, bird, orbs, byId, world, camera, S, tags, shared, diver, fleur, audio,
   get state() { return state; }, get paused() { return paused; }, get noLock() { return noLock; },
   start() { started = true; noLock = true; $('start').classList.add('off'); $('hud').classList.remove('off'); refreshOrbs(false); updateLegend(); showFleur(); },
   view(...a) { dbg = a.length ? a : null; },

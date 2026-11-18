@@ -202,6 +202,8 @@ export function learned() { if (ctx) { const t = now(); bell(t, BELL[2], 0.1, 0.
 export function page() { if (ctx) noise(now(), 0.28, { f0: 1200, f1: 4200, q: 0.5, vol: 0.09, attack: 0.05 }); }
 export function orbsAppear() { if (ctx) { const t = now(); [0, 2, 1, 3].forEach((n, i) => bell(t + i * 0.13, BELL[n] * 0.5, 0.09, 1.6)); } }
 export function pickup() { if (!ctx) return; const t = now(); [0, 1, 2, 3, 2, 3].forEach((n, i) => bell(t + i * 0.1, BELL[n] * (i > 3 ? 2 : 1), 0.11, 2)); noise(t, 1.6, { f0: 2000, f1: 8000, q: 0.5, vol: 0.07, attack: 0.2 }); }
+// a cannon shot far off: a deep thud and a rolling rumble
+export function boom(g = 1) { if (!ctx) return; const t = now(); tone(t, [[0, 70], [0.5, 32]], 0.55 * g, { decay: true, attack: 0.004 }); noise(t, 1.8, { type: 'lowpass', f0: 900, f1: 120, q: 0.5, vol: 0.45 * g, attack: 0.006 }); }
 export function splash() { if (!ctx) return; const t = now(); noise(t, 0.9, { type: 'lowpass', f0: 2600, f1: 300, q: 0.4, vol: 0.5, attack: 0.008 }); noise(t + 0.05, 1.6, { f0: 3500, f1: 1500, q: 0.4, vol: 0.16, attack: 0.1 }); tone(t, [[0, 140], [0.3, 45]], 0.4, { decay: true, attack: 0.005 }); }
 
 // ---------- music ----------

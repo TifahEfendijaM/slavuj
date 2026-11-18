@@ -86,7 +86,7 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : bottom0, gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue'].includes(o.kind), skirtC = o.woman && !o.robe && !o.sport && o.kind !== 'girl' ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read'].includes(o.kind), skirtC = o.woman && !o.robe && !o.sport && o.kind !== 'girl' ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
     if ((!gown || seated || (skirtC && sc < 1)) && o.kind !== 'girl' && o.kind !== 'raft') for (const s of [-1, 1]) {
@@ -175,6 +175,30 @@ export function createPeople(scene, world, R) {
       rod(P, torso, [-0.2, 0.0, 0.05], [0.17, 0.64, 0.06], 0.014, '#5a3418');
       const letter = P(G.box, '#f8f4ea', arms[0].el, 0, -0.34, 0.06, '#e6dfd0'); letter.scale.set(0.02, 0.14, 0.2);
       p.raise = 1; p.lastK = -1;
+    }
+    // held things that have a word of their own (the hammer, the newspaper, the umbrella...) are coloured by it (toolTag)
+    const TP = o.toolTag ? painter(o.toolTag, pos, undefined, false, o.toolAt) : P;
+    if (o.kind === 'hammer') {      // a coppersmith: a hammer in his right hand, beating a copper pot on a low anvil
+      rod(TP, arms[1].el, [0, -0.3, 0], [0, -0.3, 0.3], 0.016, '#6a4a30');
+      const hd = TP(G.box, '#5d6066', arms[1].el, 0, -0.3, 0.32, '#3d4046'); hd.scale.set(0.13, 0.07, 0.08);
+      a0pose(arms, -0.7, -1.1); arms[0].el.rotation.x = -0.9;
+    }
+    if (o.kind === 'sweep' || o.kind === 'rake') {      // a long handle held in both hands, its broom or rake on the ground ahead
+      const g = p.tool = grp(root, 0, 0, 0.52);
+      rod(TP, g, [0, 1.05, -0.2], [0, 0.04, 0.12], 0.02, '#8a6a44');
+      if (o.kind === 'sweep') { const br = TP(G.box, '#c9a35a', g, 0, 0.05, 0.14, '#a07f3a'); br.scale.set(0.42, 0.1, 0.12); }
+      else { const hd = TP(G.box, '#6a6e72', g, 0, 0.04, 0.13, '#4a4e52'); hd.scale.set(0.5, 0.03, 0.05); for (let i = -4; i <= 4; i++) rod(TP, g, [i * 0.055, 0.04, 0.13], [i * 0.055, 0.0, 0.2], 0.006, '#6a6e72'); }
+      for (const a of arms) { a.sh.rotation.set(-0.85, 0, a.s * -0.12); a.el.rotation.x = -0.5; }
+    }
+    if (o.kind === 'read') {      // a newspaper held open in front of him
+      const np = p.paper = TP(G.box, '#f2eee4', torso, 0, 0.5, 0.38, '#d9d2c2'); np.scale.set(0.5, 0.34, 0.012); np.rotation.x = -0.25;
+      for (const a of arms) { a.sh.rotation.set(-1.0, 0, a.s * -0.32); a.el.rotation.x = -0.75; }
+    }
+    if (o.kind === 'umbrella') {      // standing under an open umbrella
+      const g = p.tool = grp(root, 0.17, 0, 0.22);
+      rod(TP, g, [0, 0.95, 0], [0, 2.12, 0], 0.016, '#3a3632');
+      const cn = TP(G.cone, o.toolCol || '#b8452c', g, 0, 2.2, 0, '#8a3020'); cn.scale.set(14, 1.8, 14);      // (G.cone is 0.05 wide, 0.17 tall)
+      a0pose(arms, 0, -0.75); arms[1].el.rotation.x = -1.3; arms[1].sh.rotation.z = -0.18;
     }
     if (o.dog) p.dogBlock = block(o.x, o.y + 0.4, o.z, 0.5, 0.8, 0.9, { wall: true, person: true });
     if (o.kind === 'keeper') { for (const l of legs) { l.hip.rotation.x = -0.45; l.knee.rotation.x = 0.8; l.hip.rotation.z = 0; } hips.position.y = 0.84; for (const a of arms) a.sh.rotation.z = a.s * 0.95; }
@@ -491,6 +515,20 @@ export function createPeople(scene, world, R) {
           const kn = knocking ? Math.floor(kc + 0.5) : -1;
           if (alive && knocking && kn !== p.lastK && kc % 1 > 0.5) { p.lastK = kn; this.onKnock?.(p.root.position); }
           if (!knocking) p.lastK = -1;
+        } else if (o.kind === 'hammer') {      // a few quick blows, a look at the work, again
+          const c = alive ? (time + p.phase) % 3.2 : 0.2, beat = c < 2 ? Math.max(0, Math.sin(c * Math.PI * 3)) : 0;
+          a1.sh.rotation.set(-0.55 - 1.1 * beat, 0, 0.05); a1.el.rotation.x = -0.6 - 0.5 * beat;
+          p.head.rotation.x = 0.35; p.torso.rotation.x = 0.18; p.head.rotation.y = alive && c > 2.2 ? Math.sin(c * 3) * 0.2 : 0;
+        } else if (o.kind === 'sweep' || o.kind === 'rake') {      // the tool goes side to side (sweeping) or is drawn back towards him (raking)
+          const w = alive ? Math.sin(t * (o.kind === 'sweep' ? 2.6 : 1.5)) : 0.4;
+          if (o.kind === 'sweep') { p.tool.rotation.y = w * 0.5; p.torso.rotation.y = w * 0.25; }
+          else { p.tool.position.z = 0.52 + w * 0.16; p.torso.rotation.x = 0.12 + w * 0.08; }
+          p.head.rotation.x = 0.3;
+        } else if (o.kind === 'read') {      // reading; now and then he looks up over the paper
+          const up = alive ? sm(Math.sin(t * 0.45) * 3 - 2) : 0;
+          p.head.rotation.x = 0.28 - 0.4 * up; p.head.rotation.y = alive ? Math.sin(t * 0.3) * 0.25 * up : 0; p.paper.rotation.z = alive ? Math.sin(t * 0.8) * 0.02 : 0;
+        } else if (o.kind === 'umbrella') {      // stands waiting, the umbrella swaying a little
+          p.tool.rotation.z = alive ? Math.sin(t * 0.9) * 0.05 : 0; p.head.rotation.y = alive ? Math.sin(t * 0.35) * 0.5 : 0.3;
         } else if (o.kind === 'pose') {      // stand close, wave at the camera
           a1.sh.rotation.z = alive ? 2.4 + Math.sin(t * 5) * 0.3 : 2.5; a1.el.rotation.z = alive ? Math.sin(t * 5) * 0.3 : 0; a0.sh.rotation.z = -0.15; p.torso.rotation.z = alive ? Math.sin(t * 0.9) * 0.05 : 0; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.15 : 0;
         } else if (o.kind === 'raft') {      // one blade in, then the other
