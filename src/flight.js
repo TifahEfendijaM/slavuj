@@ -85,16 +85,9 @@ export class Flight {
       if (u >= 1) { this.hop = null; this.landedOn = h.obj; this.settle(h.point); }
       return;
     }
-    if (inp.dive) this.runOut = null;      // the player walks: that takes over from the braking steps
-    if (this.runOut) {                      // just landed: a few braking steps on, slowing to a stop
-      const r = this.runOut; r.t += dt; const u = r.t / r.dur;
-      if (u >= 1) { this.runOut = null; this.walk = 0; return; }
-      this.walk = Math.max(0.05, r.v * (1 - u));
-    } else {
-      if (!inp.dive) { this.walk = 0; return; }
-      this.yaw += angDiff(this.camYaw, this.yaw) * k(7, dt);
-      this.walk = this.walk ? Math.min(f.runSpeed, this.walk + f.walkAccel * dt) : f.walkStart;
-    }
+    if (!inp.dive) { this.walk = 0; return; }
+    this.yaw += angDiff(this.camYaw, this.yaw) * k(7, dt);
+    this.walk = this.walk ? Math.min(f.runSpeed, this.walk + f.walkAccel * dt) : f.walkStart;
     const fw = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), step = this.walk * dt, gy = this.groundY, reach = 0.3 * sc + 0.08;
     // a hop needs a clear way: straight up to just above where it lands, then across (never into a wall or a chimney)
     const clearTo = (to) => {
@@ -152,7 +145,6 @@ export class Flight {
   roomAt(point) { _o.copy(point); _o.y += 0.03; return !this.cast(_o, UP, 0.42 * S.bird.scale + this.perchH); }
   land(hit) {
     if (!this.roomAt(hit.point)) return false;          // no room: it does not land here
-    const inSpeed = Math.hypot(this.vel.x, this.vel.z);
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
     this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
     // it stands exactly where it touched. A touch by a feeler off to the side is moved back onto its own line, so it
@@ -168,9 +160,6 @@ export class Flight {
     // second, its feet already planted, so it never jumps
     const off = from.sub(this.pos); this.landEase = off.length() > 0.005 && off.length() < 0.4 ? { off, base: this.pos.clone(), t: 0 } : null;
     if (this.landEase) this.pos.add(off);
-    // coming in fast on something level enough, it does not stop dead: a few braking steps on (up to about 30 cm)
-    const level = Math.abs(this.perchPitch) < 0.05 && Math.abs(this.perchRoll) < 0.05;
-    this.runOut = level && inSpeed > 3 ? { v: clamp((inSpeed - 3) * 0.12, 0, 1.4), t: 0, dur: 0.4 } : null;
     return true;
   }
 
@@ -181,18 +170,15 @@ export class Flight {
 
     if (this.mode === 'perched') {
       if (this.landEase && (inp.dive || inp.takeoff)) { this.pos.copy(this.landEase.base); this.landEase = null; }      // walking or taking off: from where it stands
-      const ease = this.landEase; if (ease) this.pos.copy(ease.base);
+      if (this.landEase) {
+        const e = this.landEase; e.t += dt; const u = Math.min(1, e.t / 0.1), w = 1 - u * u * (3 - 2 * u);
+        this.pos.copy(e.base).addScaledVector(e.off, w); if (u >= 1) this.landEase = null;
+      }
       this.camElev = clamp(this.camElev + inp.dy * f.mouseSens - (inp.tilt - (ptr ? ptr.y : 0)) * f.keyPitchRate * dt, -0.25, 1.1);
       this.pitch += (this.perchPitch - this.pitch) * k(10, dt); this.roll += (this.perchRoll - this.roll) * k(10, dt);
-      const walked = !inp.takeoff ? this.walkStep(dt, inp) : null;
-      if (this.runOut && this.walk === 0) this.runOut = null;      // stopped by an edge or something in the way
-      if (ease && this.landEase === ease) {
-        ease.base.copy(this.pos); ease.t += dt; const u = Math.min(1, ease.t / 0.1), w = 1 - u * u * (3 - 2 * u);
-        this.pos.copy(ease.base).addScaledVector(ease.off, w); if (u >= 1) this.landEase = null;
-      }
-      if (walked === 'left') return;      // walked into the water
+      if (!inp.takeoff && this.walkStep(dt, inp) === 'left') return;      // walked off a height, or into the water
       if (inp.takeoff) {
-        this.hop = null; this.walk = 0; this.runOut = null; if (this.landEase) { this.pos.copy(this.landEase.base); this.landEase = null; }
+        this.hop = null; this.walk = 0; if (this.landEase) { this.pos.copy(this.landEase.base); this.landEase = null; }
         this.mode = 'flying'; this.landedOn = null; this.yaw = this.camYaw; this.feet = null;
         this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.02;
         this.speed = f.takeoffSpeed; this.lift = f.takeoffLift; this.grace = 0.45; this.airT = 0; this.pos.y += 0.1; this.events.push('takeoff');
