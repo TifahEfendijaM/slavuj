@@ -67,7 +67,7 @@ export function createPeople(scene, world, R) {
       const hip = grp(hips, s * 0.09, 0, 0); P(G.thigh, legC, hip, 0, -0.2, 0);
       const knee = grp(hip, 0, -0.42, 0); P(G.calf, (skirtC && seated) || o.sport ? skin : bottom, knee, 0, -0.2, 0);      // (shorts: bare calves)
       const f = P(G.foot, o.trunks ? skin : '#3a322c', knee, 0, -0.42, 0.06); f.rotation.x = Math.PI / 2;
-      legs.push({ hip, knee });
+      legs.push({ hip, knee, foot: f });
     }
     const torso = grp(hips, 0, 0, 0); const body = P(G.torso, top, torso, 0, 0, 0); body.scale.z = 0.72;
     if (o.trunks) { const tr = P(G.catBody, '#c0392b', hips, 0, -0.06, 0, '#8f2a20'); tr.scale.set(0.19, 0.17, 0.15); }      // swimming trunks
@@ -350,7 +350,15 @@ export function createPeople(scene, world, R) {
           } else {
             const run = speed > 2, cad = 5.2 * Math.sqrt(speed / 1.25) / Math.sqrt(p.sc), sw = alive ? Math.sin(t * cad) * (run ? 0.85 : 0.5) : run ? 0.85 : 0.42;
             p.legs.forEach((l, i) => { const s = i ? sw : -sw; l.hip.rotation.x = s - (run ? 0.15 : 0); l.knee.rotation.x = Math.max(0, -s) * (run ? 1.5 : 0.9) + (run ? 0.35 : 0); });
-            a0.sh.rotation.x = sw * (run ? 1 : 0.6); if (!o.dog) a1.sh.rotation.x = -sw * (run ? 1 : 0.6); p.hips.position.y = 0.92 + (alive ? Math.abs(Math.cos(t * cad)) * (run ? 0.06 : 0.025) : run ? 0.05 : 0);
+            a0.sh.rotation.x = sw * (run ? 1 : 0.6); if (!o.dog) a1.sh.rotation.x = -sw * (run ? 1 : 0.6); // the hips sit as high as the lower foot reaches (bent knees: lower), so a foot is always on the ground; then the stride's bounce
+            const reach = p.legs.length ? Math.max(...p.legs.map((l) => 0.42 * Math.cos(l.hip.rotation.x) + 0.42 * Math.cos(l.hip.rotation.x + l.knee.rotation.x) + 0.08)) : 0.92;
+            p.hips.position.y = reach;
+            if (p.legs.length) {      // then exactly: the lowest point of either foot onto the ground
+              p.root.updateMatrixWorld(true); let low = Infinity;
+              for (const l of p.legs) { const pa = l.foot.geometry.attributes.position; for (let k = 0; k < pa.count; k++) low = Math.min(low, tmpA.fromBufferAttribute(pa, k).applyMatrix4(l.foot.matrixWorld).y); }
+              p.hips.position.y -= (low - p.root.position.y) / p.root.scale.y;
+            }
+            p.hips.position.y += alive ? Math.abs(Math.cos(t * cad)) * (run ? 0.03 : 0.015) : 0;
             if (run) { p.torso.rotation.x = 0.26; for (const a of p.arms) a.el.rotation.x = -1.5; }     // leaning in, elbows bent: running
             if (o.dog) {
               const ds = alive ? Math.sin(t * 11) * 0.5 : 0.3;
