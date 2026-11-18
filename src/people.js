@@ -8,7 +8,33 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 const TOPS = ['#b8452c', '#3f6f9a', '#4f8068', '#c69a3a', '#8a5a8a', '#e6dccb', '#5d7b8a', '#c9744a'];
 const BOTTOMS = ['#4a4a52', '#6a5a44', '#3d5066', '#7a6a58', '#5a4a40'];
 const SKINS = ['#e0a37a', '#d99a72', '#e8b48c'], HAIRS = ['#3a2a20', '#5a3a22', '#2a2420', '#8a6a3a'];
-const cap = (r, l) => new THREE.CapsuleGeometry(r, l, 4, 8);
+// A run cycle in key poses, one leg, u = 0..1 (the other leg is half a cycle behind). Hip: negative swings the
+// leg forward; knee: positive folds the heel up. Contact (foot out in front) → down (knee gives) → push-off
+// (leg behind) → toe-off, heel kicks up → passing (foot tucked high under) → knee drive → reach for the ground.
+// While the foot is on the ground (u 0..STANCE) the leg is solved so the foot stays pinned where it landed;
+// in the air it follows the key poses, which start and end exactly on the solved poses.
+const STANCE = 0.35, ANKLE = 0.05, Z_LAND = 0.3, Z_OFF = -0.37;
+function legIK(z, d) {        // foot z ahead of the hip and d below it → [hip, knee] (thigh and shin 0.42 each)
+  const D = Math.min(0.839, Math.hypot(z, d)), A = 0.42;
+  return [-(Math.atan2(z, d) + Math.acos(D / (2 * A))), Math.PI - Math.acos(1 - (D * D) / (2 * A * A))];
+}
+const runHipY = (w) => w < 0.7 ? 0.84 - 0.05 * Math.sin(Math.PI * w / 0.7) : 0.84 + 0.05 * Math.sin(Math.PI * (w - 0.7) / 0.3);      // w: half-cycle; dips as the knee gives, lifts in the air
+function plant(z, hipY) {      // the foot hangs 0.06 ahead of the ankle along the shin, so solve again with that offset where the shin ended up
+  const d = hipY - ANKLE; let r = legIK(z, d);
+  for (let n = 0; n < 2; n++) { const th = r[0] + r[1]; r = legIK(z - 0.06 * Math.cos(th), d - 0.06 * Math.sin(th)); }
+  return r;
+}
+const OFF = plant(Z_OFF, runHipY(0.7)), LAND = plant(Z_LAND, runHipY(0));
+// toe-off → heel kicks up → passing (foot tucked high under) → knee drive → reach → land
+const SWING = [[STANCE, ...OFF], [0.45, 0.5, 1.5], [0.55, 0.2, 2.0], [0.68, -0.4, 1.9], [0.8, -0.85, 1.2], [0.92, -0.75, 0.6], [1, ...LAND]];
+function runLeg(u, hipY) {
+  if (u < STANCE) return plant(Z_LAND + (Z_OFF - Z_LAND) * (u / STANCE), hipY);
+  let i = 0; while (SWING[i + 1][0] < u) i++;
+  const s = (u - SWING[i][0]) / (SWING[i + 1][0] - SWING[i][0]), K = (j) => SWING[Math.max(0, Math.min(SWING.length - 1, j))];
+  return [1, 2].map((c) => { const p0 = K(i - 1)[c], p1 = K(i)[c], p2 = K(i + 1)[c], p3 = K(i + 2)[c];       // Catmull-Rom: smooth through the keys
+    return 0.5 * (2 * p1 + (p2 - p0) * s + (2 * p0 - 5 * p1 + 4 * p2 - p3) * s * s + (3 * p1 - p0 - 3 * p2 + p3) * s * s * s); });
+}
+const cap = (r, l) =>new THREE.CapsuleGeometry(r, l, 4, 8);
 const lathe = (pts) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 12);
 const G = {
   thigh: cap(0.085, 0.26), calf: cap(0.068, 0.26), foot: cap(0.05, 0.12), arm: cap(0.052, 0.5), hand: new THREE.SphereGeometry(0.058, 8, 6),
@@ -353,20 +379,29 @@ export function createPeople(scene, world, R) {
             a0.sh.rotation.x = sw * (run ? 1 : 0.6); if (!o.dog) a1.sh.rotation.x = -sw * (run ? 1 : 0.6); // the hips sit as high as the lower foot reaches (bent knees: lower), so a foot is always on the ground; then the stride's bounce
             if (run) {      // a run: push off behind, heel kicks up as the knee folds, the leg swings through and reaches to land;
               // arms pump against the legs, shoulders twist with them, the head stays steady, a slight forward lean
-              const ph = alive ? t * (2 * Math.PI * speed / 1.8) : 1.2;
-              p.legs.forEach((l, k) => { const f = ph + k * Math.PI; l.hip.rotation.x = 0.55 * Math.sin(f) - 0.2; l.knee.rotation.x = 0.22 + 1.5 * Math.pow(Math.max(0, -Math.cos(f + 0.5)), 1.3); });
-              p.arms.forEach((a, k) => { const f = ph + k * Math.PI; a.sh.rotation.set(-0.7 * Math.sin(f) - 0.15, 0, a.s * -0.12); a.el.rotation.x = -1.45 + 0.3 * Math.sin(f); });
-              p.torso.rotation.x = 0.18; p.torso.rotation.y = 0.16 * Math.sin(ph); p.head.rotation.y = -0.13 * Math.sin(ph); p.head.rotation.x = -0.08;
-              p.runPh = ph;
+              const cyc = (Z_LAND - Z_OFF) * p.root.scale.x / STANCE;      // metres per cycle (two steps): the planted foot moves back exactly as fast as he runs
+              const u0 = alive ? (t * speed / cyc) % 1 : 0.2, hipY = runHipY((u0 * 2) % 1);
+              p.legs.forEach((l, k) => {
+                const u = (u0 + k * 0.5) % 1; [l.hip.rotation.x, l.knee.rotation.x] = runLeg(u, hipY);
+                const flat = u < STANCE ? 1 : Math.max(0, 1 - (u - STANCE) / 0.12, (u - 0.85) / 0.15);      // the planted foot lies flat on the street; in the air it hangs with the shin
+                l.foot.rotation.x = Math.PI / 2 - flat * (l.hip.rotation.x + l.knee.rotation.x);
+              });
+              p.arms.forEach((a, k) => {      // each arm swings against the leg on its own side; the elbow folds more as the arm comes forward
+                const fw = -Math.cos(2 * Math.PI * ((u0 + k * 0.5 + 0.08) % 1));
+                a.sh.rotation.set(-0.15 - 0.65 * fw, 0, a.s * 0.1); a.el.rotation.x = -1.3 - 0.35 * Math.max(0, fw);
+              });
+              const tw = Math.cos(2 * Math.PI * (u0 + 0.08));
+              p.torso.rotation.x = 0.16; p.torso.rotation.y = -0.12 * tw; p.head.rotation.y = 0.1 * tw; p.head.rotation.x = -0.1;
+              p.runHipY = hipY;
             }
             const reach = p.legs.length ? Math.max(...p.legs.map((l) => 0.42 * Math.cos(l.hip.rotation.x) + 0.42 * Math.cos(l.hip.rotation.x + l.knee.rotation.x) + 0.08)) : 0.92;
-            p.hips.position.y = reach;
-            if (p.legs.length) {      // then exactly: the lowest point of either foot onto the ground
+            p.hips.position.y = run ? p.runHipY : reach;      // (a run sets its own height: the planted foot is solved onto the ground, and he is airborne between steps)
+            if (p.legs.length && !run) {      // then exactly: the lowest point of either foot onto the ground
               p.root.updateMatrixWorld(true); let low = Infinity;
               for (const l of p.legs) { const pa = l.foot.geometry.attributes.position; for (let k = 0; k < pa.count; k++) low = Math.min(low, tmpA.fromBufferAttribute(pa, k).applyMatrix4(l.foot.matrixWorld).y); }
               p.hips.position.y -= (low - p.root.position.y) / p.root.scale.y;
             }
-            p.hips.position.y += alive ? (run ? 0.045 * Math.abs(Math.sin(p.runPh)) : Math.abs(Math.cos(t * cad)) * 0.015) : 0;      // a run lifts at each push-off
+            if (!run) p.hips.position.y += alive ? Math.abs(Math.cos(t * cad)) * 0.015 : 0;
             // (the run's lean and arms are set above)     // leaning in, elbows bent: running
             if (o.dog) {
               const ds = alive ? Math.sin(t * 11) * 0.5 : 0.3;
