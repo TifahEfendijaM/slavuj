@@ -5,9 +5,18 @@
 //  - Small buttons for pause, sing, and "Open" when the bird is at an orb.
 import S from './settings.js';
 
+// A phone or tablet: a touch screen whose main pointer is a finger. Some phone browsers misreport the pointer kind
+// right after following a link (fixed by a reload), so a finger tap on an earlier page (the Bosnia map, see boot.js)
+// and the browser's own "mobile" flag count too. A laptop with a touch screen keeps its mouse controls (its main
+// pointer is fine).
 export const isTouch = (() => {
-  const coarse = matchMedia('(pointer: coarse)').matches, fine = matchMedia('(any-pointer: fine)').matches;
-  return navigator.maxTouchPoints > 0 && coarse && !fine;
+  if (!(navigator.maxTouchPoints > 0)) return false;
+  const mm = (q) => matchMedia(q).matches;
+  if (mm('(pointer: coarse)') && !mm('(any-pointer: fine)')) return true;
+  if (navigator.userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) return true;
+  if (mm('(pointer: fine)') && mm('(hover: hover)')) return false;          // a real mouse or trackpad is the main pointer
+  let tapped = false; try { tapped = sessionStorage.getItem('slavuj-touch') === '1'; } catch {}
+  return tapped || mm('(pointer: coarse)');
 })();
 
 const ICON = {
