@@ -195,6 +195,11 @@ export function createPeople(scene, world, R) {
       for (const a of arms) { a.sh.rotation.set(-1.0, 0, a.s * -0.32); a.el.rotation.x = -0.75; }
     }
     // Jahorina's people: a sledding child, a skier, a woodcutter, someone shovelling snow, a skater
+    if (o.kind === 'lie') {      // lying on her back on a sun lounger, hands behind her head (Neum)
+      root.rotation.order = 'YXZ'; root.rotation.x = -Math.PI / 2; hips.position.y = 0.92;
+      for (const a of arms) { a.sh.rotation.set(-2.7, 0, a.s * 0.5); a.el.rotation.x = -1.9; }
+      for (const l of legs) { l.hip.rotation.x = 0; l.knee.rotation.x = 0.05; }
+    }
     if (o.kind === 'sled') { const sl = TP(G.box, o.toolCol || '#b8452c', root, 0, 0.3, 0.15, '#8a3020'); sl.scale.set(0.5, 0.08, 1.2); for (const a of arms) { a.sh.rotation.set(-0.5, 0, a.s * -0.2); a.el.rotation.x = -0.4; } }
     if (o.kind === 'ski') {
       for (const s of [-1, 1]) { const sk = TP(G.box, o.toolCol || '#d9453a', root, s * 0.12, 0.03, 0.15, '#a8302a'); sk.scale.set(0.08, 0.03, 1.75); rod(TP, arms[s > 0 ? 1 : 0].el, [0, -0.3, 0], [0, -1.15, -0.25], 0.012, '#3a3e42'); }

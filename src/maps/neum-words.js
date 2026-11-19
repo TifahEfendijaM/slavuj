@@ -1,0 +1,57 @@
+// The words of Neum (summer by the sea): Bosnia's only coast. A town climbing the hill above a bay, the promenade and
+// the beach, a little harbour, the Klek peninsula and its lighthouse across the water. Edit freely: word, English
+// meaning, the question shown above the list, and the answer choices (the correct word must be among them).
+export const WORDS = {
+  mol:        { word: 'mol',        en: 'jetty',          q: 'What is the nightingale standing on?', choices: ['mol', 'most', 'krov'] },
+  more:       { word: 'more',       en: 'sea',            q: 'The great salty water. Which word is it?', choices: ['rijeka', 'more', 'jezero'] },
+  val:        { word: 'val',        en: 'wave',           q: 'What breaks white on the shore?', choices: ['val', 'oblak', 'pjena'] },
+  plaza:      { word: 'plaža',      en: 'beach',          q: 'Where do people lie in the sun by the sea?', choices: ['plaža', 'livada', 'trg'] },
+  sljunak:    { word: 'šljunak',    en: 'pebbles',        q: 'The beach is covered with little round stones. Which word is it?', choices: ['šljunak', 'snijeg', 'trava'] },
+  skoljka:    { word: 'školjka',    en: 'shell',          q: 'What has the sea left on the beach?', choices: ['školjka', 'jabuka', 'čaša'] },
+  rak:        { word: 'rak',        en: 'crab',           q: 'Who walks sideways on the rock?', choices: ['rak', 'riba', 'mačka'] },
+  hrid:       { word: 'hrid',       en: 'sea rock',       q: 'The bare rock standing in the sea. Which word is it?', choices: ['hrid', 'otok', 'mol'] },
+  suncobran:  { word: 'suncobran',  en: 'beach umbrella', q: 'What gives shade on the beach?', choices: ['kišobran', 'suncobran', 'šešir'] },
+  lezaljka:   { word: 'ležaljka',   en: 'sun lounger',    q: 'What do you lie on by the sea?', choices: ['ležaljka', 'klupa', 'krevet'] },
+  peskir:     { word: 'peškir',     en: 'towel',          q: 'What is spread out on the pebbles?', choices: ['peškir', 'ćilim', 'zastava'] },
+  suncati:    { word: 'sunčati se', en: 'to sunbathe',    q: 'What is she doing on the lounger?', choices: ['sunčati se', 'trčati', 'kuhati'] },
+  kupati:     { word: 'kupati se',  en: 'to swim',        q: 'What are they doing in the sea?', choices: ['kupati se', 'čitati', 'spavati'] },
+  dvorac:     { word: 'dvorac',     en: 'sandcastle',     q: 'What has the child built?', choices: ['dvorac', 'most', 'iglu'] },
+  kanta:      { word: 'kanta',      en: 'bucket',         q: 'What does the child carry water in?', choices: ['kanta', 'korpa', 'lopta'] },
+  pedalina:   { word: 'pedalina',   en: 'pedalo',         q: 'The little boat you move with your feet. Which word is it?', choices: ['pedalina', 'bicikl', 'kajak'] },
+  bova:       { word: 'bova',       en: 'buoy',           q: 'What floats to mark the swimming area?', choices: ['bova', 'lopta', 'boca'] },
+  riva:       { word: 'riva',       en: 'seafront',       q: 'The paved walk along the sea. Which word is it?', choices: ['riva', 'cesta', 'staza'] },
+  konobar:    { word: 'konobar',    en: 'waiter',         q: 'Who brings the drinks?', choices: ['konobar', 'kuhar', 'poštar'] },
+  lubenica:   { word: 'lubenica',   en: 'watermelon',     q: 'Which fruit is it?', choices: ['lubenica', 'jabuka', 'bundeva'] },
+  limunada:   { word: 'limunada',   en: 'lemonade',       q: 'What cold drink is in the glasses?', choices: ['limunada', 'kafa', 'čaj'] },
+  luka:       { word: 'luka',       en: 'harbour',        q: 'Where do the boats shelter behind the stone wall?', choices: ['luka', 'pijaca', 'plaža'] },
+  brod:       { word: 'brod',       en: 'boat',           q: 'What is tied up in the harbour?', choices: ['brod', 'auto', 'tramvaj'] },
+  jedrilica:  { word: 'jedrilica',  en: 'sailing boat',   q: 'Which boat moves with the wind?', choices: ['jedrilica', 'pedalina', 'ralica'] },
+  jedro:      { word: 'jedro',      en: 'sail',           q: 'What catches the wind?', choices: ['jedro', 'zastava', 'peškir'] },
+  sidro:      { word: 'sidro',      en: 'anchor',         q: 'What holds a ship in place?', choices: ['sidro', 'kanta', 'zvono'] },
+  mreza:      { word: 'mreža',      en: 'fishing net',    q: 'What is drying on the harbour wall?', choices: ['mreža', 'veš', 'ćilim'] },
+  galeb:      { word: 'galeb',      en: 'seagull',        q: 'Which bird lives by the sea?', choices: ['galeb', 'golub', 'roda'] },
+  delfin:     { word: 'delfin',     en: 'dolphin',        q: 'Who is leaping out of the sea?', choices: ['delfin', 'riba', 'labud'] },
+  naselje:    { word: 'naselje',    en: 'neighbourhood',  q: 'All the houses climbing the hill. Which word is it?', choices: ['naselje', 'luka', 'šuma'] },
+  balkon:     { word: 'balkon',     en: 'balcony',        q: 'Where can you stand outside high up on a house?', choices: ['balkon', 'podrum', 'dimnjak'] },
+  bazen:      { word: 'bazen',      en: 'swimming pool',  q: 'The blue water by the hotel. Which word is it?', choices: ['bazen', 'more', 'lokva'] },
+  maslina:    { word: 'maslina',    en: 'olive tree',     q: 'Which silvery tree grows by the sea?', choices: ['maslina', 'bor', 'trešnja'] },
+  smokva:     { word: 'smokva',     en: 'fig tree',       q: 'Which tree has big leaves and sweet fruit?', choices: ['smokva', 'vrba', 'jela'] },
+  cempres:    { word: 'čempres',    en: 'cypress',        q: 'Which tall dark tree stands like a candle?', choices: ['čempres', 'maslina', 'bor'] },
+  vinograd:   { word: 'vinograd',   en: 'vineyard',       q: 'The rows of vines on the hill. Which word is it?', choices: ['vinograd', 'voćnjak', 'livada'] },
+  otok:       { word: 'otok',       en: 'island',         q: 'Land with sea all around it. Which word is it?', choices: ['otok', 'brdo', 'mol'] },
+  poluotok:   { word: 'poluotok',   en: 'peninsula',      q: 'The long arm of land across the bay. Which word is it?', choices: ['poluotok', 'otok', 'obala'] },
+  svjetionik: { word: 'svjetionik', en: 'lighthouse',     q: 'What shines for the ships at night?', choices: ['svjetionik', 'zvonik', 'fenjer'] },
+  ljeto:      { word: 'ljeto',      en: 'summer' },
+};
+export const ORDER = Object.keys(WORDS);
+
+export const CULTURE = {
+  place: 'Neum',
+  subtitle: 'Bosnia and Herzegovina · on the Adriatic',
+  facts: [
+    ['A slice of sea', 'Neum is Bosnia and Herzegovina’s only town on the sea: the country’s coast is just about 20 km long, between two stretches of Croatia.'],
+    ['Klek', 'Across the bay lies the long Klek peninsula. The water between is calm and warm, so the bay is good for swimming from May to October.'],
+    ['A town on a hill', 'The houses climb steeply from the sea, terrace above terrace, among olive and fig trees and the scent of the maquis.'],
+    ['Summer evenings', 'In the evening everyone walks along the riva, the seafront, with ice cream or a cold drink, while the sun sets behind the peninsula.'],
+  ],
+};

@@ -6,7 +6,7 @@ export const MAPS = [
   { id: 'sarajevo', name: 'Sarajevo', season: 'Jesen', en: 'autumn', lat: 43.859, lon: 18.431 },
   { id: 'jahorina', name: 'Jahorina', season: 'Zima', en: 'winter', lat: 43.738, lon: 18.567 },
   { id: 'jajce', name: 'Jajce', season: 'Proljeće', en: 'spring', lat: 44.342, lon: 17.270 },
-  { id: 'neum', name: 'Neum', season: 'Ljeto', en: 'summer', lat: 42.923, lon: 17.615, soon: true, extra: true },      // (extra: off the season route)
+  { id: 'neum', name: 'Neum', season: 'Ljeto', en: 'summer', lat: 42.923, lon: 17.615, extra: true },      // (extra: off the season route)
 ];
 
 const params = new URLSearchParams(location.search);
