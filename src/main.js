@@ -287,11 +287,9 @@ const touch = isTouch ? setupTouch(inp, {
   canOpen: () => !!orbHere(),
   onOpen: () => { const o = orbHere(); if (o && state === 'play' && !paused) openWords(o); },
 }) : null;
+$('start').querySelector('.go').textContent = touch ? 'Tap to fly' : 'Click to fly';      // (it says Loading… until here)
 if (touch) {
   noLock = true;
-  $('start').querySelector('.controls').innerHTML = '<table><tr><th></th><th>Flying</th></tr><tr><td><kbd>Drag anywhere</kbd></td><td>steer · up to climb</td></tr><tr><td><kbd>Flap</kbd></td><td>take off · flap to climb</td></tr>'
-    + '<tr><td><kbd>Hold dive</kbd></td><td>dive<i> · walk · paddle (it changes)</i></td></tr></table><table><tr><th></th><th>Words</th></tr><tr><td><kbd>Open</kbd></td><td>an orb\'s word list</td></tr><tr><td><kbd>Feather</kbd></td><td>journal</td></tr></table>';
-  $('start').querySelector('.go').textContent = 'Tap to fly';
   $('pause').querySelector('.card').firstChild.textContent = 'Paused · tap to keep flying';
   $('pause').querySelector('table').innerHTML = '<tr><td>Drag anywhere</td><td>steer</td></tr><tr><td>Flap</td><td>flap hard to climb</td></tr><tr><td>Hold dive</td><td>dive</td></tr>'
     + '<tr class="gap"><td>Feather</td><td>journal</td></tr><tr><td>Note</td><td>sing</td></tr>';

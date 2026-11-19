@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <title>Slavuj</title>
+<script>
+// Phone or computer? Decided here, before anything else loads, so a phone shows its own controls (and the "turn your
+// phone" note) from the first moment, on the Bosnia map too. A phone or tablet: a touch screen whose main pointer is a
+// finger. Some phone browsers misreport the pointer kind right after following a link, so the browser's "mobile" flag
+// and a finger tap on an earlier page count too. A laptop with a touch screen keeps its mouse controls.
+(() => {
+  const n = navigator, mm = (q) => matchMedia(q).matches;
+  let tapped = false; try { tapped = sessionStorage.getItem('slavuj-touch') === '1'; } catch (e) {}
+  const touch = n.maxTouchPoints > 0 && (
+    (mm('(pointer: coarse)') && !mm('(any-pointer: fine)'))
+    || (n.userAgentData && n.userAgentData.mobile === true) || /Android|iPhone|iPad|iPod|Mobile/i.test(n.userAgent)
+    || (!(mm('(pointer: fine)') && mm('(hover: hover)')) && (tapped || mm('(pointer: coarse)'))));
+  if (touch) document.documentElement.classList.add('touch');
+  addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') try { sessionStorage.setItem('slavuj-touch', '1'); } catch (e) {} }, { capture: true, passive: true });
+})();
+</script>
 <style>
   :root { --paper: #f5efdf; --paper2: #efe6d0; --ink: #3b352f; --yellow: #ffc61a; --gold: #c8891a; --blue: #2466e8; --red: #b8452c; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--paper); color: var(--ink);
@@ -151,7 +167,8 @@
   body.touch #hint { top: 12px; bottom: auto; font-size: 18px; max-width: 54vw; white-space: normal; text-align: center; pointer-events: none; }
   body.tidle #tzone, body.tidle .tbtn, body.tidle #tring, body.tidle #tknob, body.cine .tbtn { opacity: 0; pointer-events: none; }
   #turn { display: none; z-index: 20; background: var(--paper); } #turn .card { font-size: 26px; max-width: 70vw; padding: 20px 24px; }
-  @media (orientation: portrait) { body.touch #turn { display: grid; } }
+  @media (orientation: portrait) { html.touch #turn { display: grid; } }
+  html:not(.touch) .ph, html.touch .pc { display: none !important; }
   body:not(.touch) #tzone, body:not(.touch) .tbtn, body:not(.touch) #tring, body:not(.touch) #tknob { display: none; }
   /* the journal on a phone: the whole visible screen (dvh: without the browser's bars), close always in the corner */
   body.touch #journal { place-items: start center; padding-top: 8px; bottom: auto; height: var(--vh, 100dvh); box-sizing: border-box; }
@@ -251,11 +268,17 @@
     <div class="menu"><button id="toMap" class="wobbly">Bosnia map</button><button id="restart" class="wobbly">Restart level</button><button id="toFinale" class="wobbly">Skip to the finale</button></div>
     <div class="note">Restart clears this level's colours and words. Skip to the finale colours everything and collects every word (for testing).</div>
     </div></div>
+<div id="turn" class="overlay"><div class="card wobbly">Turn your phone sideways to play</div></div>
 <div id="start" class="overlay">
   <div class="card wobbly">
     <h1>Slavuj</h1>
     <div class="sub">A nightingale colours <span class="town">the town</span> in, one Bosnian word at a time.</div>
-    <div class="controls">
+    <div class="controls ph">
+      <table><tr><th></th><th>Flying</th></tr><tr><td><kbd>Drag anywhere</kbd></td><td>steer · up to climb</td></tr><tr><td><kbd>Flap</kbd></td><td>take off · flap to climb</td></tr>
+        <tr><td><kbd>Hold dive</kbd></td><td>dive<i> · walk · paddle (it changes)</i></td></tr></table>
+      <table><tr><th></th><th>Words</th></tr><tr><td><kbd>Open</kbd></td><td>an orb's word list</td></tr><tr><td><kbd>Feather</kbd></td><td>journal</td></tr></table>
+    </div>
+    <div class="controls pc">
       <table>
         <tr><th></th><th>Flying</th></tr>
         <tr><td><kbd>Mouse</kbd></td><td>steer</td></tr>
@@ -269,7 +292,7 @@
         <tr><td><kbd>F</kbd> <kbd>Esc</kbd></td><td>sing · pause</td></tr>
       </table>
     </div>
-    <div class="go">Click to fly</div>
+    <div class="go">Loading…</div>
     <div class="foot"><a href="./" id="backMap">← Bosnia map</a> · <a href="https://easybosnian.com" target="_blank" rel="noopener" id="brand">easybosnian.com</a><span id="resetWrap" style="display:none"> · <button id="reset">start over</button></span></div>
   </div>
 </div>

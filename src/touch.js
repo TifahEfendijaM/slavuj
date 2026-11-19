@@ -5,19 +5,8 @@
 //  - Small buttons for pause, sing, and "Open" when the bird is at an orb.
 import S from './settings.js';
 
-// A phone or tablet: a touch screen whose main pointer is a finger. Some phone browsers misreport the pointer kind
-// right after following a link (fixed by a reload), so a finger tap on an earlier page (the Bosnia map, see boot.js)
-// and the browser's own "mobile" flag count too. A laptop with a touch screen keeps its mouse controls (its main
-// pointer is fine).
-export const isTouch = (() => {
-  if (!(navigator.maxTouchPoints > 0)) return false;
-  const mm = (q) => matchMedia(q).matches;
-  if (mm('(pointer: coarse)') && !mm('(any-pointer: fine)')) return true;
-  if (navigator.userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) return true;
-  if (mm('(pointer: fine)') && mm('(hover: hover)')) return false;          // a real mouse or trackpad is the main pointer
-  let tapped = false; try { tapped = sessionStorage.getItem('slavuj-touch') === '1'; } catch {}
-  return tapped || mm('(pointer: coarse)');
-})();
+// phone or computer: decided by the page itself, at the very start (index.html)
+export const isTouch = document.documentElement.classList.contains('touch');
 
 const ICON = {
   flap: '<svg viewBox="0 0 48 48"><path d="M7 38 C 15 24, 27 19, 42 21 C 34 26, 30 30, 27 40 C 21 36, 13 36, 7 38 Z" fill="#2466e8" stroke="#3b352f" stroke-width="2.4" stroke-linejoin="round"/><path d="M24 15 V 4 M18 10 l6 -6 6 6" fill="none" stroke="#3b352f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -41,7 +30,6 @@ export function setupTouch(inp, hooks) {
   const openB = el('button', 'topen', 'tbtn wobbly off', 'Open');
   const pauseB = el('button', 'tpause', 'tbtn small wobbly', ICON.pause);
   const singB = el('button', 'tsing', 'tbtn small wobbly', ICON.sing);
-  el('div', 'turn', 'overlay', '<div class="card wobbly">Turn your phone sideways to play</div>');
 
   const stick = { id: null, x0: 0, y0: 0 }, state = { flap: false, dive: false };
   inp.pointer = { x: 0, y: 0 };       // always there on a phone: a released stick means level flight
