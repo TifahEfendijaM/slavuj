@@ -15,13 +15,16 @@ import { rng } from './paper.js';
 import { Flight } from './flight.js';
 import * as audio from './audio.js';
 import { isTouch, setupTouch } from './touch.js';
+
+// a map still in development carries a notice that it is a pre-release
+if (MAPS.find((m) => m.id === M.id)?.wip) { const b = document.createElement('div'); b.id = 'wip'; b.textContent = 'Work in progress · early pre-release, far from finished'; document.body.append(b); }
 const { WORDS, ORDER, CULTURE, text: TEXT, finale: FIN, ambience: AMB = {} } = M;      // the map being played (src/maps/)
 // the town's name where the page mentions it, the way back to the Bosnia map, and (after the finale) the way on to the next town
 document.title = 'Slavuj · ' + M.name; for (const e of document.querySelectorAll('.town')) e.textContent = M.name;
 document.getElementById('backMap').href = mapUrl(null);
 document.getElementById('toMap').addEventListener('click', () => { location.href = mapUrl(null); });
 { const i = MAPS.findIndex((m) => m.id === M.id), nx = MAPS[i + 1];
-  if (nx) document.getElementById('nextMap').innerHTML = nx.soon ? `Next: ${nx.name}, coming later` : `<a href="${mapUrl(nx.id)}">Fly on to ${nx.name} →</a>`; }
+  if (nx) document.getElementById('nextMap').innerHTML = nx.soon ? `Next: ${nx.name}, still in development. Coming soon!` : `<a href="${mapUrl(nx.id)}">Fly on to ${nx.name} →</a>`; }
 
 const $ = (id) => document.getElementById(id);
 const clamp = THREE.MathUtils.clamp, V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -33,7 +36,7 @@ const SPEAKER = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="
 // ---------- scene ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setClearColor(S.colors.paper);
-document.body.prepend(renderer.domElement);
+renderer.domElement.id = 'gl'; document.body.prepend(renderer.domElement);
 const canvas = renderer.domElement;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(S.camera.fov, 1, 0.1, 2000);
@@ -57,12 +60,16 @@ const fountainAt = world.fountain ? V(world.fountain.x, world.fountain.y + 1.4, 
 const crowdN = world.people.filter((p) => p.kind === 'watch').length;
 let live = false;
 
+// the canvas always fills the screen by its own style (index.html); the picture follows whatever size it actually has, so a phone
+// browser changing its bars or the safe areas (as after the journal opens) never leaves empty strips at the sides
 function resize() {
-  const w = innerWidth, h = innerHeight, px = Math.min(devicePixelRatio, 2);
-  renderer.setPixelRatio(px); renderer.setSize(w, h);
+  const r = renderer.domElement.getBoundingClientRect(), w = Math.max(1, Math.round(r.width || innerWidth)), h = Math.max(1, Math.round(r.height || innerHeight)), px = Math.min(devicePixelRatio, 2);
+  renderer.setPixelRatio(px); renderer.setSize(w, h, false);
   camera.aspect = w / h; camera.updateProjectionMatrix(); setResolution(w, h, px);
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize); visualViewport?.addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 300));
+if (window.ResizeObserver) new ResizeObserver(resize).observe(renderer.domElement);
+resize();
 
 // ---------- progress (kept between visits) ----------
 const params = new URLSearchParams(location.search), fresh = params.has('fresh');
@@ -644,7 +651,7 @@ function snapshot(id) {
 }
 function showCard(id) {
   const w = WORDS[id], el = $('card');
-  $('cardImg').src = pics[id] || BUNDLED[id] || snapshot(id); el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
+  $('cardImg').src = (id === FIN.word && BUNDLED[id]) || pics[id] || BUNDLED[id] || snapshot(id);      // (the finale's picture is the same for everyone: the prepared one) el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
   el.classList.remove('off'); audio.page();
 }
 $('card').addEventListener('click', () => $('card').classList.add('off'));
@@ -687,7 +694,7 @@ function updateFinale(dt) {
   once('sing', 0.4, () => { singing = true; audio.speak(FIN.word).then(() => { singing = false; }); });
   once('sky', 1.2, () => { paint('sky'); paint('sun'); for (const t of FIN.paints || []) paint(t);      // (and whatever in this map has no word of its own)
  audio.swell(true, 7); audio.paintWash(6); });
-  once('photo', 8, () => { snapId = FIN.word; });
+  once('photo', 11, () => { keepPic(FIN.word, snapshot(FIN.word)); });      // the finale's word, framed on what it names (the sun, the season), once it is coloured
   once('birds', 11, () => audio.setLife({ birds: true })); once('city', 12.5, () => audio.setLife({ city: true }));
   once('murmur', 12.5, () => audio.setLife({ murmur: 0.5 }));
   once('jump', 15, () => { diver?.jump(); people.fishJumpAt(time + 4.3); wake(); FIN.climax?.(ctx()); singing = true; audio.song(FIN.word, 7.3, 1).then(() => { singing = false; }); });   // the whole melody, once; the fish leaps just after the diver's splash, while the camera looks down at the water
@@ -706,10 +713,14 @@ function updateFinale(dt) {
   camera.position.lerpVectors(s.from, s.to, e);
   FIN.step?.(t, dt, ctx());      // the map's own moving parts in its finale
   if (s.diver && diver) {      // the diver's shot: the camera turns with him, aimed a little ahead along his leap and fall, so it never trails him
-    const d = diver.state === 'jump' ? diver.root.position : diver.state === 'stand' ? world.diverPos : diver.splashPos, aim = V(d.x, d.y + 1, d.z);
+    const d = diver.state === 'jump' ? diver.root.position : diver.state === 'stand' ? world.diverPos : diver.splashPos, aim = V(d.x, d.y + (diver.state === 'jump' || diver.state === 'stand' ? 1 : 0.4), d.z);
     if (diver.state === 'jump' && f.lastD && dt > 0) aim.addScaledVector(V(d.x - f.lastD.x, d.y - f.lastD.y, d.z - f.lastD.z), 0.2 / dt);
     f.lastD = diver.state === 'jump' ? d.clone() : null;
-    f.look = (f.look || world.diverPos.clone()).lerp(aim, k(9, dt)); camera.lookAt(f.look);
+    if (diver.state !== 'stand' && aim.y < 1.4) aim.y = 0.4 + Math.exp(aim.y - 1.4);      // eased onto the water, never below it, so at the splash the look slows to a stop instead of jerking back up
+    // a spring with no overshoot: the look speeds up and slows down smoothly, never stopping dead
+    if (!f.look) { f.look = world.diverPos.clone(); f.lookV = V(0, 0, 0); }
+    const w = 7, h = Math.min(dt, 1 / 30);
+    f.lookV.addScaledVector(aim.clone().sub(f.look), w * w * h).multiplyScalar(Math.max(0, 1 - 2 * w * h)); f.look.addScaledVector(f.lookV, h); camera.lookAt(f.look);
   }
   else camera.lookAt(look.lerpVectors(s.lookFrom, s.lookTo, e));
   if (camera.fov !== 46) { camera.fov = 46; camera.updateProjectionMatrix(); }

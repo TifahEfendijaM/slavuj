@@ -9,7 +9,7 @@
   :root { --paper: #f5efdf; --paper2: #efe6d0; --ink: #3b352f; --yellow: #ffc61a; --gold: #c8891a; --blue: #2466e8; --red: #b8452c; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--paper); color: var(--ink);
     font-family: 'Patrick Hand', 'Comic Sans MS', cursive; user-select: none; }
-  canvas { display: block; position: fixed; inset: 0; }
+  canvas { display: block; position: fixed; inset: 0; } #gl { width: 100% !important; height: 100% !important; }
   button { font-family: inherit; color: inherit; }
   .wobbly { border: 2.5px solid var(--ink); border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px; }
   kbd { font-family: inherit; border: 2px solid var(--ink); border-radius: 7px; padding: 0 8px; background: #fffaf0; box-shadow: 1px 2px 0 var(--ink); }
@@ -173,6 +173,8 @@
     #card img { width: min(540px, 70vw, 120vh); }
   }
 
+  #wip { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 50; pointer-events: none; background: #c8452e; color: #fff8ec; font-size: 17px; padding: 3px 16px 4px; border-radius: 0 0 10px 10px; box-shadow: 2px 3px 0 rgba(59,53,47,.25); white-space: nowrap; }
+  @media (max-height: 520px) { #wip { font-size: 13px; padding: 2px 12px 3px; } }
   /* ---- the Bosnia map (src/bosnia.js) ---- */
   #bosnia { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100dvh; display: flex; flex-direction: column; align-items: center; background: var(--paper); overflow: hidden; }
   #bosnia .bhead { text-align: center; padding: 10px 16px 0; flex: none; }

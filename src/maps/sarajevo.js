@@ -6,6 +6,7 @@ import { makeKit, BANK, GEO, PAL, LEAVES } from '../kit.js';
 import { tag, PAT } from '../paper.js';
 import { WORDS, ORDER, CULTURE } from './sarajevo-words.js';
 import art from '../../assets/journal-sarajevo.jpg';
+import { makeFall } from '../fall.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const WATER_Y = 7.6, RZ0 = 40, RZ1 = 50, RZ = 45;          // the Miljacka: its surface and its two banks
@@ -274,7 +275,7 @@ function build(scene) {
   return {
     clouds: K.clouds, colliders: b.colliders, orbs: K.orbs, people, animals: [], sunPos,
     start: V(6, 0, 20), fleur: V(0, 58, -30), pigeons: { x: 6, y: BANK + 0.12, z: 5, fx: 8, fz: 0, fh: 9 },
-    smoke: [V(11, BANK + 1.1, -8)], tramParts,
+    smoke: [V(11, BANK + 1.1, -8)], tramParts, trees: K.trees,
   };
 }
 
@@ -286,32 +287,16 @@ function roofGeoShop(w, d, rh) {
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(pos.length / 3 * 2).fill(0), 2)); g.computeVertexNormals(); return g;
 }
 
-// ---------- the living town: falling leaves, the tram, and the finale's cannon shot and whirl of leaves ----------
-const LEAF_N = 260;
-let leaves = null, whirl = 0, tramX = 0, tramDir = 1, tramWait = 0;
-function setupLeaves(scene) {
-  const g = new THREE.PlaneGeometry(0.26, 0.2), cols = ['#e08a2e', '#d9612e', '#e8b13a', '#c9452a', '#d99a3a'];
-  leaves = Array.from({ length: LEAF_N }, (_, i) => {
-    const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: cols[i % cols.length], side: THREE.DoubleSide, transparent: true }));
-    m.visible = false; scene.add(m);
-    return { m, x: 0, y: 0, z: 0, t: Math.random() * 20, sp: 0.5 + Math.random() * 0.6, ph: Math.random() * 6, home: null };
-  });
-}
-function respawn(l, world, around) {
-  const s = around ? null : world.leafTrees[Math.floor(Math.random() * world.leafTrees.length)];
-  if (around) { const a = Math.random() * 6.28, r = 3 + Math.random() * 14; l.x = around.x + Math.cos(a) * r; l.z = around.z + Math.sin(a) * r; l.y = around.y + Math.random() * 6; l.a = a; l.r = r; }
-  else { l.x = s[0] + (Math.random() - 0.5) * 4; l.z = s[1] + (Math.random() - 0.5) * 4; l.y = s[2] + 4 + Math.random() * 2.5; l.a = null; }
-}
-
+// ---------- the living town: leaves falling from the trees, the tram, and the finale's cannon shot and gust of wind ----------
+let fall = null, tramX = 0, tramDir = 1, tramWait = 0;
+// where a leaf lands: the ground, the hill, or the Miljacka (which carries it off downstream)
+const ground = (x, z) => (z > RZ0 && z < RZ1 ? { y: WATER_Y, flow: [0.7, 0] } : { y: yAt(z) + 0.13 });      // (+ the paving)
 export default {
   id: 'sarajevo', name: 'Sarajevo', WORDS, ORDER, CULTURE, art,
   bounds: { boundsRadius: 178, ceiling: 100 },      // (the fortress is 160 m north of the square)
   build(scene) {
     const w = build(scene);
-    w.leafTrees = [];
-    for (let x = -100; x <= 100; x += 16) w.leafTrees.push([x + 7, 36.6, BANK]);
-    for (const [x, z] of [[-10, -3], [10, 3.5], [24, 18], [-34, 16]]) w.leafTrees.push([x, z, BANK]);
-    setupLeaves(scene);
+    fall = makeFall(scene, { kind: 'autumn', trees: w.trees.filter((t) => t.tag === 'leaves'), ground, n: 900, cols: ['#e08a2e', '#d9612e', '#e8b13a', '#c9452a', '#d99a3a', '#b8742a'] });
     return w;
   },
   text: {
@@ -331,26 +316,16 @@ export default {
       { t0: 14, t1: 20, from: V(14, 50, -104), to: V(-4, 52, -112), lookFrom: V(1, 44, -156), lookTo: V(0, 44, -155) },
       { t0: 20, t1: 26, from: V(42, 40, -60), to: V(30, 46, -84), lookFrom: V(0, 18, 4), lookTo: V(0, 20, -6) },
     ],
-    // the cannon on Žuta tabija fires at sunset, and a gust lifts a whirl of golden leaves over Baščaršija
+    // the cannon on Žuta tabija fires at sunset, and a gust of wind shakes the leaves from the trees of Baščaršija
     climax(c) {
       c.audio.boom(0.9); c.splashFx(V(2, TOP + 6.2, -152.6), 0.6);
-      whirl = 1;
-      for (const l of leaves) { respawn(l, c.world, V(0, BANK + 4, 0)); l.m.visible = true; }
+      fall.gust();
     },
   },
-  onAlive() { for (const l of leaves) l.m.visible = true; },
-  // every frame: the leaves drift down (or whirl), the tram runs once the town is alive
+  onAlive() { fall.show(); },
+  // every frame: the leaves fall, the tram runs once the town is alive
   update(dt, time, life, c) {
-    if (life < 0.5 && !whirl) return;
-    for (const l of leaves) {
-      if (!l.home) { l.home = true; respawn(l, c.world); l.y -= Math.random() * 5; }
-      l.t += dt;
-      if (whirl && l.a !== null) { l.a += dt * (0.9 + 6 / (l.r + 2)); l.y += dt * 3; l.r += dt * 0.9; l.x = Math.cos(l.a) * l.r; l.z = Math.sin(l.a) * l.r; if (l.y > BANK + 30) { respawn(l, c.world); } }
-      else { l.y -= dt * l.sp; l.x += Math.sin(l.t * 1.3 + l.ph) * dt * 0.5; l.z += Math.cos(l.t * 0.9 + l.ph) * dt * 0.3; if (l.y < BANK + 0.1) respawn(l, c.world); }
-      l.m.position.set(l.x, l.y, l.z); l.m.rotation.set(l.t * 2 + l.ph, l.t * 1.3, l.t * 0.7);
-      l.m.scale.setScalar(whirl && l.a !== null ? 4.5 : 1.4);      // (the whirl is seen from far off)
-    }
-    if (whirl) { whirl -= dt / 11; if (whirl <= 0) { whirl = 0; for (const l of leaves) l.a = null; } }
+    fall.update(dt);
     if (life < 0.5) return;
     // the tram: along the river road, a pause at each end
     if (tramWait > 0) tramWait -= dt;

@@ -61,7 +61,7 @@ export function makeKit(scene, opts = {}) {
   const orbs = [], clouds = [];
   const orb = (id, focus, size, tags, shot, top, extra = {}) => orbs.push({ id, focus: new Vector3(...focus), size, tags, shot,
     at: new Vector3(focus[0], top + S.orb.hoverHeight, focus[2]), stage: 1, ...extra });
-  const K = { b, R, pick, rr, A, box, slab, orb, orbs, clouds, mat4, GEO, PAL };
+  const K = { b, R, pick, rr, A, box, slab, orb, orbs, clouds, mat4, GEO, PAL, trees: [] };      // (trees: each broad-leaved tree's crown, for things falling from them)
 
   // the sky dome and the sun (both coloured in the finale) with its pencilled rays
   K.sky = (o = {}) => {
@@ -104,6 +104,7 @@ export function makeKit(scene, opts = {}) {
     A(GEO.TAPER, x, y0 + th / 2, z, { ...T, tag: o.trunkTag || T.tag, col: '#7a5636', bleed: '#5f4028', edge: 50 }, R() * 6, 0, 0, [0.42 * s, th, 0.42 * s]);
     const blobs = o.big ? [[0, 1.6, 0, 2.6], [-1.9, 0.7, 0.6, 1.9], [1.8, 0.9, -0.4, 2.0], [0.4, 0.6, 1.9, 1.8], [-0.3, 0.8, -1.9, 1.8]] : [[0, 1.0, 0, 1.7], [-1.1, 0.3, 0.3, 1.25], [1.0, 0.4, -0.3, 1.3]];
     const thin = o.bare ? 0.55 : 1;      // late in autumn: a thinner crown
+    K.trees.push({ x, z, y: y0 + th + 0.8 * s, r: (o.big ? 2.6 : 1.7) * s * thin, tag: o.crownTag || T.tag });
     for (const [px, py, pz, r] of blobs) A(GEO.ICO, x + px * s, y0 + th + py * s, z + pz * s, { ...T, tag: o.crownTag || T.tag, col: g[0], bleed: g[1], hull: true, sway: (v) => 0.03 * (v.y - y0 - th + 1) }, R() * 6, 0, 0, [r * s * thin, r * s * 0.85 * thin, r * s * thin]);
   });
   // a pine or spruce: tiers of dark cones (snow on them in winter: o.snow)

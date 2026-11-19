@@ -6,6 +6,7 @@ import { makeKit, BANK, GEO, PAL, triGeo } from '../kit.js';
 import { tag, PAT } from '../paper.js';
 import { WORDS, ORDER, CULTURE } from './jajce-words.js';
 import art from '../../assets/journal-jajce.jpg';
+import { makeFall } from '../fall.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const LOW = 1, EDGE = 28, WY = BANK + 0.06;          // the meadow's height, the edge of the town's rock, the stream's surface
@@ -240,26 +241,19 @@ function build(scene) {
   return {
     clouds: K.clouds, colliders: b.colliders, orbs: K.orbs, people, sunPos, start: V(-14, 0, -20), fleur: V(0, 56, 14),
     animals: [{ kind: 'sheep', tag: 'lamb', x: 48, y: LOW + 0.06, z: 94, ry: 0.6, roam: 3 }, { kind: 'sheep', tag: 'lamb', x: 50.6, y: LOW + 0.06, z: 96.4, ry: 2.4, roam: 3 }, { kind: 'sheep', tag: 'lamb', x: 45.4, y: LOW + 0.06, z: 96.8, ry: -1.2, roam: 3 }],
-    smoke: [farm.chimTop, houses[0].chimTop, houses[8].chimTop].filter(Boolean), cherries,
+    smoke: [farm.chimTop, houses[0].chimTop, houses[8].chimTop].filter(Boolean), cherries, trees: K.trees,
   };
 }
 // a steep little roof for the mills
 function roofSteep() { const g = new THREE.ConeGeometry(2.3, 1.6, 4); g.rotateY(Math.PI / 4); return g; }
 
-// ---------- the living town: blossom petals drift down; in the finale a gust lifts a cloud of them over the falls ----------
-let petals = null, whirl = 0;
-function setupPetals(scene) {
-  const g = new THREE.PlaneGeometry(0.2, 0.16), cols = ['#f6dce6', '#fbeef2', '#f2c6d6', '#fff6f8'];
-  petals = Array.from({ length: 240 }, (_, i) => { const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: cols[i % 4], side: THREE.DoubleSide })); m.visible = false; scene.add(m); return { m, t: Math.random() * 20, sp: 0.4 + Math.random() * 0.5, ph: Math.random() * 6, a: null }; });
-}
-function respawn(l, world, around) {
-  if (around) { const a = Math.random() * 6.28, r = 3 + Math.random() * 14; l.x = around.x + Math.cos(a) * r; l.z = around.z + Math.sin(a) * r; l.y = around.y + Math.random() * 6; l.a = a; l.r = r; l.c = around; }
-  else { const [x, z] = world.cherries[Math.floor(Math.random() * world.cherries.length)]; l.x = x + (Math.random() - 0.5) * 4; l.z = z + (Math.random() - 0.5) * 4; l.y = (z > EDGE ? LOW : BANK) + 4 + Math.random() * 2; l.a = null; }
-}
+// ---------- the living town: blossom petals and pollen on the spring breeze; in the finale a gust shakes the cherries ----------
+let fall = null;
+const ground = (x, z) => ({ y: (z > EDGE ? LOW : BANK) + 0.13 });      // (+ the paving or the grass)
 export default {
   id: 'jajce', name: 'Jajce', WORDS, ORDER, CULTURE, art,
   bounds: { boundsRadius: 150, ceiling: 100 },
-  build(scene) { const w = build(scene); setupPetals(scene); return w; },
+  build(scene) { const w = build(scene); fall = makeFall(scene, { kind: 'spring', trees: w.trees.filter((t) => t.tag === 'blossom'), ground, n: 700, pollen: 1400, cols: ['#f6dce6', '#fbeef2', '#f2c6d6', '#fff6f8'] }); return w; },
   text: {
     firstHint: 'fly to the glowing orb and land on the little watermill',
     first: 'New orbs have appeared all over Jajce. Find them in any order.',
@@ -276,20 +270,10 @@ export default {
       { t0: 14, t1: 21, from: V(16, 8, 96), to: V(-12, 9, 92), lookFrom: V(0, 10, 40), lookTo: V(0, 12, 34) },
       { t0: 21, t1: 26, from: V(-60, 30, 130), to: V(-40, 34, 140), lookFrom: V(10, 8, 70), lookTo: V(20, 10, 60) },
     ],
-    // a gust over the falls lifts a cloud of blossom petals
-    climax(c) { whirl = 1; for (const l of petals) { respawn(l, c.world, V(0, LOW + 6, 44)); l.m.visible = true; } },
+    // a gust of spring wind shakes the blossom from the cherries
+    climax() { fall.gust(); },
   },
-  onAlive() { for (const l of petals) l.m.visible = true; },
-  update(dt, time, life, c) {
-    if (life < 0.5 && !whirl) return;
-    for (const l of petals) {
-      if (l.x === undefined) { respawn(l, c.world); l.y -= Math.random() * 5; }
-      l.t += dt;
-      if (whirl && l.a !== null) { l.a += dt * (0.9 + 6 / (l.r + 2)); l.y += dt * 2.6; l.r += dt * 0.8; l.x = l.c.x + Math.cos(l.a) * l.r; l.z = l.c.z + Math.sin(l.a) * l.r; if (l.y > LOW + 30) respawn(l, c.world); }
-      else { l.y -= dt * l.sp; l.x += Math.sin(l.t * 1.3 + l.ph) * dt * 0.5; l.z += Math.cos(l.t * 0.9 + l.ph) * dt * 0.3; if (l.y < (l.z > EDGE ? LOW : BANK) + 0.1) respawn(l, c.world); }
-      l.m.position.set(l.x, l.y, l.z); l.m.rotation.set(l.t * 2 + l.ph, l.t * 1.3, l.t * 0.7); l.m.scale.setScalar(whirl && l.a !== null ? 4 : 1.4);
-    }
-    if (whirl) { whirl -= dt / 11; if (whirl <= 0) { whirl = 0; for (const l of petals) l.a = null; } }
-  },
+  onAlive() { fall.show(); },
+  update(dt) { fall.update(dt); },
   ambience: { murmur: [[36, -6, 26], [-60, 96, 20]], water: (p) => Math.max(Math.max(0, 1 - Math.hypot(p.x, p.z - EDGE) / 50), Math.max(0, 1 - Math.hypot(p.x + 20, p.z + 30) / 34) * 0.6) },
 };
