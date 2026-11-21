@@ -71,4 +71,12 @@ export function leave() {
   if (window.parent !== window) window.parent.postMessage({ type: 'slavuj:close' }, location.origin);
   else location.href = '/';
 }
-if (PLATFORM) addEventListener('click', (e) => { const a = e.target.closest?.('.leave'); if (a) { e.preventDefault(); e.stopPropagation(); leave(); } }, true);
+// the EasyBosnian menu: the page around the game shows the site's own menu bar (logo, links, profile) above the game
+export function menu() {
+  if (window.parent !== window) window.parent.postMessage({ type: 'slavuj:menu' }, location.origin);
+  else location.href = '/';
+}
+if (PLATFORM) addEventListener('click', (e) => {
+  const a = e.target.closest?.('.leave, .ebmenu'); if (!a) return;
+  e.preventDefault(); e.stopPropagation(); if (a.classList.contains('ebmenu')) menu(); else leave();
+}, true);

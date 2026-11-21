@@ -161,7 +161,12 @@
   #pause .pmenu .main { font-size: 23px; background: var(--yellow); padding-top: 8px; padding-bottom: 9px; } #pause .pmenu .main:hover { background: #ffd54d; }
   #mute .off, #mute.muted .on { display: none; } #mute.muted .off { display: inline; }
   html.platform .eb { display: none !important; }      /* the links to easybosnian.com: not needed on easybosnian itself */
-  html:not(.platform) .pf { display: none !important; }      /* and the way back to it, only there */
+  html:not(.platform) .pf { display: none !important; }      /* and its logo and menu, only there */
+  /* on easybosnian: its logo, faint in a corner while playing (never in the way: it cannot be clicked), and at the top of the start card */
+  #ebmark { position: fixed; left: calc(14px + env(safe-area-inset-left)); bottom: 12px; height: 20px; opacity: .55; pointer-events: none; z-index: 2; }
+  #start .eblogo { display: block; height: 26px; margin: -6px auto 4px; }
+  .ebicon { width: 22px; height: 22px; flex: none; }
+  #bosnia .eblogo { position: absolute; left: calc(16px + env(safe-area-inset-left)); top: 14px; height: 24px; z-index: 2; }
   #turn { display: none; z-index: 20; background: var(--paper); } #turn .card { font-size: 26px; max-width: 70vw; padding: 20px 24px; }
   @media (orientation: portrait) { html.touch #turn { display: grid; } }
   html:not(.touch) .ph, html.touch .pc { display: none !important; }
@@ -271,16 +276,18 @@
       <div class="pmenu">
         <button id="resume" class="wobbly main"><svg viewBox="0 0 24 24"><path d="M7 4.5 L19 12 L7 19.5 Z" fill="#2466e8" stroke="#3b352f" stroke-width="2" stroke-linejoin="round"/></svg><span class="lb">Keep flying</span></button>
         <button id="mute" class="wobbly"><svg viewBox="0 0 24 24"><path d="M4 9.5 H8 L13 5 V19 L8 14.5 H4 Z" fill="#fffaf0" stroke="#3b352f" stroke-width="2" stroke-linejoin="round"/><path class="on" d="M16 9 Q18 12 16 15 M18.5 6.5 Q22 12 18.5 17.5" fill="none" stroke="#3b352f" stroke-width="2" stroke-linecap="round"/><path class="off" d="M16.5 9.5 L21.5 14.5 M21.5 9.5 L16.5 14.5" fill="none" stroke="#b8452c" stroke-width="2.2" stroke-linecap="round"/></svg><span class="lb">Sound: on</span></button>
-        <button id="leaveGame" class="wobbly leave pf"><svg viewBox="0 0 24 24"><path d="M14 4 H19 V20 H14 M10 8 L6 12 L10 16 M6 12 H15" fill="none" stroke="#3b352f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lb">Back to EasyBosnian</span></button>
+        <button id="ebMenu" class="wobbly ebmenu pf"><img src="/favicon.svg" alt="" class="ebicon"><span class="lb">EasyBosnian menu</span></button>
         <button id="toMap" class="wobbly"><svg viewBox="0 0 24 24"><path d="M3 6 L9 4 L15 6 L21 4 V18 L15 20 L9 18 L3 20 Z M9 4 V18 M15 6 V20" fill="#fffaf0" stroke="#3b352f" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="lb">Bosnia map</span></button>
         <button id="restart" class="wobbly"><svg viewBox="0 0 24 24"><path d="M5.5 12 A6.5 6.5 0 1 0 8 6.9 M8 3.5 V7.2 H4.3" fill="none" stroke="#3b352f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><span class="lb">Restart level</span><small>clears this level's colours and words</small></span></button>
         <button id="toFinale" class="wobbly"><svg viewBox="0 0 24 24"><path d="M4 5 L12 12 L4 19 Z M12 5 L20 12 L12 19 Z" fill="none" stroke="#3b352f" stroke-width="1.8" stroke-linejoin="round"/></svg><span><span class="lb">Skip to the finale</span><small>colours everything and collects every word</small></span></button>
       </div>
     </div>
   </div></div>
+<img id="ebmark" class="pf" src="/email-logo.png" alt="">
 <div id="turn" class="overlay"><div class="card wobbly">Turn your phone sideways to play</div></div>
 <div id="start" class="overlay">
   <div class="card wobbly">
+    <img class="pf eblogo" src="/email-logo.png" alt="EasyBosnian">
     <h1>Slavuj</h1>
     <div class="sub">A nightingale colours <span class="town">the town</span> in, one Bosnian word at a time.</div>
     <div class="controls ph">
@@ -303,7 +310,7 @@
       </table>
     </div>
     <div class="go">Loading…</div>
-    <div class="foot"><a href="./" id="backMap">← Bosnia map</a><span class="pf"> · <a href="" class="leave">Back to EasyBosnian</a></span><span class="eb"> · <a href="https://easybosnian.com" target="_blank" rel="noopener" id="brand">easybosnian.com</a></span><span id="resetWrap" style="display:none"> · <button id="reset">start over</button></span></div>
+    <div class="foot"><a href="./" id="backMap">← Bosnia map</a><span class="pf"> · <a href="" class="ebmenu">EasyBosnian menu</a></span><span class="eb"> · <a href="https://easybosnian.com" target="_blank" rel="noopener" id="brand">easybosnian.com</a></span><span id="resetWrap" style="display:none"> · <button id="reset">start over</button></span></div>
   </div>
 </div>
 <button id="skip" class="wobbly off"><kbd>Enter</kbd> skip</button>

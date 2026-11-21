@@ -35,7 +35,7 @@ export function showBosnia() {
   const route = pins.filter((q) => !q.m.extra).map((q) => `${q.rx.toFixed(1)},${q.ry.toFixed(1)}`).join(' ');
   const H = GEO.h;
   el.innerHTML = `
-    <div class="bhead"><h1>Slavuj</h1><div class="bsub">Choose where to fly · each town is a season of the year</div></div>
+    <img class="pf eblogo" src="/email-logo.png" alt="EasyBosnian"><div class="bhead"><h1>Slavuj</h1><div class="bsub">Choose where to fly · each town is a season of the year</div></div>
     <svg class="bmap" viewBox="-20 -20 1040 ${H + 40}" preserveAspectRatio="xMidYMid meet">
       <defs>
         <filter id="wob"><feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="7"/></filter>
@@ -67,7 +67,7 @@ export function showBosnia() {
         </g>`).join('')}
     </svg>
     <div class="bfoot eb"><a href="https://easybosnian.com" target="_blank" rel="noopener">easybosnian.com</a></div>
-    <div class="bfoot pf"><a href="" class="leave">← Back to EasyBosnian</a></div>`;
+    <div class="bfoot pf"><a href="" class="ebmenu">EasyBosnian menu</a></div>`;
   // the place names sit clear of each other: Jahorina's label goes below the pin, Sarajevo's above
   // the frame hugs the map (a little beyond Bosnia's borders) instead of stretching across a wide screen
   const svg = el.querySelector('.bmap'), ratio = 1040 / (H + 40);
