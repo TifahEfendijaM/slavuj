@@ -164,6 +164,7 @@
   html:not(.platform) .pf { display: none !important; }      /* and its logo and menu, only there */
   /* on easybosnian: its logo, faint in a corner while playing (never in the way: it cannot be clicked), and at the top of the start card */
   #ebmark { position: fixed; left: calc(14px + env(safe-area-inset-left)); bottom: 12px; height: 20px; opacity: .55; pointer-events: none; z-index: 2; }
+  #start:not(.off) ~ #ebmark { display: none; }      /* (the start card shows the logo itself) */
   #start .eblogo { display: block; height: 26px; margin: -6px auto 4px; }
   .ebicon { width: 22px; height: 22px; flex: none; }
   #bosnia .eblogo { position: absolute; left: calc(16px + env(safe-area-inset-left)); top: 14px; height: 24px; z-index: 2; }
@@ -283,7 +284,6 @@
       </div>
     </div>
   </div></div>
-<img id="ebmark" class="pf" src="/email-logo.png" alt="">
 <div id="turn" class="overlay"><div class="card wobbly">Turn your phone sideways to play</div></div>
 <div id="start" class="overlay">
   <div class="card wobbly">
@@ -313,6 +313,7 @@
     <div class="foot"><a href="./" id="backMap">← Bosnia map</a><span class="pf"> · <a href="" class="ebmenu">EasyBosnian menu</a></span><span class="eb"> · <a href="https://easybosnian.com" target="_blank" rel="noopener" id="brand">easybosnian.com</a></span><span id="resetWrap" style="display:none"> · <button id="reset">start over</button></span></div>
   </div>
 </div>
+<img id="ebmark" class="pf" src="/email-logo.png" alt="">
 <button id="skip" class="wobbly off"><kbd>Enter</kbd> skip</button>
 <div id="fade"></div>
 <script type="module" src="/src/boot.js"></script>

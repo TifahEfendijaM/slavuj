@@ -19,7 +19,7 @@ pull().finally(start);
 function start() {
   if (MAP_ID) import('./main.js').then(loaded, failed);
   else {
-    for (const id of ['start', 'pause', 'hud', 'skip', 'journal', 'words', 'card', 'hint', 'learn', 'barTop', 'barBot']) document.getElementById(id)?.remove();
+    for (const id of ['start', 'pause', 'hud', 'skip', 'journal', 'words', 'card', 'hint', 'learn', 'barTop', 'barBot', 'ebmark']) document.getElementById(id)?.remove();
     document.title = 'Slavuj · Bosnia';
     import('./bosnia.js').then((m) => { loaded(); m.showBosnia(); }, failed);
   }
