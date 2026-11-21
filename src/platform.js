@@ -65,3 +65,10 @@ export function push(delay = 1200) {
 // the game shows what was earned (main.js sets this)
 let onXp = () => {};
 export function onXpAwarded(fn) { onXp = fn; }
+
+// leaving the game: the platform page around it closes it (in a frame); opened on its own, back to the platform's start
+export function leave() {
+  if (window.parent !== window) window.parent.postMessage({ type: 'slavuj:close' }, location.origin);
+  else location.href = '/';
+}
+if (PLATFORM) addEventListener('click', (e) => { const a = e.target.closest?.('.leave'); if (a) { e.preventDefault(); e.stopPropagation(); leave(); } }, true);

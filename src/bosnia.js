@@ -66,7 +66,8 @@ export function showBosnia() {
           <text y="92" class="pseason">${q.m.season} · ${q.m.en}${q.state === 'soon' ? ' · in development' : q.m.wip ? ' · beta' : ''}${q.state === 'soon' ? '' : q.n ? ` · ${q.words}/${q.n}` : ''}</text>
         </g>`).join('')}
     </svg>
-    <div class="bfoot eb"><a href="https://easybosnian.com" target="_blank" rel="noopener">easybosnian.com</a></div>`;
+    <div class="bfoot eb"><a href="https://easybosnian.com" target="_blank" rel="noopener">easybosnian.com</a></div>
+    <div class="bfoot pf"><a href="" class="leave">← Back to EasyBosnian</a></div>`;
   // the place names sit clear of each other: Jahorina's label goes below the pin, Sarajevo's above
   // the frame hugs the map (a little beyond Bosnia's borders) instead of stretching across a wide screen
   const svg = el.querySelector('.bmap'), ratio = 1040 / (H + 40);
