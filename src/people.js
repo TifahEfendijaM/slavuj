@@ -138,6 +138,8 @@ export function createPeople(scene, world, R) {
       const b = P(G.catBody, C, d, 0, 0.42, 0, C2); b.scale.set(0.17, 0.17, 0.36);
       const hd = p.dogHead = grp(d, 0, 0.58, 0.36); const hm = P(G.catBody, C, hd, 0, 0, 0, C2); hm.scale.set(0.13, 0.13, 0.15);
       const sn = P(G.catBody, '#f3e6cf', hd, 0, -0.03, 0.15); sn.scale.set(0.07, 0.06, 0.09);
+      p.dogJaw = grp(hd, 0, -0.07, 0.08); const jw = P(G.catBody, '#e8d3b4', p.dogJaw, 0, -0.008, 0.08, '#c9a882'); jw.scale.set(0.05, 0.022, 0.08);      // the lower jaw: it opens to bark
+      p.barkT = 9;
       for (const s of [-1, 1]) { const e = P(G.catBody, C2, hd, s * 0.11, 0.03, -0.02); e.scale.set(0.035, 0.09, 0.06); }
       p.dogLegs = [[0.09, 0.22], [-0.09, 0.22], [0.09, -0.22], [-0.09, -0.22]].map(([x, z]) => { const g = grp(d, x, 0.3, z); const m = P(G.catLeg, C, g, 0, 0, 0, C2); m.scale.y = 1.15; return g; });
       p.dogTail = grp(d, 0, 0.5, -0.33); const tl = P(G.catTail, C, p.dogTail, 0, 0, 0, C2); tl.scale.set(0.8, 0.55, 0.8); p.dogTail.rotation.x = -0.9;
@@ -500,7 +502,13 @@ export function createPeople(scene, world, R) {
               p.dogLegs.forEach((l, i) => { l.rotation.x = (i === 0 || i === 3 ? ds : -ds); });
               p.dogTail.rotation.z = alive ? Math.sin(t * 9) * 0.5 : 0.2; p.dogHead.rotation.y = alive ? Math.sin(t * 0.8) * 0.3 : 0.25; p.dog.position.y = alive ? Math.abs(Math.sin(t * 11)) * 0.02 : 0;
               p.dog.getWorldPosition(dogP); p.dogBlock.matrixWorld.setPosition(dogP.x, dogP.y + 0.4, dogP.z);
-              if (alive && R() < dt / 16) this.onBark?.(dogP);
+              if (alive && R() < dt / 16) { p.barkT = 0; this.onBark?.(dogP); }
+              // a bark: two woofs (at 0 and 0.4 s, as in the sound). For each the nose comes up, the jaw drops and the head snaps
+              // forward and down; the tail stands up meanwhile
+              p.barkT += dt;
+              const woof = (t0) => { const u = (p.barkT - t0) / 0.22; return u > 0 && u < 1 ? Math.sin(Math.PI * u) : 0; }, wf = Math.max(woof(0), woof(0.4)), barking = p.barkT < 0.75;
+              p.dogHead.rotation.x = -0.35 * wf + (barking ? 0.06 : 0); p.dogJaw.rotation.x = 0.55 * wf;
+              if (barking) { p.dogHead.rotation.y *= 0.3; p.dogTail.rotation.x = -1.3; p.dogTail.rotation.z *= 0.4; } else p.dogTail.rotation.x = -0.9;
               if (alive) go(dogP, p.root.rotation.y, 0.5, 0.7);      // a bark now and then (the sound is played in main.js)
             }
           }

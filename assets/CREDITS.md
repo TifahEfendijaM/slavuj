@@ -13,7 +13,7 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | `audio/sfx/applause.mp3` | The crowd's applause | BigSoundBank, Joseph Sardin: "Applause about 25-50 people #1" (0812) | CC0 |
 | `audio/sfx/horse-neigh.mp3` | The horse neighing | BigSoundBank, Joseph Sardin: "Horse Neighing #3" (0863) | CC0 |
 | `audio/sfx/cat-meow.mp3` | The cat miaowing | BigSoundBank, Joseph Sardin: "Little Meow of a Cat #1" (0494) | CC0 |
-| `audio/sfx/dog-bark.mp3` | The dog barking (two barks cut from the recording) | BigSoundBank, Joseph Sardin: "Small dog barking" (0612) | CC0 |
+| `audio/sfx/dog-bark.mp3`, `audio/sfx/dog-bark2.mp3` | The dog barking (two double barks cut from the recording) | BigSoundBank, Joseph Sardin: "Barking Dog #2" (2954) | CC0 |
 | `audio/sfx/fountain.mp3` | The šadrvan's water (24 s loop, mono) | BigSoundBank, Joseph Sardin: "Fountain of a Japanese Temple" (0913) | CC0 |
 
 Everything else is generated in code and belongs to the project: the bird, the town, all textures, the journal drawing, the music and the other sound effects.

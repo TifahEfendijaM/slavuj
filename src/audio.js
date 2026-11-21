@@ -130,7 +130,7 @@ export function baa(g = 1) {
 // the horse neighing and the cat miaowing, as loud as they are near (g 0..1)
 export function neigh(g = 1) { if (ctx && g > 0) clip('horse-neigh', 0.38 * g); }
 export function meow(g = 1) { if (ctx && g > 0) clip('cat-meow', 0.3 * g); }
-export function bark(g = 1) { if (ctx && g > 0) clip('dog-bark', 0.32 * g); }
+export function bark(g = 1) { if (ctx && g > 0) clip(Math.random() < 0.5 ? 'dog-bark' : 'dog-bark2', 0.34 * g); }      // two woofs; one of two takes
 // the šadrvan's water: one quiet loop, as loud as the bird is near it (0 = silent)
 let fountainGain = null;
 export function setFountain(g) {
