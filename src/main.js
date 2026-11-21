@@ -245,15 +245,15 @@ function restartLevel() { try { localStorage.removeItem(KEY); localStorage.remov
 // for testing: everything coloured and every word collected, only the fleur-de-lis and the finale left
 function skipToFinale() { save = { done: orbs.map((o) => o.id), finale: false }; store(); reload(); }
 $('reset').addEventListener('click', restartLevel);
-{ const b = $('mute'), show = () => { b.textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'; }; show();
+{ const b = $('mute'), show = () => { b.querySelector('.lb').textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'; b.classList.toggle('muted', audio.isMuted()); }; show();
   b.addEventListener('click', (e) => { e.stopPropagation(); audio.setMuted(!audio.isMuted()); show(); }); }
 for (const [id, fn] of [['restart', restartLevel], ['toFinale', skipToFinale]]) {
-  const b = $(id), label = b.textContent; let armed = 0;
+  const b = $(id), lb = b.querySelector('.lb'), label = lb.textContent; let armed = 0;
   b.addEventListener('click', (e) => {
     e.stopPropagation();
     if (armed) return fn();
-    armed = 1; b.textContent = 'Sure? Click again'; b.classList.add('armed');
-    setTimeout(() => { armed = 0; b.textContent = label; b.classList.remove('armed'); }, 3500);
+    armed = 1; lb.textContent = touch ? 'Sure? Tap again' : 'Sure? Click again'; b.classList.add('armed');
+    setTimeout(() => { armed = 0; lb.textContent = label; b.classList.remove('armed'); }, 3500);
   });
 }
 if (save.done.length) $('resetWrap').style.display = '';
@@ -306,9 +306,6 @@ const touch = isTouch ? setupTouch(inp, {
 $('start').querySelector('.go').textContent = touch ? 'Tap to fly' : 'Click to fly';      // (it says Loading… until here)
 if (touch) {
   noLock = true;
-  $('pause').querySelector('.card').firstChild.textContent = 'Paused · tap to keep flying';
-  $('pause').querySelector('table').innerHTML = '<tr><td>Drag anywhere</td><td>steer</td></tr><tr><td>Flap</td><td>flap hard to climb</td></tr><tr><td>Hold dive</td><td>dive</td></tr>'
-    + '<tr class="gap"><td>Feather</td><td>journal</td></tr><tr><td>Note</td><td>sing</td></tr>';
   $('words').querySelector('.esc').innerHTML = '<button id="wclose" class="wobbly">close</button> · tap the speaker to hear a word';
   $('wclose').addEventListener('click', () => { if (state === 'words') closeWords(); });
   $('jclose').textContent = 'close'; $('skip').textContent = 'skip';
