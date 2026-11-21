@@ -26,7 +26,7 @@ function plant(z, hipY) {      // the foot hangs 0.06 ahead of the ankle along t
 }
 const OFF = plant(Z_OFF, runHipY(0.7)), LAND = plant(Z_LAND, runHipY(0));
 // toe-off → heel kicks up → passing (foot tucked high under) → knee drive → reach → land
-const SWING = [[STANCE, ...OFF], [0.45, 0.5, 1.5], [0.55, 0.2, 2.0], [0.68, -0.4, 1.9], [0.8, -0.85, 1.2], [0.92, -0.75, 0.6], [1, ...LAND]];
+const SWING = [[STANCE, ...OFF], [0.43, 0.42, 0.5], [0.52, 0.22, 1.15], [0.63, -0.2, 1.6], [0.76, -0.7, 1.4], [0.89, -0.82, 0.75], [1, ...LAND]];      // (the foot lifts and comes through in one arc, with no flick back after toe-off)
 function runLeg(u, hipY) {
   if (u < STANCE) return plant(Z_LAND + (Z_OFF - Z_LAND) * (u / STANCE), hipY);
   let i = 0; while (SWING[i + 1][0] < u) i++;
@@ -249,7 +249,7 @@ export function createPeople(scene, world, R) {
       a.neck = grp(root, 0, 1.4, 0.62); E(C, a.neck, 0, 0.32, 0.2, 0.15, 0.42, 0.2, C2).rotation.x = 0.55; E(C, a.neck, 0, 0.68, 0.52, 0.12, 0.14, 0.3, C2).rotation.x = 0.5;
       for (const s of [-1, 1]) E(C2, a.neck, s * 0.07, 0.86, 0.36, 0.03, 0.08, 0.04); E(D, a.neck, 0, 0.42, 0.06, 0.05, 0.4, 0.1).rotation.x = 0.55;
       for (const [x, z] of [[0.18, 0.5], [-0.18, 0.5], [0.18, -0.5], [-0.18, -0.5]]) { const g = grp(root, x, 1.0, z); const m = P(G.catLeg, C, g, 0, 0, 0, C2); m.scale.set(1.5, 3.85, 1.5); a.legs.push(g); }
-      a.tail = grp(root, 0, 1.35, -0.76); const t = P(G.catTail, D, a.tail, 0, 0, 0); t.scale.set(1.2, 1.3, 1.2); a.tail.rotation.x = Math.PI - 0.35;
+      a.tail = grp(root, 0, 1.36, -0.8); const t = P(G.catTail, D, a.tail, 0, 0, 0); t.scale.set(1.2, 1.3, 1.2); a.tail.rotation.x = Math.PI + 0.55;      // (hangs down and back, clear of the hindquarters)
       a.block = block(o.x, o.y + 1, o.z, 1.7, 2, 1.7, { wall: true, person: true });
     } else {
       const W = '#f4f0e4', W2 = '#d6cfbc', D = '#3a342e';
@@ -406,12 +406,13 @@ export function createPeople(scene, world, R) {
     m.position.set(x, y, z); m.scale.set(sx, sy, sz); addHull(m, 1.5); parent.add(m); return m;
   };
   const cbody = new THREE.Group(); cat.add(cbody);
-  CP(G.catBody, cbody, 0, 0.36, 0, 0.42, 0.28, 0.25);
+  CP(G.catBody, cbody, 0, 0.36, 0, 0.4, 0.22, 0.19);
   const chead = new THREE.Group(); chead.position.set(0.38, 0.6, 0); cbody.add(chead);
   CP(G.catBody, chead, 0, 0, 0, 0.2, 0.19, 0.2); for (const s of [-1, 1]) CP(G.ear, chead, 0.02, 0.2, s * 0.11);
   const ctail = new THREE.Group(); ctail.position.set(-0.4, 0.4, 0); cbody.add(ctail); CP(G.catTail, ctail, 0, 0, 0);
   const clegs = [[0.24, 0.1], [0.24, -0.1], [-0.24, 0.1], [-0.24, -0.1]].map(([x, z]) => { const g = new THREE.Group(); g.position.set(x, 0.26, z); cbody.add(g); CP(G.catLeg, g, 0, 0, 0); return g; });
   const catS = { walk: 0, x: C.x, dir: 1, rest: 2 };
+  const CAT_SIT = { tilt: 0.5, drop: 0.04, front: 1.17, hind: 0.95, walkY: 0.0 };
 
   return {
     flagCloth: cloth, animals,
@@ -685,9 +686,10 @@ export function createPeople(scene, world, R) {
       const moving = alive && c.rest < 0; c.walk += ((moving ? 1 : 0) - c.walk) * k(5, dt);
       if (alive && !moving && R() < dt / 14) this.onMeow?.(cat.position);      // a miaow now and then while it sits (the sound is played in main.js)
       cat.position.x = c.x; cat.rotation.y = c.dir > 0 ? 0 : Math.PI; world.catBlock.matrixWorld.setPosition(c.x, C.y + 0.4, C.z);
-      cbody.rotation.z = (1 - c.walk) * 0.5; cbody.position.y = c.walk * 0.06;
+      // sitting up: the body tilts back onto its haunches, the front legs stand straight and upright, the hind legs fold under it
+      const sit = 1 - c.walk; cbody.rotation.z = sit * CAT_SIT.tilt; cbody.position.y = c.walk * CAT_SIT.walkY - sit * CAT_SIT.drop;
       const sw = Math.sin(time * 9) * 0.5 * c.walk;
-      clegs.forEach((l, i) => { l.rotation.z = (i === 0 || i === 3 ? sw : -sw); l.scale.y = 0.35 + 0.65 * c.walk; });
+      clegs.forEach((l, i) => { const front = i < 2; l.rotation.z = (i === 0 || i === 3 ? sw : -sw) + sit * (front ? -CAT_SIT.tilt : CAT_SIT.hind); l.scale.y = front ? 1 + sit * (CAT_SIT.front - 1) : 1; });
       ctail.rotation.z = 0.5 + (alive ? Math.sin(time * 1.7) * 0.35 : 0); ctail.rotation.x = alive ? Math.sin(time * 1.1) * 0.3 : 0;
       chead.rotation.y = alive && !moving ? Math.sin(time * 0.8) * 0.5 : 0;
       }
