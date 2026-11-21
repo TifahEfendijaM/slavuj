@@ -50,7 +50,9 @@ export class Flight {
 
   // stand on the surface. Each foot finds its own ground; the body is lifted just enough to stay clear
   // of it, and leans with the slope only where the surface is really steep (a tower roof, a cliff).
-  settle(p, again) {
+  settle(p, again, pushed) {
+    // first: standing against a wall (a narrow window ledge), it steps out until its body is clear of the wall
+    if (!pushed) { const out = this.wallPush(p); if (out) p = out; }
     const sc = S.bird.scale, f = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), l = new THREE.Vector3(f.z, 0, -f.x);
     const nrm = new THREE.Vector3(), g = [];
     for (const [a, b] of [[0, 0], [0.32, 0], [-0.32, 0], [0.18, 0.15], [0.18, -0.15], [-0.18, 0.15], [-0.18, -0.15], [0, 0.21], [0, -0.21]]) {
@@ -62,7 +64,7 @@ export class Flight {
     if (nrm.lengthSq() < 0.01) nrm.set(0, 1, 0); nrm.normalize();
     const st = clamp((0.8 - nrm.y) / 0.18, 0, 1), lean = st * st * (3 - 2 * st) * 0.85;
     // on a really steep surface it clings facing up the slope, which is how a bird holds on
-    if (st > 0.5 && !again) { this.yaw = Math.atan2(-nrm.x, -nrm.z); return this.settle(p, true); }
+    if (st > 0.5 && !again) { this.yaw = Math.atan2(-nrm.x, -nrm.z); return this.settle(p, true, pushed); }
     this.perchPitch = -Math.asin(clamp(nrm.dot(f), -1, 1)) * lean; this.perchRoll = -Math.asin(clamp(nrm.dot(l), -1, 1)) * lean;
     const tp = Math.tan(this.perchPitch), tr = Math.tan(this.perchRoll), D0 = 0.3 * sc, az = 0.4 * sc, ax = 0.26 * sc;
     let y = p.y + this.perchH;
@@ -80,6 +82,41 @@ export class Flight {
       const h = this.cast(_o, DOWN, this.perchH + 0.9 * sc);
       return h && !h.object.userData.water ? { p: h.point.clone(), n: h.n } : { p: _o.clone().setY(_o.y - this.perchH), n: UP.clone() };
     });
+  }
+
+  // the body seen from above is an ellipse (0.4 long, 0.26 wide, times the bird's scale). Feel all round it, at the height
+  // of the body and of the head, for walls closer than its edge; return the spot moved clear of them, null if it is
+  // clear already, or false if it cannot fit there at all (a narrow gap between a wall and a flower box)
+  wallPush(p) {
+    const sc = S.bird.scale, az = 0.4 * sc + 0.03, ax = 0.26 * sc + 0.03, push = new THREE.Vector3(), d = new THREE.Vector3();
+    // only the fixed solid things within reach are felt for (their bounds are worked out once); people and animals are not walls
+    const near = [];
+    for (const c of this.colliders) {
+      if (c.userData.person || c.userData.swimmer || c.userData.water) continue;
+      if (!c.userData._ws) { if (!c.geometry.boundingSphere) c.geometry.computeBoundingSphere(); c.updateMatrixWorld(); c.userData._ws = c.geometry.boundingSphere.clone().applyMatrix4(c.matrixWorld); }
+      const w = c.userData._ws; if (w.center.distanceToSquared(p) < (w.radius + 1) ** 2) near.push(c);
+    }
+    if (!near.length) return null;
+    const feel = (o, dir, far) => { this.ray.set(o, dir); this.ray.far = far; const h = this.ray.intersectObjects(near, false)[0]; if (h) h.n = h.face.normal.clone().applyMatrix3(_nm.getNormalMatrix(h.object.matrixWorld)).normalize(); return h; };
+    for (let pass = 0; pass < 6; pass++) {
+      let moved = false;
+      for (let i = 0; i < 16; i++) {
+        const a = (i / 16) * Math.PI * 2, rel = a - this.yaw, r = 1 / Math.sqrt((Math.cos(rel) / az) ** 2 + (Math.sin(rel) / ax) ** 2);
+        d.set(Math.sin(a), 0, Math.cos(a));
+        for (const hy of [this.perchH * 0.9, this.perchH * 1.6]) {
+          _o.set(p.x + push.x, p.y + hy, p.z + push.z);
+          const h = feel(_o, d, r);
+          if (h && Math.abs(h.n.y) < 0.6 && !h.object.userData.water && r - h.distance > 0.005) { push.addScaledVector(d, -(r - h.distance) * 0.7); moved = true; }
+        }
+      }
+      if (!moved) break;
+      if (pass === 5) return false;      // still against something after every try: no room
+    }
+    if (push.lengthSq() < 1e-6) return null;
+    if (push.length() > 0.45) return false;
+    // it must still have ground under it there
+    _o.set(p.x + push.x, p.y + 0.3, p.z + push.z); const g = this.cast(_o, DOWN, 0.6);
+    return g && !g.object.userData.water && Math.abs(g.point.y - p.y) < 0.25 ? g.point.clone() : false;
   }
 
   // On the ground, holding the mouse button walks, then runs. Small steps up and down are hopped;
@@ -151,7 +188,7 @@ export class Flight {
   // is there room above this spot for the bird's body? (not under an overhanging roof or a ledge)
   roomAt(point) { _o.copy(point); _o.y += 0.03; return !this.cast(_o, UP, 0.42 * S.bird.scale + this.perchH); }
   land(hit) {
-    if (!this.roomAt(hit.point)) return false;          // no room: it does not land here
+    if (!this.roomAt(hit.point) || this.wallPush(hit.point) === false) return false;          // no room (above it, or for its body beside a wall): it does not land here
     this.landHit = Math.max(0, -this.vel.y) + this.speed * 0.15;      // how hard it comes down (for the give in its legs)
     this.mode = 'perched'; this.speed = 0; this.vel.set(0, 0, 0); this.diving = this.power = false; this.flare = 0;
     this.hop = null; this.walk = 0; this.camElev = 0.3; this.mousePitch = 0; this.clearL = this.clearR = 1;
