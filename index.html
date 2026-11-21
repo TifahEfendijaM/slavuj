@@ -41,6 +41,7 @@
   #start td { white-space: nowrap; }      /* (in a narrow window the two groups stack instead of squeezing) */
   #start table { font-size: 19px; border-spacing: 12px 6px; text-align: left; }
   #start th { font-family: 'Caveat', cursive; font-size: 25px; font-weight: 700; color: var(--blue); text-align: left; padding-bottom: 2px; }
+  #start kbd.wide { display: inline-block; width: calc(0.975em + 20px); text-align: left; }      /* as wide as the J and F keys above it together */
   #start td:first-child { text-align: right; white-space: nowrap; } #start td i { font-style: normal; opacity: .6; }
   #start .go { font-size: 30px; font-family: 'Caveat', cursive; font-weight: 700; }
   #start .foot { font-size: 16px; margin-top: 10px; opacity: .8; }
@@ -310,7 +311,7 @@
         <tr><th></th><th>Words &amp; more</th></tr>
         <tr><td><kbd>E</kbd></td><td>open an orb's word list</td></tr>
         <tr><td><kbd>J</kbd> <kbd>F</kbd></td><td>journal · sing</td></tr>
-        <tr><td><kbd>Esc</kbd></td><td>pause</td></tr>
+        <tr><td><kbd class="wide">Esc</kbd></td><td>pause</td></tr>
       </table>
     </div>
     <div class="go">Loading…</div>
