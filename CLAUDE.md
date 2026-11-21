@@ -6,11 +6,11 @@ Three.js + Vite. Live at https://tifahefendijam.github.io/slavuj/ (repo TifahEfe
 
 ## Status
 - Only Mostar (summer, approved) is public. Sarajevo (autumn), Jahorina (winter), Jajce (spring) and Neum (summer, extra) are built but marked `wip` in `src/maps/index.js`: on the public site they show on the Bosnia map, locked, as "in development"; locally they play with a "Work in progress" banner. The user is leaning towards redoing them.
-- Next big step (not started): putting the game on the easybosnian platform (repo fahro/bosanski-jezik, branch `develop`; the user has write access, Fahrudin owns it). Plan discussed on 2026-11-21: a public page such as `/slavuj` on the website plus a row in the app's Practice tab; the game stays its own build in a folder of the site; progress in the browser for guests and saved to the account when signed in; no easybosnian.com links inside the platform version. Open questions: energy cost or XP, app size (~10 MB), a new backend endpoint for progress. Work on a feature branch and a pull request into `develop`, never `main`.
+- On easybosnian (merged into `develop` on 2026-11-21, PRs #10 and #11; live on the test site, not yet on easybosnian.com): the page `/slavuj`, a band on the home page, a card on the dashboard (the nightingale mascot), and in the app's Practice tab a row plus the glowing mascot ("Tap the bird to play Slavuj"). Free, no energy; XP 2 per word learned and 20 per finished map, once each ("Skip to the finale" earns none). Guests save in the browser; signed-in players also on the account. Later: animate the Practice mascot (flap, head turn, wink; no sound).
 
 ## Maps
 - Summer: Mostar. Autumn: Sarajevo old town with Žuta tabija. Winter: Jahorina. Spring: Jajce. Extra: Neum. Also liked: Trebević, Igman, Vrelo Bosne, Blagaj.
-- About 40 words per map; words without a recording use the browser's synthetic voice (record.html lists every map's words). *Ljubav* (was *ašikovanje*) still needs recording.
+- About 40 words per map; words without a recording use the browser's synthetic voice (record.html lists every map's words). *Ljubav* (was *ašikovanje*) is recorded.
 - "Skip to the finale" (pause menu) is for players too. `?unlock` opens every map on the Bosnia map (locally).
 
 ## Rules from the user
@@ -32,6 +32,16 @@ Three.js + Vite. Live at https://tifahefendijam.github.io/slavuj/ (repo TifahEfe
 - `src/settings.js`: values to tweak. `src/vocab.js`: Mostar's words. `src/fall.js`: falling leaves and blossom.
 - `src/people.js`: people and animals (and what walks towards the bird, so it flies off). `src/flight.js`: flying, landing, walking, swimming. `src/main.js`: game flow.
 - `assets/audio/words/`: the user's own recordings, made with `record.html` (dev server only). `assets/photos/`: default journal photos.
+
+## GitHub: where changes go
+- **This game, `TifahEfendijaM/slavuj`**:
+  - `main` is the public game: every push republishes https://tifahefendijam.github.io/slavuj/ (GitHub Pages workflow). Commit finished, approved changes here.
+  - `dev` is for work in progress and experiments (the platform build, art-style trials). Pushing it publishes nothing. Merge `main` into `dev` after each public change, and `dev` into `main` only when the user approves.
+- **The easybosnian platform, `fahro/bosanski-jezik`** (owner Fahrudin; the user has write access). Local copy: `~/Documents/bosanski-jezik`, a partial checkout without `backend/static` media.
+  - The game lives there as a build in `frontend/public/games/slavuj/`, made with `npm run build:platform` from a clean copy of `dev` (so recordings not yet committed stay out), plus `pages/Slavuj.jsx`, `utils/slavujText.js`, `backend/app/routes/slavuj.py` and `backend/tests/test_slavuj.py`.
+  - To update it: make a new branch from the latest `develop`, commit, push, open a pull request into `develop` and merge it (Fahrudin allows the user to add to `develop`). About ten minutes after the merge it is live on the test site, https://bosanski-test.up.railway.app/slavuj.
+  - Never push or merge into `main` there: `main` deploys the live easybosnian.com, and Fahrudin moves `develop` into it.
+  - Their CI's frontend `test:progress` check already fails on `develop` (4 tests, not ours).
 
 ## Working on it
 - `npm run dev` (port 5183). Test with `?slot=test&fresh` so the user's save is untouched; `window.__game` has test hooks (`step`, `skipToFinale`, `startFinale`, `view`, `checkShots`, `flight`, `people`...).
