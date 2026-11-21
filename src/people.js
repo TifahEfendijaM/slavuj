@@ -714,7 +714,7 @@ export function createPeople(scene, world, R) {
         a.walk += ((moving ? 1 : 0) - a.walk) * k(4, dt);
         if (moving) go(a.root.position, a.root.rotation.y, a.size, a.o.kind === 'horse' ? 2.2 : 1.2);
         // now and then the horse lifts its head high and neighs (the sound is played in main.js)
-        if (a.o.kind === 'horse' && alive && !moving && !(a.neigh > 0) && R() < dt / 16) { a.neigh = 2.8; this.onNeigh?.(a.root.position); }
+        if (a.o.kind === 'horse' && alive) { a.nextNeigh = (a.nextNeigh ?? 4 + R() * 4) - dt; if (a.nextNeigh <= 0 && !moving && !(a.neigh > 0)) { a.neigh = 2.8; a.nextNeigh = 12 + R() * 10; this.onNeigh?.(a.root.position); } }      // a neigh every 12 to 22 s (once it stands still)
         if (a.neigh > 0) a.neigh -= dt;
         const proud = a.neigh > 0 ? sm(Math.min(1, (2.8 - a.neigh) / 0.3, a.neigh / 0.6)) : 0, toss = a.neigh > 0 ? Math.sin((2.8 - a.neigh) * 8) * 0.14 * proud : 0;
         const down = alive ? (1 - a.walk) * sm(Math.sin(t * 0.5) * 2 + 1.1) * (1 - proud) : 0.3;
