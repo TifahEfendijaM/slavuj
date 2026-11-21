@@ -242,7 +242,7 @@ $('start').addEventListener('click', (e) => {
 });
 function reload() { if (!fresh) return location.reload(); params.delete('fresh'); const q = params.toString(); location.href = location.pathname + (q ? '?' + q : ''); }
 function restartLevel() { try { localStorage.removeItem(KEY); localStorage.removeItem(PICS); } catch (e) { /* */ } reload(); }
-// for testing: everything coloured and every word collected, only the fleur-de-lis and the finale left
+// skip to the finale (for players too): everything coloured and every word collected, only the fleur-de-lis and the finale left
 function skipToFinale() { save = { done: orbs.map((o) => o.id), finale: false }; store(); reload(); }
 $('reset').addEventListener('click', restartLevel);
 { const b = $('mute'), show = () => { b.querySelector('.lb').textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'; b.classList.toggle('muted', audio.isMuted()); }; show();
