@@ -271,10 +271,10 @@ export function buildWorld(scene) {
         box(cw + 0.4, 0.22, cw + 0.4, cx, cy + 1.9, cz, { ...CH, col: cc[1], bleed: cc[1] });
       }
       const dx = o.doorX ?? -w * 0.22;
-      box(1.25, 2.15, 0.16, dx, 1.08, d / 2 + 0.05, { tag: 'door', col: dc, bleed: '#4a3020', pat: PAT.planks, ps: 4, pool: 1, solid: false });
+      box(1.25, 2.15, 0.16, dx, 1.08, d / 2 + 0.05, { tag: 'door', col: dc, bleed: '#4a3020', pat: PAT.planks, ps: 4, pool: 1, wall: true });
       box(2.1, 0.3, 1.2, dx, 0.15, d / 2 + 0.6, { tag: 'door', col: '#cfc4ad', bleed: '#b4a688', orb: o.doorOrb });
       const win = (px, py, pz, wr, big, fl, open) => {
-        const ww = big ? 2.4 : 0.95, wh = big ? 1.6 : 1.25, Wn = { tag: 'window', pool: 1, solid: false };
+        const ww = big ? 2.4 : 0.95, wh = big ? 1.6 : 1.25, Wn = { tag: 'window', pool: 1, wall: true };      // (solid: the bird keeps clear of the glass and shutters; wall: it cannot stand on their thin tops)
         b.push(mat4(px, py, pz, wr));
         box(ww, wh, 0.1, 0, 0, 0.02, { ...Wn, col: open ? '#54463c' : '#6a93ad', bleed: open ? '#3c322b' : '#44708f' });
         for (const sg of [-1, 1]) box(ww * 0.25, wh, 0.07, sg * ww * 0.63, 0, 0.04, { ...Wn, col: trim, bleed: trim, pat: PAT.planks, ps: 3 });

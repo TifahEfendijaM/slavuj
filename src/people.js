@@ -391,7 +391,7 @@ export function createPeople(scene, world, R) {
   const ballHome = new THREE.Vector3(...(world.ball || [31.2, 12.29, 76.2])), BP = painter('ball', ballHome, 1), ball = kickers.length ? BP(G.ball, '#f8f4ea', scene, 0, 0, 0, '#cfd6d8') : new THREE.Object3D();
   ball.scale.setScalar(0.17); ball.position.copy(ballHome);
   const ballBlock = kickers.length ? block(ballHome.x, ballHome.y, ballHome.z, 0.4, 0.4, 0.4, { wall: true, person: true }) : new THREE.Object3D(), dogP = new THREE.Vector3();
-  const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3();
+  const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3();
 
   // ---- the slide: where the sliding child is at each moment of its round ----
   const SLD = world.slide || { x: 0, y: 0, z: 0 }, kidS = 1.05 * 0.66, seatDrop = 0.36 * 0.66;
@@ -439,7 +439,7 @@ export function createPeople(scene, world, R) {
     applaud() { for (const p of list) if (p.o.kind === 'watch') p.cheer = true; },
     update(dt, time, life, bird) {
       const mv = this.movers = [];      // whatever is walking this frame (where, which way, how wide): main.js lifts the bird out of their way
-      const go = (pos, ry, r, h) => mv.push({ x: pos.x, y: pos.y, z: pos.z, fx: Math.sin(ry), fz: Math.cos(ry), r, h });
+      const go = (pos, ry, r, h, v = 1.2) => mv.push({ x: pos.x, y: pos.y, z: pos.z, fx: Math.sin(ry), fz: Math.cos(ry), r, h, v });      // v: how fast it comes (the faster, the sooner the bird must go)
       const alive = life > 0.5;
       for (const p of list) {
         const t = time * (alive ? 1 : 0) + p.phase, [a0, a1] = p.arms, o = p.o;
@@ -455,7 +455,7 @@ export function createPeople(scene, world, R) {
           }
           if (alive) {
             p.block.matrixWorld.setPosition(p.root.position.x, p.root.position.y + p.sc, p.root.position.z);
-            go(p.root.position, p.root.rotation.y, (o.kind === 'bike' ? 0.9 : 0.45) * p.sc, 1.9 * p.sc);
+            go(p.root.position, p.root.rotation.y, (o.kind === 'bike' ? 0.9 : 0.45) * p.sc, 1.9 * p.sc, speed);
           }
           if (o.kind === 'bike') {
             const ph = alive ? t * 5.2 : 1.1;
@@ -502,7 +502,7 @@ export function createPeople(scene, world, R) {
               p.dogLegs.forEach((l, i) => { l.rotation.x = (i === 0 || i === 3 ? ds : -ds); });
               p.dogTail.rotation.z = alive ? Math.sin(t * 9) * 0.5 : 0.2; p.dogHead.rotation.y = alive ? Math.sin(t * 0.8) * 0.3 : 0.25; p.dog.position.y = alive ? Math.abs(Math.sin(t * 11)) * 0.02 : 0;
               p.dog.getWorldPosition(dogP); p.dogBlock.matrixWorld.setPosition(dogP.x, dogP.y + 0.4, dogP.z);
-              if (alive && R() < dt / 16) { p.barkT = 0; this.onBark?.(dogP); }
+              if (alive && (p.nextBark = (p.nextBark ?? 3 + R() * 5) - dt) <= 0) { p.nextBark = 10 + R() * 10; p.barkT = 0; this.onBark?.(dogP); }      // a bark every 10 to 20 s: a few on every lap (about 40 s)
               // a bark: two woofs (at 0 and 0.4 s, as in the sound). For each the nose comes up, the jaw drops and the head snaps
               // forward and down; the tail stands up meanwhile
               p.barkT += dt;
@@ -623,14 +623,14 @@ export function createPeople(scene, world, R) {
           const a = alive ? Math.sin(t * 2.3) * 0.6 : 0.3;
           p.pivot.rotation.x = a; for (const l of p.legs) l.knee.rotation.x = 1.1 - (alive ? Math.cos(t * 2.3) * 0.6 : 0.4); p.torso.rotation.x = alive ? -Math.cos(t * 2.3) * 0.2 : 0;
         } else if (o.kind === 'keeper') {
-          if (alive) { p.root.position.z = o.z + Math.sin(t * 1.3) * 0.9; p.block.matrixWorld.setPosition(o.x, o.y + p.sc, p.root.position.z); }
+          if (alive) { p.root.position.z = o.z + Math.sin(t * 1.3) * 0.9; p.block.matrixWorld.setPosition(o.x, o.y + p.sc, p.root.position.z); go(p.root.position, Math.cos(t * 1.3) > 0 ? 0 : Math.PI, 0.45 * p.sc, 1.9 * p.sc, 1.2); }      // (shuffling from side to side)
           p.hips.position.y = 0.84 + (alive ? Math.abs(Math.sin(t * 2.6)) * 0.04 : 0); for (const a of p.arms) a.sh.rotation.z = a.s * (0.95 + (alive ? Math.sin(t * 2.6) * 0.15 : 0));
         } else if (o.kind === 'cheer') {
           const j = alive ? Math.abs(Math.sin(t * 3.4)) : 0;
           p.root.position.y = p.y0 + j * 0.14; a1.sh.rotation.z = 2.5 + (alive ? Math.sin(t * 6.8) * 0.3 : 0); a0.sh.rotation.z = alive ? -0.4 - j * 1.6 : -0.2; p.head.rotation.x = -0.15;
         } else if (o.kind === 'slide') {
           const [sit, ry, walk, climb] = alive ? slideAt(time + p.phase, tmpA) : [1, -Math.PI / 2, 0, 0];
-          if (alive) { p.root.position.set(SLD.x + tmpA.x, SLD.y + tmpA.y, SLD.z + tmpA.z); p.root.rotation.y += Math.atan2(Math.sin(ry - p.root.rotation.y), Math.cos(ry - p.root.rotation.y)) * k(8, dt); }
+          if (alive) { p.root.position.set(SLD.x + tmpA.x, SLD.y + tmpA.y, SLD.z + tmpA.z); p.root.rotation.y += Math.atan2(Math.sin(ry - p.root.rotation.y), Math.cos(ry - p.root.rotation.y)) * k(8, dt); if (walk > 0.3 || sit > 0.3) go(p.root.position, p.root.rotation.y, 0.45 * p.sc, 1.9 * p.sc, sit > 0.3 ? 3 : 1.4); }
           else p.root.position.set(SLD.x + TOPSEAT.x, SLD.y + TOPSEAT.y, SLD.z);
           const sw = Math.sin(t * 8) * 0.6 * walk * (1 - sit);
           p.hips.position.y = 0.92 - 0.42 * sit;
@@ -651,6 +651,7 @@ export function createPeople(scene, world, R) {
         for (const [p, v] of [[kickers[0], tmpA], [kickers[1], tmpB]]) v.copy(p.root.position).add(new THREE.Vector3(Math.sin(p.root.rotation.y) * 0.45, 0, Math.cos(p.root.rotation.y) * 0.45));
         ball.position.lerpVectors(tmpA, tmpB, h); ball.position.y = ballHome.y + Math.abs(Math.sin(time * 2.3)) * 0.35 * Math.sin(Math.PI * h); ball.rotation.x += dt * 5;
         ballBlock.matrixWorld.setPosition(ball.position.x, ball.position.y, ball.position.z);
+        { const to = Math.sin(time * 1.15) > 0 ? tmpB : tmpA; go(tmpC.set(ball.position.x, ballHome.y - 0.2, ball.position.z), Math.atan2(to.x - ball.position.x, to.z - ball.position.z), 0.25, 0.8, 4); }      // the ball, on its way to the other kid
       }
       // smoke, the fountain and the traffic light
       if (alive) flow(time); else if (this.flowed) flow(0);

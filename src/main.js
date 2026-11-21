@@ -77,7 +77,7 @@ function inWay(b) {
   for (const m of people.movers || []) {
     const dx = b.x - m.x, dz = b.z - m.z, d = Math.hypot(dx, dz);
     if (b.y < m.y - 0.3 || b.y > m.y + m.h) continue;
-    if (d < m.r + 0.35 && dx * m.fx + dz * m.fz > -0.1) return true;      // close, and ahead of it (or beside it)
+    if (d < m.r + 0.35 + m.v * 0.3 && dx * m.fx + dz * m.fz > -0.1) return true;      // close (sooner for something fast), and ahead of it or beside it
   }
   return false;
 }
