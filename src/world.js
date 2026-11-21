@@ -510,7 +510,7 @@ export function buildWorld(scene) {
   const people = [
     { kind: 'watch', tag: 'people', x: -6.2, y: deckY(-6.2), z: 0.9, ry: 1.35, look: 0 }, { kind: 'watch', tag: 'people', x: -7.5, y: deckY(-7.5), z: 0.5, ry: 1.3, woman: true }, { kind: 'watch', tag: 'people', x: -8.8, y: deckY(-8.8), z: 1.0, ry: 1.4 },
     { kind: 'sell', tag: 'people', x: 36, y: street, z: -1.95, ry: 0.3, fes: true }, { kind: 'sell', tag: 'people', x: 42.2, y: street, z: 1.95, ry: Math.PI - 0.3 },
-    { kind: 'walk', tag: 'people', x: 41, y: street, z: 0.3, to: [58, -0.3], woman: true }, { kind: 'walk', tag: 'run', x: -57, y: street, z: 0.5, to: [-34, -0.5], speed: 3.3, top: '#2a9fb0' },
+    { kind: 'walk', tag: 'people', x: 41, y: street, z: 0.3, to: [58, -0.3], woman: true }, { kind: 'walk', tag: 'run', x: -57, y: street, z: 0.5, to: [-34, -0.5], speed: 3.3 },
     { kind: 'walk', tag: 'people', x: -39.5, y: street, z: 7, to: [-39.5, 30], dog: true },
     { kind: 'walk', tag: 'people', x: 27, y: street, z: -32.1, to: [27, -36.2], fes: true, fesAt: 4 - S.cutscene.paintDelay + 0.15 }, { kind: 'walk', tag: 'people', x: 36.4, y: street, z: -31.6, to: [29.6, -31.6], woman: true, scarf: true },
     { kind: 'sit', tag: 'sit', x: 18.5, y: BANK + 0.3, z: 49.45, ry: Math.PI / 2 - 0.3, woman: true }, { kind: 'sit', tag: 'sit', x: 18.5, y: BANK + 0.3, z: 50.55, ry: Math.PI / 2 + 0.3 },
