@@ -49,6 +49,32 @@ function loopAt(p, d) {
   else { const a = (d - 2 * len - Math.PI * TURN_R) / TURN_R; x = A.x + (-lx * Math.cos(a) - ux * Math.sin(a)) * TURN_R; z = A.z + (-lz * Math.cos(a) - uz * Math.sin(a)) * TURN_R; hx = -ux * Math.cos(a) + lx * Math.sin(a); hz = -uz * Math.cos(a) + lz * Math.sin(a); }
   p.root.position.set(x, p.root.position.y, z); p.root.rotation.y = Math.atan2(hx, hz);
 }
+// The goalkeeper's side-shuffle, in his own frame (x: to his side). Over one step cycle (STEP of travel) the leading foot
+// steps out while the other stays planted, then the trailing foot closes in while the leading one stays planted; so a
+// planted foot never slides. The cycle runs on the distance travelled, so he steps quicker when he moves quicker and
+// stops stepping at each turn; a change of direction blends to the mirrored stance. Leg: 0.77 from hip to ankle (crouched).
+const K_STEP = 0.45, K_NARROW = 0.14, K_LEG = 0.772, K_HIP = 0.09;
+function keeperShuffle(p, dt) {
+  const z = p.root.position.z, dz = z - (p.kPrev ?? z); p.kPrev = z;
+  const ry = p.root.rotation.y, dl = (-dz * Math.sin(ry)) / p.root.scale.x;      // the move along his own x (sideways), in his own size
+  p.kD = (p.kD || 0) + Math.abs(dl);
+  const dir = dl > 1e-5 ? 1 : dl < -1e-5 ? -1 : (p.kDir || 1);
+  const e = (x) => x * x * (3 - 2 * x), u = (p.kD / K_STEP) % 1, S = K_STEP, n = K_NARROW;
+  let lead, trail, liftL = 0, liftT = 0;
+  if (u < 0.5) { trail = n + u * S; lead = n + (S / 2) * e(u / 0.5); liftL = Math.sin(Math.PI * u / 0.5); }
+  else { lead = n + S / 2 - (u - 0.5) * S; trail = n + S / 2 - (S / 2) * e((u - 0.5) / 0.5); liftT = Math.sin(Math.PI * (u - 0.5) / 0.5); }
+  let feet = [-1, 1].map((sd) => sd === dir ? [sd * lead, liftL] : [sd * trail, liftT]);
+  if (dir !== p.kDir) { p.kFrom = p.kFeet; p.kBlend = 0; p.kDir = dir; }
+  if (p.kFrom && p.kBlend < 1) { p.kBlend = Math.min(1, p.kBlend + dt / 0.3); const w = e(p.kBlend); feet = feet.map(([x, l], i) => [p.kFrom[i][0] + (x - p.kFrom[i][0]) * w, p.kFrom[i][1] * (1 - w) + l * w]); }
+  p.kFeet = feet;
+  let planted = 1, low = 9;
+  p.legs.forEach((l, i) => {
+    const sd = i ? 1 : -1, [fx, lift] = feet[i], th = Math.asin(Math.max(-0.9, Math.min(0.9, (fx - sd * K_HIP) / K_LEG)));
+    l.hip.rotation.set(-0.45 - 0.3 * lift, 0, th); l.knee.rotation.x = 0.8 + 0.6 * lift;      // a lifted foot: the knee bends a little more
+    if (lift < low) { low = lift; planted = Math.cos(th); }      // (the foot on the ground: the one lifted least)
+  });
+  p.hips.position.y = 0.068 + K_LEG * planted;      // the hips sit as high as the planted leg reaches
+}
 const cap = (r, l) =>new THREE.CapsuleGeometry(r, l, 4, 8);
 const lathe = (pts) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 12);
 const G = {
@@ -624,7 +650,8 @@ export function createPeople(scene, world, R) {
           p.pivot.rotation.x = a; for (const l of p.legs) l.knee.rotation.x = 1.1 - (alive ? Math.cos(t * 2.3) * 0.6 : 0.4); p.torso.rotation.x = alive ? -Math.cos(t * 2.3) * 0.2 : 0;
         } else if (o.kind === 'keeper') {
           if (alive) { p.root.position.z = o.z + Math.sin(t * 1.3) * 0.9; p.block.matrixWorld.setPosition(o.x, o.y + p.sc, p.root.position.z); go(p.root.position, Math.cos(t * 1.3) > 0 ? 0 : Math.PI, 0.45 * p.sc, 1.9 * p.sc, 1.2); }      // (shuffling from side to side)
-          p.hips.position.y = 0.84 + (alive ? Math.abs(Math.sin(t * 2.6)) * 0.04 : 0); for (const a of p.arms) a.sh.rotation.z = a.s * (0.95 + (alive ? Math.sin(t * 2.6) * 0.15 : 0));
+          keeperShuffle(p, dt);
+          for (const a of p.arms) { a.sh.rotation.z = a.s * (0.95 + (alive ? Math.sin(t * 2.1 + (a.s > 0 ? 0 : 0.5)) * 0.32 : 0)); a.el.rotation.x = -0.15; }      // arms out wide, rising and falling at an easy pace
         } else if (o.kind === 'cheer') {
           const j = alive ? Math.abs(Math.sin(t * 3.4)) : 0;
           p.root.position.y = p.y0 + j * 0.14; a1.sh.rotation.z = 2.5 + (alive ? Math.sin(t * 6.8) * 0.3 : 0); a0.sh.rotation.z = alive ? -0.4 - j * 1.6 : -0.2; p.head.rotation.x = -0.15;
