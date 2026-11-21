@@ -53,6 +53,7 @@ people.onKnock = (p) => { if (live) audio.knock(clamp(1 - flight.pos.distanceTo(
 const nearGain = (p, r) => clamp(1 - flight.pos.distanceTo(p) / r, 0, 1) ** 1.6;
 people.onNeigh = (p) => { if (live) audio.neigh(nearGain(p, 22)); };
 people.onMeow = (p) => { if (live) audio.meow(nearGain(p, 11)); };
+people.onBark = (p) => { if (live) audio.bark(nearGain(p, 16)); };
 // the spectators on the bridge: they keep applauding now and then after the finale, heard from nearby
 const crowd = (() => { const w = world.people.filter((p) => p.kind === 'watch'), c = V(0, 0, 0); for (const p of w) c.add(V(p.x, p.y, p.z)); return c.multiplyScalar(1 / Math.max(1, w.length)); })();
 let clapWait = 6, wasDiving = false;
@@ -71,11 +72,23 @@ addEventListener('resize', resize); visualViewport?.addEventListener('resize', r
 if (window.ResizeObserver) new ResizeObserver(resize).observe(renderer.domElement);
 resize();
 
+// is the bird standing in the way of a person or animal walking towards it? (they would walk through it)
+function inWay(b) {
+  for (const m of people.movers || []) {
+    const dx = b.x - m.x, dz = b.z - m.z, d = Math.hypot(dx, dz);
+    if (b.y < m.y - 0.3 || b.y > m.y + m.h) continue;
+    if (d < m.r + 0.35 && dx * m.fx + dz * m.fz > -0.1) return true;      // close, and ahead of it (or beside it)
+  }
+  return false;
+}
+
 // ---------- progress (kept between visits) ----------
 const params = new URLSearchParams(location.search), fresh = params.has('fresh');
 const KEY = saveKey(M.id);   // ?slot=name keeps a separate save
 let save = { done: [], finale: false };
 try { if (!fresh) save = { ...save, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { /* no storage */ }
+const RENAMED = { asikovanje: 'ljubav' };      // words renamed since a save was made: the save keeps them
+save.done = (save.done || []).map((id) => RENAMED[id] || id);
 const store = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* no storage */ } };
 if (save.finale) markFinished(M.id);      // (a map finished before this mark existed)
 const painting = new Set();
@@ -86,6 +99,7 @@ const PICS = KEY + '-pics';
 const BUNDLED = Object.fromEntries(Object.entries(import.meta.glob('../assets/photos/*.jpg', { eager: true, query: '?url', import: 'default' })).map(([p, u]) => [p.split('/').pop().slice(0, -4), u]));
 let pics = {}, snapId = null;
 try { if (!fresh) pics = JSON.parse(localStorage.getItem(PICS) || '{}'); } catch (e) { /* no storage */ }
+for (const [a, b] of Object.entries(RENAMED)) if (pics[a] && !pics[b]) { pics[b] = pics[a]; delete pics[a]; }
 function keepPic(id, data) {
   if (!data) return; pics[id] = data; try { localStorage.setItem(PICS, JSON.stringify(pics)); } catch (e) { /* storage full: the photo still shows this session */ }
   // dev only, the main save: each photo also goes straight into assets/photos as the game's default for that word
@@ -231,6 +245,8 @@ function restartLevel() { try { localStorage.removeItem(KEY); localStorage.remov
 // for testing: everything coloured and every word collected, only the fleur-de-lis and the finale left
 function skipToFinale() { save = { done: orbs.map((o) => o.id), finale: false }; store(); reload(); }
 $('reset').addEventListener('click', restartLevel);
+{ const b = $('mute'), show = () => { b.textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'; }; show();
+  b.addEventListener('click', (e) => { e.stopPropagation(); audio.setMuted(!audio.isMuted()); show(); }); }
 for (const [id, fn] of [['restart', restartLevel], ['toFinale', skipToFinale]]) {
   const b = $(id), label = b.textContent; let armed = 0;
   b.addEventListener('click', (e) => {
@@ -712,12 +728,12 @@ function updateFinale(dt) {
   FIN.step?.(t, dt, ctx());      // the map's own moving parts in its finale
   if (s.diver && diver) {      // the diver's shot: the camera turns with him, aimed a little ahead along his leap and fall, so it never trails him
     const d = diver.state === 'jump' ? diver.root.position : diver.state === 'stand' ? world.diverPos : diver.splashPos, aim = V(d.x, d.y + (diver.state === 'jump' || diver.state === 'stand' ? 1 : 0.4), d.z);
-    if (diver.state === 'jump' && f.lastD && dt > 0) aim.addScaledVector(V(d.x - f.lastD.x, d.y - f.lastD.y, d.z - f.lastD.z), 0.2 / dt);
+    if (diver.state === 'jump' && f.lastD && dt > 0) aim.addScaledVector(V(d.x - f.lastD.x, d.y - f.lastD.y, d.z - f.lastD.z), 0.25 / dt);
     f.lastD = diver.state === 'jump' ? d.clone() : null;
     if (diver.state !== 'stand' && aim.y < 1.4) aim.y = 0.4 + Math.exp(aim.y - 1.4);      // eased onto the water, never below it, so at the splash the look slows to a stop instead of jerking back up
     // a spring with no overshoot: the look speeds up and slows down smoothly, never stopping dead
     if (!f.look) { f.look = world.diverPos.clone(); f.lookV = V(0, 0, 0); }
-    const w = 7, h = Math.min(dt, 1 / 30);
+    const w = 9, h = Math.min(dt, 1 / 30);
     f.lookV.addScaledVector(aim.clone().sub(f.look), w * w * h).multiplyScalar(Math.max(0, 1 - 2 * w * h)); f.look.addScaledVector(f.lookV, h); camera.lookAt(f.look);
   }
   else camera.lookAt(look.lerpVectors(s.lookFrom, s.lookTo, e));
@@ -809,6 +825,7 @@ function tick(dt) {
 
   const running = started && !paused && state === 'play' && (locked || noLock); live = running;
   if (running) {
+    if ((flight.mode === 'perched' || flight.mode === 'swim') && inWay(flight.pos)) inp.takeoff = true;      // something walking straight at the bird: it hops up and flies off
     flight.update(dt, inp);
     if (flight.diving && !wasDiving) audio.cancelTakeoff();      // diving straight after taking off: the take-off wingbeats stop
     wasDiving = flight.diving;

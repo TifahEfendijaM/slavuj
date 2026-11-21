@@ -164,7 +164,7 @@ export function makeKit(scene, opts = {}) {
         b.push(mat4(px, py, pz, wr));
         box(0.95, 1.25, 0.1, 0, 0, 0.02, { ...Wn, col: o.lit ? '#f2c66a' : '#6a93ad', bleed: o.lit ? '#d9963a' : '#44708f' });
         for (const sg of [-1, 1]) box(0.24, 1.25, 0.07, sg * 0.6, 0, 0.04, { ...Wn, col: trim, bleed: trim, pat: PAT.planks, ps: 3 });
-        box(1.47, 0.14, 0.34, 0, -0.69, 0.17, { tag: o.winTag || 'window', col: '#d8cdb6', bleed: '#bfb092', solid: false });
+        box(1.47, 0.14, 0.34, 0, -0.69, 0.17, { tag: o.winTag || 'window', col: '#d8cdb6', bleed: '#bfb092' });      // (solid: the bird can perch on it)
         b.pop();
       };
       const uy = sh + (h - sh) * 0.52;

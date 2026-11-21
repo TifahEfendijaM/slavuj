@@ -278,7 +278,7 @@ export function buildWorld(scene) {
         b.push(mat4(px, py, pz, wr));
         box(ww, wh, 0.1, 0, 0, 0.02, { ...Wn, col: open ? '#54463c' : '#6a93ad', bleed: open ? '#3c322b' : '#44708f' });
         for (const sg of [-1, 1]) box(ww * 0.25, wh, 0.07, sg * ww * 0.63, 0, 0.04, { ...Wn, col: trim, bleed: trim, pat: PAT.planks, ps: 3 });
-        box(ww * 1.55, 0.14, big ? 1.1 : 0.34, 0, -wh / 2 - 0.07, big ? 0.55 : 0.17, { tag: 'window', col: '#d8cdb6', bleed: '#bfb092', solid: !!big, orb: big ? o.windowOrb : undefined });
+        box(ww * 1.55, 0.14, big ? 1.1 : 0.34, 0, -wh / 2 - 0.07, big ? 0.55 : 0.17, { tag: 'window', col: '#d8cdb6', bleed: '#bfb092', orb: big ? o.windowOrb : undefined });      // (solid, small ones too: the bird can perch on a ledge)
         if (fl) { box(ww * 0.95, 0.22, 0.3, 0, -wh / 2 + 0.11, 0.33, { tag: 'flower', col: '#b9683e', bleed: '#96502e' }); flowers(0, -wh / 2 + 0.32, 0.33, ww * 0.8); }
         b.pop();
       };
@@ -562,7 +562,7 @@ export function buildWorld(scene) {
     const k = ljudiGroups.findIndex((gr) => Math.hypot(gr.focus[0] - p.x, gr.focus[2] - p.z) < gr.size + 1);
     if (k >= 0) p.paintAt = 4 + k * 2.8 - S.cutscene.paintDelay + 0.15;
   }
-  orb('asikovanje', [-28.25, BANK + 3, -5.2], 4.2, ['lovers'], 'close', BANK + 6.2, { near: { p: [-28.25, BANK + 0.6, -3], r: 3 }, at: new Vector3(-28.25, BANK + 6.4, -4.6) });
+  orb('ljubav', [-28.25, BANK + 3, -5.2], 4.2, ['lovers'], 'close', BANK + 6.2, { near: { p: [-28.25, BANK + 0.6, -3], r: 3 }, at: new Vector3(-28.25, BANK + 6.4, -4.6) });
 
 
   // a sign in pixel letters (5 wide, 7 high, plus the mark over Š)

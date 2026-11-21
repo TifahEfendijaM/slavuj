@@ -22,12 +22,20 @@ function clip(name, vol, o = {}) {
 }
 const now = () => ctx.currentTime;
 
+// muting silences everything, the word recordings too; it is remembered between visits
+let muted = false; try { muted = localStorage.getItem('slavuj-muted') === '1'; } catch (e) { /* no storage */ }
+export const isMuted = () => muted;
+export function setMuted(m) {
+  muted = m; try { localStorage.setItem('slavuj-muted', m ? '1' : '0'); } catch (e) { /* no storage */ }
+  if (master) master.gain.setTargetAtTime(m ? 0 : S.audio.volume, ctx.currentTime, 0.04);
+  if (m) { player?.pause(); window.speechSynthesis?.cancel(); }
+}
 export function unlock() {
   try {
     if (!ctx) {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
-      master = ctx.createGain(); master.gain.value = S.audio.volume; master.connect(comp); comp.connect(ctx.destination);
+      master = ctx.createGain(); master.gain.value = muted ? 0 : S.audio.volume; master.connect(comp); comp.connect(ctx.destination);
       const delay = ctx.createDelay(); delay.delayTime.value = 0.13; const fb = ctx.createGain(); fb.gain.value = 0.22;
       sfx = ctx.createGain(); sfx.connect(master); sfx.connect(delay); delay.connect(fb); fb.connect(delay); fb.connect(master);
       mus = ctx.createGain(); mus.gain.value = S.audio.music; mus.connect(master); mus.connect(delay);
@@ -122,6 +130,7 @@ export function baa(g = 1) {
 // the horse neighing and the cat miaowing, as loud as they are near (g 0..1)
 export function neigh(g = 1) { if (ctx && g > 0) clip('horse-neigh', 0.38 * g); }
 export function meow(g = 1) { if (ctx && g > 0) clip('cat-meow', 0.3 * g); }
+export function bark(g = 1) { if (ctx && g > 0) clip('dog-bark', 0.32 * g); }
 // the šadrvan's water: one quiet loop, as loud as the bird is near it (0 = silent)
 let fountainGain = null;
 export function setFountain(g) {
@@ -260,6 +269,7 @@ if (window.speechSynthesis) { findVoice(); window.speechSynthesis.onvoiceschange
 export const slug = (w) => w.toLowerCase().replace(/đ/g, 'dj').replace(/[ćč]/g, 'c').replace(/š/g, 's').replace(/ž/g, 'z');
 export const pronunciationSource = () => (Object.keys(clips).length ? 'recordings' : voice ? 'browser voice ' + voice.name : 'none');
 export function pronounce(word) {
+  if (muted) return true;
   const id = slug(word);
   if (clips[id]) { player?.pause(); player = new Audio(clips[id]); player.volume = 0.95; player.play().catch(() => {}); return true; }
   if (!voice) findVoice();

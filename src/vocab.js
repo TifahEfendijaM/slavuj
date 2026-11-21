@@ -67,7 +67,7 @@ export const WORDS = {
   igraliste: { word: 'igralište', en: 'playground', q: Q, choices: ['igralište', 'džamija', 'ulica'] },
   skola:   { word: 'škola',   en: 'school',   q: 'Children learn here. Which word is it?', choices: ['bolnica', 'škola', 'dućan'] },
   zastava: { word: 'zastava', en: 'flag',     q: Q, choices: ['zastava', 'prozor', 'oblak'] },
-  asikovanje: { word: 'ašikovanje', en: 'courting', q: 'She is at her window, he has brought flowers. What is this old custom called?', choices: ['plivanje', 'ašikovanje', 'spavanje'] },
+  ljubav: { word: 'ljubav', en: 'love', q: 'She is at her window, he has brought her flowers. What is between them?', choices: ['voda', 'ljubav', 'škola'] },
   oblak:   { word: 'oblak',   en: 'cloud',    q: Q, choices: ['stijena', 'trava', 'oblak'] },
   cvijet:  { word: 'cvijet',  en: 'flower',   q: Q, choices: ['cvijet', 'drvo', 'trava'] },
   ducan:   { word: 'dućan',   en: 'shop',     q: Q, choices: ['džamija', 'dućan', 'kula'] },

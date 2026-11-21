@@ -34,6 +34,21 @@ function runLeg(u, hipY) {
   return [1, 2].map((c) => { const p0 = K(i - 1)[c], p1 = K(i)[c], p2 = K(i + 1)[c], p3 = K(i + 2)[c];       // Catmull-Rom: smooth through the keys
     return 0.5 * (2 * p1 + (p2 - p0) * s + (2 * p0 - 5 * p1 + 4 * p2 - p3) * s * s + (3 * p1 - p0 - 3 * p2 + p3) * s * s * s); });
 }
+// A walker with a dog goes round a long loop: out along his line, a half circle (radius TURN_R) round the
+// far end, back along the other side, a half circle round the near end. The dog walks on his left, so he turns right.
+const TURN_R = 0.6;
+const loopLen = (p) => 2 * p.from.distanceTo(p.to) + 2 * Math.PI * TURN_R;
+function loopAt(p, d) {
+  const len = p.from.distanceTo(p.to), ux = (p.to.x - p.from.x) / len, uz = (p.to.z - p.from.z) / len, lx = uz, lz = -ux;      // u: along the line; l: his left going out
+  // (the loop is shifted to his right, so he goes out along his own line, from where he stands in the sketch, and comes back beside it)
+  const A = { x: p.from.x - lx * TURN_R, z: p.from.z - lz * TURN_R }, B = { x: p.to.x - lx * TURN_R, z: p.to.z - lz * TURN_R };
+  let x, z, hx, hz;
+  if (d < len) { x = A.x + ux * d + lx * TURN_R; z = A.z + uz * d + lz * TURN_R; hx = ux; hz = uz; }
+  else if (d < len + Math.PI * TURN_R) { const a = (d - len) / TURN_R; x = B.x + (lx * Math.cos(a) + ux * Math.sin(a)) * TURN_R; z = B.z + (lz * Math.cos(a) + uz * Math.sin(a)) * TURN_R; hx = ux * Math.cos(a) - lx * Math.sin(a); hz = uz * Math.cos(a) - lz * Math.sin(a); }
+  else if (d < 2 * len + Math.PI * TURN_R) { const e = d - len - Math.PI * TURN_R; x = B.x - ux * e - lx * TURN_R; z = B.z - uz * e - lz * TURN_R; hx = -ux; hz = -uz; }
+  else { const a = (d - 2 * len - Math.PI * TURN_R) / TURN_R; x = A.x + (-lx * Math.cos(a) - ux * Math.sin(a)) * TURN_R; z = A.z + (-lz * Math.cos(a) - uz * Math.sin(a)) * TURN_R; hx = -ux * Math.cos(a) + lx * Math.sin(a); hz = -uz * Math.cos(a) + lz * Math.sin(a); }
+  p.root.position.set(x, p.root.position.y, z); p.root.rotation.y = Math.atan2(hx, hz);
+}
 const cap = (r, l) =>new THREE.CapsuleGeometry(r, l, 4, 8);
 const lathe = (pts) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 12);
 const G = {
@@ -113,6 +128,7 @@ export function createPeople(scene, world, R) {
     if (o.kind === 'swimmer') p.block = block(o.x, 0.3, o.z, 1.0, 1.1, 2.3, { wall: true, person: true });
     else if (o.kind !== 'girl' && o.kind !== 'swing') p.block = block(o.x, o.y + sc, o.z, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), 2 * sc, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), { wall: true, person: true });
     if (moving && o.to) { p.from = pos.clone(); p.to = new THREE.Vector3(o.to[0], o.y, o.to[1]); root.rotation.y = Math.atan2(p.to.x - p.from.x, p.to.z - p.from.z); }
+    if (moving && o.to && o.dog) { p.loopS = 0; loopAt(p, 0); }
     if (seated || o.kind === 'raft') { hips.position.y = 0.5; for (const l of legs) { l.hip.rotation.x = -1.5; l.knee.rotation.x = o.kind === 'raft' ? 0.55 : 1.45; } }
     if (o.kind === 'girl') torso.rotation.x = 0.5;
     if (o.kind === 'boy' && !o.kite) for (const [dx, dy, c] of [[0, 0.1, '#e0453a'], [0.07, 0.03, '#f2c230'], [-0.07, 0.04, '#f08fb0'], [0, -0.02, '#5a9148']]) P(G.bloom, c, arms[1].el, dx, -0.41 - dy, 0.02);
@@ -420,17 +436,24 @@ export function createPeople(scene, world, R) {
     fishJumpAt(t) { fishT0 = t; },
     applaud() { for (const p of list) if (p.o.kind === 'watch') p.cheer = true; },
     update(dt, time, life, bird) {
+      const mv = this.movers = [];      // whatever is walking this frame (where, which way, how wide): main.js lifts the bird out of their way
+      const go = (pos, ry, r, h) => mv.push({ x: pos.x, y: pos.y, z: pos.z, fx: Math.sin(ry), fz: Math.cos(ry), r, h });
       const alive = life > 0.5;
       for (const p of list) {
         const t = time * (alive ? 1 : 0) + p.phase, [a0, a1] = p.arms, o = p.o;
         if (o.kind === 'walk' || o.kind === 'bike' || o.kind === 'skate') {
           const speed = o.speed || 1.25;
-          if (alive) {
+          if (alive && o.dog) {      // with a dog: a loop with a U-turn at each end (turning away from the dog, so it stays on the outside), never a turn on the spot
+            p.loopS = (p.loopS + dt * speed) % loopLen(p); loopAt(p, p.loopS);
+          } else if (alive) {
             p.s += p.dir * dt * speed / p.from.distanceTo(p.to); if (p.s > 1 || p.s < 0) { p.dir *= -1; p.s = Math.min(1, Math.max(0, p.s)); }
             p.root.position.lerpVectors(p.from, p.to, p.s);
             const want = Math.atan2((p.to.x - p.from.x) * p.dir, (p.to.z - p.from.z) * p.dir);
             p.root.rotation.y += Math.atan2(Math.sin(want - p.root.rotation.y), Math.cos(want - p.root.rotation.y)) * k(o.kind === 'bike' ? 2.5 : 5, dt);
+          }
+          if (alive) {
             p.block.matrixWorld.setPosition(p.root.position.x, p.root.position.y + p.sc, p.root.position.z);
+            go(p.root.position, p.root.rotation.y, (o.kind === 'bike' ? 0.9 : 0.45) * p.sc, 1.9 * p.sc);
           }
           if (o.kind === 'bike') {
             const ph = alive ? t * 5.2 : 1.1;
@@ -477,6 +500,8 @@ export function createPeople(scene, world, R) {
               p.dogLegs.forEach((l, i) => { l.rotation.x = (i === 0 || i === 3 ? ds : -ds); });
               p.dogTail.rotation.z = alive ? Math.sin(t * 9) * 0.5 : 0.2; p.dogHead.rotation.y = alive ? Math.sin(t * 0.8) * 0.3 : 0.25; p.dog.position.y = alive ? Math.abs(Math.sin(t * 11)) * 0.02 : 0;
               p.dog.getWorldPosition(dogP); p.dogBlock.matrixWorld.setPosition(dogP.x, dogP.y + 0.4, dogP.z);
+              if (alive && R() < dt / 16) this.onBark?.(dogP);
+              if (alive) go(dogP, p.root.rotation.y, 0.5, 0.7);      // a bark now and then (the sound is played in main.js)
             }
           }
         } else if (o.kind === 'watch') {
@@ -513,6 +538,7 @@ export function createPeople(scene, world, R) {
             p.s += p.dir * dt * o.speed / p.from.distanceTo(p.to); if (p.s > 1 || p.s < 0) { p.dir *= -1; p.s = Math.min(1, Math.max(0, p.s)); }
             const want = Math.atan2((p.to.x - p.from.x) * p.dir, (p.to.z - p.from.z) * p.dir); p.root.rotation.y += Math.atan2(Math.sin(want - p.root.rotation.y), Math.cos(want - p.root.rotation.y)) * k(2, dt);
             p.root.position.lerpVectors(p.from, p.to, p.s).addScaledVector(birdD.set(Math.sin(p.root.rotation.y), 0, Math.cos(p.root.rotation.y)), -0.95);
+            go(birdD.copy(p.root.position).addScaledVector(birdD.clone().set(Math.sin(p.root.rotation.y), 0, Math.cos(p.root.rotation.y)), 0.95), p.root.rotation.y, 0.6, 0.6);
             a0.sh.rotation.x = -(t * 3.2) % 6.283; a1.sh.rotation.x = -(t * 3.2 + Math.PI) % 6.283; p.head.rotation.y = Math.sin(t * 3.2) * 0.5;
           }
           p.legs.forEach((l, i) => { l.hip.rotation.x = (alive ? Math.sin(t * 9 + i * Math.PI) : i ? 0.2 : -0.2) * 0.3; });
@@ -650,6 +676,7 @@ export function createPeople(scene, world, R) {
           }
         }
         a.walk += ((moving ? 1 : 0) - a.walk) * k(4, dt);
+        if (moving) go(a.root.position, a.root.rotation.y, a.size, a.o.kind === 'horse' ? 2.2 : 1.2);
         // now and then the horse lifts its head high and neighs (the sound is played in main.js)
         if (a.o.kind === 'horse' && alive && !moving && !(a.neigh > 0) && R() < dt / 16) { a.neigh = 2.8; this.onNeigh?.(a.root.position); }
         if (a.neigh > 0) a.neigh -= dt;
@@ -684,6 +711,7 @@ export function createPeople(scene, world, R) {
       const c = catS;
       if (alive) { c.rest -= dt; if (c.rest < 0) { c.x += c.dir * dt * 0.9; if (c.x > C.x1 || c.x < C.x0) { c.dir *= -1; c.rest = 1.5 + R() * 3; c.x = Math.min(C.x1, Math.max(C.x0, c.x)); } else if (R() < dt * 0.12) c.rest = 1 + R() * 2.5; } }
       const moving = alive && c.rest < 0; c.walk += ((moving ? 1 : 0) - c.walk) * k(5, dt);
+      if (moving) go(cat.position, c.dir > 0 ? Math.PI / 2 : -Math.PI / 2, 0.45, 0.7);
       if (alive && !moving && R() < dt / 14) this.onMeow?.(cat.position);      // a miaow now and then while it sits (the sound is played in main.js)
       cat.position.x = c.x; cat.rotation.y = c.dir > 0 ? 0 : Math.PI; world.catBlock.matrixWorld.setPosition(c.x, C.y + 0.4, C.z);
       // sitting up: the body tilts back onto its haunches, the front legs stand straight and upright, the hind legs fold under it

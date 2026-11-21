@@ -52,7 +52,7 @@
   #legend, #reticle { display: none; }
   #pause table { margin: 10px auto 0; font-size: 18px; border-spacing: 14px 4px; text-align: left; } #pause td:first-child { text-align: right; white-space: nowrap; }
   #pause td { vertical-align: top; padding: 2px 0; } #pause td i { opacity: .55; font-style: normal; } #pause tr.multi td { line-height: 1.35; } #pause tr.gap td { padding-top: 12px; }
-  #pause .menu { display: flex; gap: 14px; justify-content: center; margin-top: 16px; }
+  #pause .menu { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 16px; }
   #pause .menu button { font-size: 20px; padding: 5px 18px 7px; background: #fffaf0; cursor: pointer; box-shadow: 2px 3px 0 rgba(59, 53, 47, .18); }
   #pause .menu button:hover, #pause .menu button.armed { background: #fff2c4; }
   #pause .note { font-size: 15px; opacity: .6; margin-top: 8px; max-width: 430px; }
@@ -265,7 +265,7 @@
       <tr><td><kbd>F</kbd></td><td>sing</td></tr>
       <tr><td><kbd>Esc</kbd></td><td>pause</td></tr>
     </table>
-    <div class="menu"><button id="toMap" class="wobbly">Bosnia map</button><button id="restart" class="wobbly">Restart level</button><button id="toFinale" class="wobbly">Skip to the finale</button></div>
+    <div class="menu"><button id="mute" class="wobbly">Sound: on</button><button id="toMap" class="wobbly">Bosnia map</button><button id="restart" class="wobbly">Restart level</button><button id="toFinale" class="wobbly">Skip to the finale</button></div>
     <div class="note">Restart clears this level's colours and words. Skip to the finale colours everything and collects every word (for testing).</div>
     </div></div>
 <div id="turn" class="overlay"><div class="card wobbly">Turn your phone sideways to play</div></div>
