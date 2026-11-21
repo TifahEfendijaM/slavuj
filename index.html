@@ -1,26 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-mode="%MODE%">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <title>Slavuj</title>
-<script>
-// Phone or computer? Decided here, before anything else loads, so a phone shows its own controls (and the "turn your
-// phone" note) from the first moment, on the Bosnia map too. A phone or tablet: a touch screen whose main pointer is a
-// finger. Some phone browsers misreport the pointer kind right after following a link, so the browser's "mobile" flag
-// and a finger tap on an earlier page count too. A laptop with a touch screen keeps its mouse controls.
-(() => {
-  const n = navigator, mm = (q) => matchMedia(q).matches;
-  let tapped = false; try { tapped = sessionStorage.getItem('slavuj-touch') === '1'; } catch (e) {}
-  const touch = n.maxTouchPoints > 0 && (
-    (mm('(pointer: coarse)') && !mm('(any-pointer: fine)'))
-    || (n.userAgentData && n.userAgentData.mobile === true) || /Android|iPhone|iPad|iPod|Mobile/i.test(n.userAgent)
-    || (!(mm('(pointer: fine)') && mm('(hover: hover)')) && (tapped || mm('(pointer: coarse)'))));
-  if (touch) document.documentElement.classList.add('touch');
-  addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') try { sessionStorage.setItem('slavuj-touch', '1'); } catch (e) {} }, { capture: true, passive: true });
-})();
-</script>
+<script src="./early.js"></script>
 <style>
   :root { --paper: #f5efdf; --paper2: #efe6d0; --ink: #3b352f; --yellow: #ffc61a; --gold: #c8891a; --blue: #2466e8; --red: #b8452c; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--paper); color: var(--ink);
@@ -175,6 +160,7 @@
   #pause .pmenu svg { width: 24px; height: 24px; flex: none; } #pause .pmenu small { display: block; font-size: 13px; opacity: .55; line-height: 1.1; margin-top: 1px; }
   #pause .pmenu .main { font-size: 23px; background: var(--yellow); padding-top: 8px; padding-bottom: 9px; } #pause .pmenu .main:hover { background: #ffd54d; }
   #mute .off, #mute.muted .on { display: none; } #mute.muted .off { display: inline; }
+  html.platform .eb { display: none !important; }      /* the links to easybosnian.com: not needed on easybosnian itself */
   #turn { display: none; z-index: 20; background: var(--paper); } #turn .card { font-size: 26px; max-width: 70vw; padding: 20px 24px; }
   @media (orientation: portrait) { html.touch #turn { display: grid; } }
   html:not(.touch) .ph, html.touch .pc { display: none !important; }
@@ -261,7 +247,7 @@
       <h2 id="cplace"></h2>
       <div class="small" id="csub"></div>
       <img class="art" id="cart" alt="Stari Most at sunset, painted in watercolour">
-      <div id="endcard" class="wobbly" style="display:none"><div id="nextMap"></div>Learn Bosnian at <a href="https://easybosnian.com" target="_blank" rel="noopener">easybosnian.com</a></div>
+      <div id="endcard" class="wobbly" style="display:none"><div id="nextMap"></div><span class="eb">Learn Bosnian at <a href="https://easybosnian.com" target="_blank" rel="noopener">easybosnian.com</a></span></div>
       <div class="lockmsg">Colour all of <span class="town">the town</span> to read its story.</div>
       <div class="facts" id="cfacts"></div>
     </div>
@@ -315,7 +301,7 @@
       </table>
     </div>
     <div class="go">Loading…</div>
-    <div class="foot"><a href="./" id="backMap">← Bosnia map</a> · <a href="https://easybosnian.com" target="_blank" rel="noopener" id="brand">easybosnian.com</a><span id="resetWrap" style="display:none"> · <button id="reset">start over</button></span></div>
+    <div class="foot"><a href="./" id="backMap">← Bosnia map</a><span class="eb"> · <a href="https://easybosnian.com" target="_blank" rel="noopener" id="brand">easybosnian.com</a></span><span id="resetWrap" style="display:none"> · <button id="reset">start over</button></span></div>
   </div>
 </div>
 <button id="skip" class="wobbly off"><kbd>Enter</kbd> skip</button>

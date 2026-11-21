@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 5183 --strictPort",
-    "build": "vite build"
+    "build": "vite build",
+    "build:platform": "vite build --mode platform --outDir dist-platform"
   },
   "dependencies": {
     "@fontsource/caveat": "^5.3.0",

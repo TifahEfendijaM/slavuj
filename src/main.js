@@ -14,6 +14,7 @@ import { createPeople } from './people.js';
 import { rng } from './paper.js';
 import { Flight } from './flight.js';
 import * as audio from './audio.js';
+import * as platform from './platform.js';
 import { isTouch, setupTouch } from './touch.js';
 
 // a map still in development carries a notice that it is a pre-release
@@ -89,7 +90,10 @@ let save = { done: [], finale: false };
 try { if (!fresh) save = { ...save, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { /* no storage */ }
 const RENAMED = { asikovanje: 'ljubav' };      // words renamed since a save was made: the save keeps them
 save.done = (save.done || []).map((id) => RENAMED[id] || id);
-const store = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* no storage */ } };
+// the words learned by answering (a save from before this list: all of its words, unless it was skipped to the finale);
+// only these earn XP on the platform (src/platform.js)
+save.learned = (save.learned ?? (save.skipped ? [] : save.done)).map((id) => RENAMED[id] || id);
+const store = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* no storage */ } platform.push(); };
 if (save.finale) markFinished(M.id);      // (a map finished before this mark existed)
 const painting = new Set();
 // journal photos: one frame grabbed from each word's own colouring scene, stored beside the save
@@ -243,7 +247,7 @@ $('start').addEventListener('click', (e) => {
 function reload() { if (!fresh) return location.reload(); params.delete('fresh'); const q = params.toString(); location.href = location.pathname + (q ? '?' + q : ''); }
 function restartLevel() { try { localStorage.removeItem(KEY); localStorage.removeItem(PICS); } catch (e) { /* */ } reload(); }
 // skip to the finale (for players too): everything coloured and every word collected, only the fleur-de-lis and the finale left
-function skipToFinale() { save = { done: orbs.map((o) => o.id), finale: false }; store(); reload(); }
+function skipToFinale() { save = { done: orbs.map((o) => o.id), finale: false, skipped: true, learned: save.learned }; store(); reload(); }
 $('reset').addEventListener('click', restartLevel);
 { const b = $('mute'), show = () => { b.querySelector('.lb').textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'; b.classList.toggle('muted', audio.isMuted()); }; show();
   b.addEventListener('click', (e) => { e.stopPropagation(); audio.setMuted(!audio.isMuted()); show(); }); }
@@ -613,7 +617,7 @@ const nearEnd = (o) => Math.max(0, ...o.def.tags.map((t) => tag(t).nearEnd ?? ta
 const snapTime = (o, dur) => o.def.shot === 'combo' ? Math.min(S.cutscene.paintDelay + nearEnd(o) + 0.2, 3.8) : Math.min(S.cutscene.paintDelay + paintEnd(o) + 0.4, dur - 0.2);
 function finishOrb(o) {
   o.done = true; o.alive = false; scene.remove(o.vis); if (o.id === 'sat') hands.visible = true;
-  if (!save.done.includes(o.id)) save.done.push(o.id); store();
+  if (!save.done.includes(o.id)) save.done.push(o.id); if (!save.learned.includes(o.id)) save.learned.push(o.id); store();
   showLearn(o.w); renderJournal(o.id);
   const n = refreshOrbs(true);
   const last = TEXT.last && byId[TEXT.last.id];
@@ -627,6 +631,7 @@ let learnTimer = 0;
 function showLearn(w) { const el = $('learn'); el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en; el.classList.remove('off'); audio.learned(); $('hud').classList.add('pulse'); clearTimeout(learnTimer); learnTimer = setTimeout(hideLearn, 4500); }
 function hideLearn() { $('learn').classList.add('off'); $('hud').classList.remove('pulse'); }
 function say(text, seconds) { toast = text; toastT = seconds; }
+platform.onXpAwarded((xp) => { if (state === 'play') say(`+${xp} XP`, 2.2); });      // (on the platform, signed in)
 
 // ---------- feather journal ----------
 function renderJournal(newId) {
