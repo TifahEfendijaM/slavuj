@@ -142,8 +142,8 @@ export function createPeople(scene, world, R) {
     if (sc < 1) head.scale.setScalar(1.25);                       // children: a bigger head
     if (o.fes) painter('fes', pos, undefined, false, o.fesAt)(G.fes, '#b3312c', head, 0, 0.15, 0, '#8f2420'); else if (o.robe) P(G.cap, '#f3efe6', head, 0, 0.02, 0);
     else if (o.kind === 'post') { P(G.cap, '#23405e', head, 0, 0.03, 0, '#1a2f45'); const v = P(G.box, '#1a2f45', head, 0, 0.05, 0.13); v.scale.set(0.2, 0.025, 0.11); }
-    else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl') { const s = P(G.scarf, pick(TOPS), head, 0, 0.012, -0.012); s.rotation.x = -0.25; }
-    else {
+    else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl' && sc >= 1) { const s = P(G.scarf, pick(TOPS), head, 0, 0.012, -0.012); s.rotation.x = -0.25; }
+    else {      // (a girl who drew a scarf gets hair instead: the scarf would hide her face. One draw either way, so nobody else changes)
       const hc = pick(HAIRS), h = P(G.hair, hc, head, 0, 0.012, -0.012); h.rotation.x = -0.3;
       if (o.woman) { const long = P(G.head, hc, head, 0, -0.13, -0.075); long.scale.set(1.02, 1.75, 0.62); }      // long hair down the back
       if (o.kind === 'girl') { const fl = P(G.bloom, '#f2c230', head, 0.1, 0.09, 0.06); fl.scale.setScalar(0.7); }
