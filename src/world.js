@@ -529,8 +529,8 @@ export function buildWorld(scene) {
     { kind: 'wait', tag: 'wait', x: 82.7, y: BANK + 0.15, z: 10.4, ry: Math.PI / 2, woman: true },
     // children: football on the pitch, the slide in the playground
     { kind: 'walk', tag: 'kids', x: 26.5, y: street, z: 73.6, to: [35, 78.4], speed: 2.7, sc: kid, ball: 0 }, { kind: 'walk', tag: 'kids', x: 36, y: street, z: 73.8, to: [28, 79.4], speed: 2.4, sc: kid, woman: true, sport: true, ball: 1 },
-    { kind: 'keeper', tag: 'kids', x: 23.5, y: street, z: 76, ry: Math.PI / 2, sc: kid },
-    { kind: 'slide', tag: 'kids', x: SL.x - 0.45, y: SL.y + 1.96, z: SL.z, ry: -Math.PI / 2, sc: kid }, { kind: 'cheer', tag: 'kids', x: SL.x + 2.7, y: SL.y, z: SL.z - 0.9, ry: -1.9, sc: kid, woman: true },
+    { kind: 'keeper', tag: 'kids', x: 23.5, y: street, z: 76, ry: Math.PI / 2, sc: kid, top: '#4f8068' },
+    { kind: 'slide', tag: 'kids', x: SL.x - 0.45, y: SL.y + 1.96, z: SL.z, ry: -Math.PI / 2, sc: kid, top: '#3f6f9a' }, { kind: 'cheer', tag: 'kids', x: SL.x + 2.7, y: SL.y, z: SL.z - 0.9, ry: -1.9, sc: kid, woman: true },
     { kind: 'swing', tag: 'kids', x: 53.2, y: BANK + 2.5, z: 76.4, ry: 0, sc: kid, woman: true, first: true },
     { kind: 'post', tag: 'post', x: -24.46, y: BANK + 0.3, z: 63.22, ry: 0, top: '#2f5578' },
   ];
