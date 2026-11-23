@@ -148,6 +148,14 @@ export function land() { if (!ctx) return; const t = now(); tone(t, [[0, 150], [
 export function bump() { if (ctx) { const t = now(); tone(t, [[0, 120], [0.12, 60]], 0.22, { decay: true, attack: 0.004 }); noise(t, 0.1, { f0: 500, f1: 200, vol: 0.1 }); } }
 // the bird meets the water: p is 0..1, from a gentle touch to a full dive
 export function birdSplash(p) { if (!ctx) return; const t = now(); noise(t, 0.25 + 0.5 * p, { type: 'lowpass', f0: 1800 + 1800 * p, f1: 400, q: 0.4, vol: 0.1 + 0.3 * p, attack: 0.008 }); noise(t + 0.04, 0.5 + 0.6 * p, { f0: 3200, f1: 1500, q: 0.5, vol: 0.04 + 0.1 * p, attack: 0.06 }); if (p > 0.5) tone(t, [[0, 170], [0.2, 60]], 0.25 * p, { decay: true, attack: 0.005 }); }
+// the bridge crowd after the finale: it never stops clapping, so its applause loops (the steady middle of the recording),
+// as loud as the bird is close (g, 0..1), like the fountain
+let applauseGain = null;
+export function setApplause(g) {
+  if (!ctx) return;
+  if (!applauseGain) { const buf = sfxBufs.applause; if (!buf || g <= 0) return; applauseGain = ctx.createGain(); applauseGain.gain.value = 0; const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.loopStart = 1; src.loopEnd = Math.min(7.5, buf.duration); src.connect(applauseGain).connect(amb); src.start(now(), 1); }
+  applauseGain.gain.setTargetAtTime(0.55 * g, now(), 0.25);
+}
 // a crowd clapping; gain below 1 is the same crowd heard from further off
 export function applause(seconds = 6, gain = 1) {
   if (!ctx) return; const t = now();

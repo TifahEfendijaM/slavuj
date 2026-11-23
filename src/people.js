@@ -544,7 +544,7 @@ export function createPeople(scene, world, R) {
             const f = p.f ||= 2.2 + R() * 1.5, wave = Math.sin(t * 0.31 * f + p.phase * 2) > 0.2, j = Math.max(0, Math.sin(t * f)) ** 2;
             p.root.position.y = p.y0 + j * (wave ? 0.16 : 0.06);
             for (const a of p.arms) {
-              if (wave) { a.sh.rotation.x += (-2.85 + Math.sin(t * 2.3 * f + a.s) * 0.25 - a.sh.rotation.x) * k(8, dt); a.sh.rotation.z = -a.s * 0.3; a.el.rotation.x = -0.25; }     // arms up, cheering
+              if (wave) { a.sh.rotation.x += (-2.4 + Math.sin(t * 2.3 * f + a.s) * 0.25 - a.sh.rotation.x) * k(8, dt); a.sh.rotation.z = a.s * 0.5; a.el.rotation.x = -0.25; }     // arms up and apart in a V, cheering (hands clear of the head)
               else { a.sh.rotation.x += (-1.15 - a.sh.rotation.x) * k(8, dt); a.sh.rotation.z = -a.s * (0.3 + 0.16 * Math.sin(t * 6.5 * f)); a.el.rotation.x = -0.6; }                    // clapping
             }
           } else { a0.sh.rotation.x += ((o.look === 0 ? -2.2 : 0) - a0.sh.rotation.x) * k(5, dt); a0.sh.rotation.z = o.look === 0 ? 0.5 : -0.08; a1.sh.rotation.x += (0 - a1.sh.rotation.x) * k(5, dt); a1.sh.rotation.z = 0.08; }

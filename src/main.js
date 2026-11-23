@@ -55,9 +55,9 @@ const nearGain = (p, r) => clamp(1 - flight.pos.distanceTo(p) / r, 0, 1) ** 1.6;
 people.onNeigh = (p) => { if (live) audio.neigh(nearGain(p, 22)); };
 people.onMeow = (p) => { if (live) audio.meow(nearGain(p, 11)); };
 people.onBark = (p) => { if (live) audio.bark(nearGain(p, 16)); };
-// the spectators on the bridge: they keep applauding now and then after the finale, heard from nearby
+// the spectators on the bridge: they keep applauding after the finale, heard from nearby
 const crowd = (() => { const w = world.people.filter((p) => p.kind === 'watch'), c = V(0, 0, 0); for (const p of w) c.add(V(p.x, p.y, p.z)); return c.multiplyScalar(1 / Math.max(1, w.length)); })();
-let clapWait = 6, wasDiving = false;
+let wasDiving = false;
 const fountainAt = world.fountain ? V(world.fountain.x, world.fountain.y + 1.4, world.fountain.z) : null;
 const crowdN = world.people.filter((p) => p.kind === 'watch').length;
 let live = false;
@@ -848,10 +848,7 @@ function tick(dt) {
   }
 
   // the sheep bleat now and then, heard only when the bird is close to the meadow
-  if (crowdN && running && shared.uLife.value > 0.5 && !fin && (clapWait -= dt) < 0) {      // the bridge crowd claps again every so often
-    clapWait = 9 + Math.random() * 9; const g = nearGain(crowd, 32);
-    if (g > 0) { audio.applause(3 + Math.random() * 2, g); people.applaud(); }
-  }
+  audio.setApplause(crowdN && running && shared.uLife.value > 0.5 && !fin ? nearGain(crowd, 32) : 0);      // the bridge crowd claps on and on, heard close by
   audio.setFountain(fountainAt && running && shared.uLife.value > 0.5 ? nearGain(fountainAt, 16) : 0);      // the šadrvan, heard close by
   if (AMB.sheep && running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - AMB.sheep[0], flight.pos.z - AMB.sheep[1]) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 18 && Math.random() < dt * 0.25) audio.baa((1 - sd / 18) ** 1.6); }
   freeSingT -= dt;
