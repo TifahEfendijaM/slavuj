@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { paintGeo, washMat, addHull, tag, inkMaterial } from './paper.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TOPS = ['#b8452c', '#3f6f9a', '#4f8068', '#c69a3a', '#8a5a8a', '#e6dccb', '#5d7b8a', '#c9744a'];
 const BOTTOMS = ['#4a4a52', '#6a5a44', '#3d5066', '#7a6a58', '#5a4a40'];
@@ -77,9 +78,16 @@ function keeperShuffle(p, dt) {
 }
 const cap = (r, l) =>new THREE.CapsuleGeometry(r, l, 4, 8);
 const lathe = (pts) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 12);
+// a hijab: round the top, sides and back of the head and under the chin, open in front for the face (the face points
+// along +z, where a sphere's phi is pi/2), then falling over the neck onto the shoulders
+function hijab() {
+  const r = 0.15, top = 0.78, chin = 2.02, open = 0.95, S = (p0, pl, t0, tl, w, h) => new THREE.SphereGeometry(r, w, h, p0, pl, t0, tl);
+  const drape = lathe([[0.235, -0.285], [0.2, -0.2], [0.14, -0.14], [0.085, -0.12]]);      // (bottom to top, so it faces outwards)
+  return mergeGeometries([S(0, Math.PI * 2, 0, top, 14, 3), S(Math.PI / 2 + open, Math.PI * 2 - 2 * open, top, chin - top, 11, 5), S(0, Math.PI * 2, chin, 2.6 - chin, 14, 2), drape]);
+}
 const G = {
   thigh: cap(0.085, 0.26), calf: cap(0.068, 0.26), foot: cap(0.05, 0.12), arm: cap(0.052, 0.5), hand: new THREE.SphereGeometry(0.058, 8, 6),
-  head: new THREE.SphereGeometry(0.13, 12, 10), hair: new THREE.SphereGeometry(0.139, 12, 7, 0, Math.PI * 2, 0, 1.75), scarf: new THREE.SphereGeometry(0.15, 12, 8, 0, Math.PI * 2, 0, 2.3),
+  head: new THREE.SphereGeometry(0.13, 12, 10), hair: new THREE.SphereGeometry(0.139, 12, 7, 0, Math.PI * 2, 0, 1.75), scarf: hijab(),
   torso: lathe([[0.001, 0], [0.15, 0], [0.155, 0.14], [0.145, 0.28], [0.19, 0.5], [0.2, 0.57], [0.15, 0.64], [0.07, 0.68], [0.06, 0.74], [0.001, 0.74]]),
   skirt: lathe([[0.001, -0.89], [0.31, -0.89], [0.17, 0.02], [0.001, 0.02]]), robe: lathe([[0.001, -0.88], [0.27, -0.88], [0.18, 0.02], [0.001, 0.02]]),   // listed bottom to top, so the surface faces outwards
   uarm: cap(0.052, 0.2), farm: cap(0.048, 0.2),
@@ -142,8 +150,8 @@ export function createPeople(scene, world, R) {
     if (sc < 1) head.scale.setScalar(1.25);                       // children: a bigger head
     if (o.fes) painter('fes', pos, undefined, false, o.fesAt)(G.fes, '#b3312c', head, 0, 0.15, 0, '#8f2420'); else if (o.robe) P(G.cap, '#f3efe6', head, 0, 0.02, 0);
     else if (o.kind === 'post') { P(G.cap, '#23405e', head, 0, 0.03, 0, '#1a2f45'); const v = P(G.box, '#1a2f45', head, 0, 0.05, 0.13); v.scale.set(0.2, 0.025, 0.11); }
-    else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl' && sc >= 1) { const s = P(G.scarf, pick(TOPS), head, 0, 0.012, -0.012); s.rotation.x = -0.25; }
-    else {      // (a girl who drew a scarf gets hair instead: the scarf would hide her face. One draw either way, so nobody else changes)
+    else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl' && sc >= 1) P(G.scarf, pick(TOPS), head, 0, 0.012, -0.012);
+    else {      // (a girl who drew a hijab gets hair instead. One draw either way, so nobody else changes)
       const hc = pick(HAIRS), h = P(G.hair, hc, head, 0, 0.012, -0.012); h.rotation.x = -0.3;
       if (o.woman) { const long = P(G.head, hc, head, 0, -0.13, -0.075); long.scale.set(1.02, 1.75, 0.62); }      // long hair down the back
       if (o.kind === 'girl') { const fl = P(G.bloom, '#f2c230', head, 0.1, 0.09, 0.06); fl.scale.setScalar(0.7); }
