@@ -181,8 +181,8 @@ export function createPeople(scene, world, R) {
     }
     if (o.kind === 'eat') {       // an ice cream cone held up to the mouth
       const P = painter('icecream', pos), e = arms[1].el;
-      P(G.cone, '#d9a25a', e, 0, -0.42, 0.02, '#b97f3a').scale.setScalar(1.1);
-      P(G.ball, '#f08fb0', e, 0, -0.53, 0.02).scale.setScalar(0.075); P(G.ball, '#f6e3b0', e, 0.01, -0.62, 0.02).scale.setScalar(0.062);
+      P(G.cone, '#d9a25a', e, 0, -0.33, 0.02, '#b97f3a').scale.setScalar(1.1);      // (gripped low in her fist, the scoops just above it)
+      P(G.ball, '#f08fb0', e, 0, -0.44, 0.02).scale.setScalar(0.075); P(G.ball, '#f6e3b0', e, 0.01, -0.53, 0.02).scale.setScalar(0.062);
     }
     if (o.kind === 'photo') {     // a camera held in both hands, lifted to the eye
       const e = arms[1].el, cam = P(G.box, '#3a3632', e, -0.08, -0.34, -0.03, '#22201e'); cam.scale.set(0.22, 0.14, 0.1);
@@ -570,7 +570,7 @@ export function createPeople(scene, world, R) {
           a1.sh.rotation.x = -2.5 + (alive ? Math.sin(t * 1.6) * 0.12 : 0); a0.sh.rotation.z = -0.3; p.head.rotation.x = -0.45; p.root.rotation.z = alive ? Math.sin(t * 1.3) * 0.03 : 0;
         } else if (o.kind === 'eat') {       // a lick, a look around, another lick
           const lick = alive ? Math.max(0, Math.sin(t * 1.5)) : 0.5;
-          a1.sh.rotation.set(-0.3 - lick * 0.12, 0, -0.42); a1.el.rotation.x = -2.2 - lick * 0.12; p.head.rotation.x = 0.1 + lick * 0.2; p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.3 * (1 - lick) : 0; a0.sh.rotation.z = -0.1;
+          a1.sh.rotation.set(-0.5 - lick * 0.12, -0.2, 1.3); a1.el.rotation.x = -2.4 - lick * 0.12;      // (found by search, elbow out to the side: at each lick the top scoop reaches her lips, under 1 cm short; still, 3.6 cm off; the arm 3 cm clear of her chest, nothing in her head) p.head.rotation.x = 0.1 + lick * 0.2; p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.3 * (1 - lick) : 0; a0.sh.rotation.z = -0.1;
         } else if (o.kind === 'photo') {     // lowers the camera to look, lifts it again
           const up = alive ? sm(Math.sin(t * 0.6) * 2 + 1.2) : 1;
           for (const a of p.arms) { a.sh.rotation.x = -0.55 - 0.95 * up; a.el.rotation.x = -1.15 - 0.15 * up; } p.head.rotation.x = 0.12 * up;
