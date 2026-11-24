@@ -281,7 +281,7 @@ export function paintGeo(geo, o = {}) {
 }
 
 // ---- the world builder: merges everything of one tag into one mesh ----
-const COLLIDE = new THREE.MeshBasicMaterial();
+const COLLIDE = new THREE.MeshBasicMaterial(), COLLIDE2 = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });      // (two-sided: an open ring, solid from inside too)
 const edgeCache = new Map();
 const _v = new THREE.Vector3(), _n = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3();
 const _nm = new THREE.Matrix3(), _c = new THREE.Color();
@@ -333,7 +333,7 @@ export class Builder {
       }
     }
     if (o.solid !== false) {
-      const c = new THREE.Mesh(geo, COLLIDE); c.matrixAutoUpdate = false; c.matrix.copy(W); c.matrixWorld.copy(W);
+      const c = new THREE.Mesh(geo, o.twoSided ? COLLIDE2 : COLLIDE); c.matrixAutoUpdate = false; c.matrix.copy(W); c.matrixWorld.copy(W);
       c.userData = { orb: o.orb, water: o.water, wall: o.wall, tag: o.tag };
       this.colliders.push(c); return c;
     }

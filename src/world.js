@@ -409,7 +409,7 @@ export function buildWorld(scene) {
     box(2.2, 3.4, 2.2, 34, BANK + 1.7, -35.6, { ...Mn, col: s[0], bleed: s[1], pat: PAT.blocks, ps: 0.6 });
     A(CYL, 34, BANK + 10, -35.6, { ...Mn, col: s[0], bleed: s[1], edge: 60 }, 0, 0, 0, [0.9, 13.4, 0.9]);
     A(new THREE.CylinderGeometry(1, 0.55, 1, 10), 34, BANK + 16.9, -35.6, { ...Mn, col: s[1], bleed: s[1], edge: 40 }, 0, 0, 0, [2.2, 0.8, 2.2]);
-    A(new THREE.CylinderGeometry(1, 1, 1, 10, 1, true), 34, BANK + 17.75, -35.6, { tag: 'minaret', col: s[1], edge: 40, hull: false, wall: true }, 0, 0, 0, [2.15, 0.9, 2.15]);
+    A(new THREE.CylinderGeometry(1, 1, 1, 10, 1, true), 34, BANK + 17.75, -35.6, { tag: 'minaret', col: s[1], edge: 40, hull: false, wall: true, twoSided: true }, 0, 0, 0, [2.15, 0.9, 2.15]);
     A(CYL, 34, BANK + 19.5, -35.6, { ...Mn, col: s[0], bleed: s[1], edge: 60 }, 0, 0, 0, [0.78, 4.4, 0.78]);
     A(CONE8, 34, BANK + 24.2, -35.6, { ...Mn, col: '#8e979c', bleed: '#737d86', wall: true, edge: 20 }, 0, 0, 0, [1, 5, 1]);
   });
@@ -799,7 +799,7 @@ export function buildWorld(scene) {
   // ---------- a well in the middle of the meadow where the horse and the sheep graze ----------
   b.object(() => {
     const wx = 51, wz = 48, W = { tag: 'well', orb: 'bunar' };
-    A(new THREE.CylinderGeometry(1, 1, 1, 14, 1, true), wx, BANK + 0.45, wz, { ...W, col: '#bcafa2', bleed: '#978a7c', pat: PAT.blocks, ps: 0.6, edge: 40 }, 0, 0, 0, [0.95, 0.9, 0.95]);
+    A(new THREE.CylinderGeometry(1, 1, 1, 14, 1, true), wx, BANK + 0.45, wz, { ...W, col: '#bcafa2', bleed: '#978a7c', pat: PAT.blocks, ps: 0.6, edge: 40, twoSided: true }, 0, 0, 0, [0.95, 0.9, 0.95]);
     A(new THREE.TorusGeometry(0.95, 0.09, 6, 18).rotateX(Math.PI / 2), wx, BANK + 0.92, wz, { ...W, col: '#a89a8c', bleed: '#857868', edge: 60 });
     A(CYL12, wx, BANK + 0.6, wz, { ...W, col: '#2f5a66', bleed: '#22434d', wall: true, ink: false, hatch: 0 }, 0, 0, 0, [0.9, 0.02, 0.9]);   // dark water far down
     for (const sx of [-0.88, 0.88]) box(0.14, 2.1, 0.14, wx + sx, BANK + 1.05, wz, { ...W, col: '#7a5636', bleed: '#5f4028' });
