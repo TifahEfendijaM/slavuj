@@ -569,11 +569,25 @@ export function createPeople(scene, world, R) {
           for (const a of p.arms) { a.sh.rotation.x = -0.55 - 0.95 * up; a.el.rotation.x = -1.15 - 0.15 * up; } p.head.rotation.x = 0.12 * up;
         } else if (o.kind === 'swimmer') {   // front crawl, up and down the river
           if (alive) {
-            p.s += p.dir * dt * o.speed / p.from.distanceTo(p.to); if (p.s > 1 || p.s < 0) { p.dir *= -1; p.s = Math.min(1, Math.max(0, p.s)); }
-            const want = Math.atan2((p.to.x - p.from.x) * p.dir, (p.to.z - p.from.z) * p.dir); p.root.rotation.y += Math.atan2(Math.sin(want - p.root.rotation.y), Math.cos(want - p.root.rotation.y)) * k(2, dt);
-            p.root.position.lerpVectors(p.from, p.to, p.s).addScaledVector(birdD.set(Math.sin(p.root.rotation.y), 0, Math.cos(p.root.rotation.y)), -0.95);
-            go(birdD.copy(p.root.position).addScaledVector(birdD.clone().set(Math.sin(p.root.rotation.y), 0, Math.cos(p.root.rotation.y)), 0.95), p.root.rotation.y, 0.6, 0.6);
-            a0.sh.rotation.x = -(t * 3.2) % 6.283; a1.sh.rotation.x = -(t * 3.2 + Math.PI) % 6.283; p.head.rotation.y = Math.sin(t * 3.2) * 0.5;
+            // a lap: up one lane, a U-turn onto a parallel lane (towards the middle of the river), back down it and a U-turn
+            // home, so he swims round each turn instead of spinning on the spot
+            const L = p.from.distanceTo(p.to), r = 1, dx = (p.to.x - p.from.x) / L, dz = (p.to.z - p.from.z) / L;
+            const sd = Math.sign(-p.from.x) || 1, nx = dz * sd, nz = -dx * sd, nf = nx * -p.from.x > 0 ? 1 : -1, Nx = nx * nf, Nz = nz * nf;
+            const lap = 2 * L + 2 * Math.PI * r; p.u = ((p.u ?? 0) + dt * o.speed) % lap; const u = p.u;
+            let px, pz, vx, vz;
+            if (u < L) { px = p.from.x + dx * u; pz = p.from.z + dz * u; vx = dx; vz = dz; }
+            else if (u < L + Math.PI * r) { const a = (u - L) / r, cx = p.to.x + Nx * r, cz = p.to.z + Nz * r; px = cx - Nx * r * Math.cos(a) + dx * r * Math.sin(a); pz = cz - Nz * r * Math.cos(a) + dz * r * Math.sin(a); vx = Nx * Math.sin(a) + dx * Math.cos(a); vz = Nz * Math.sin(a) + dz * Math.cos(a); }
+            else if (u < 2 * L + Math.PI * r) { const w = u - L - Math.PI * r; px = p.to.x + 2 * Nx * r - dx * w; pz = p.to.z + 2 * Nz * r - dz * w; vx = -dx; vz = -dz; }
+            else { const a = (u - 2 * L - Math.PI * r) / r, cx = p.from.x + Nx * r, cz = p.from.z + Nz * r; px = cx + Nx * r * Math.cos(a) - dx * r * Math.sin(a); pz = cz + Nz * r * Math.cos(a) - dz * r * Math.sin(a); vx = -Nx * Math.sin(a) - dx * Math.cos(a); vz = -Nz * Math.sin(a) - dz * Math.cos(a); }
+            const ry = Math.atan2(vx, vz); p.root.rotation.y = ry;
+            p.root.position.set(px, p.from.y, pz).addScaledVector(birdD.set(Math.sin(ry), 0, Math.cos(ry)), -0.95);
+            go(birdD.set(px, p.from.y, pz), ry, 0.6, 0.6);
+            // the arms: over the water reaching forward, under it pulling back. His body rolls with the strokes (the side
+            // whose arm is out of the water comes up), and every second stroke he turns his face out on the right to breathe
+            const ph = t * 3.2, roll = -Math.sin(ph) * 0.4;
+            a0.sh.rotation.x = ph % 6.283; a1.sh.rotation.x = (ph + Math.PI) % 6.283;
+            const c1 = ((ph + Math.PI) % 6.283) / 6.283, breath = sm((c1 - 0.02) / 0.12) * (1 - sm((c1 - 0.32) / 0.14));      // (as the right arm leaves the water)
+            p.torso.rotation.y = roll + 0.15 * breath; p.head.rotation.y = -roll * 0.8 + 1.0 * breath;
           }
           p.legs.forEach((l, i) => { l.hip.rotation.x = (alive ? Math.sin(t * 9 + i * Math.PI) : i ? 0.2 : -0.2) * 0.3; });
           p.root.position.y = p.y0 + (alive ? Math.sin(t * 3.2) * 0.02 : 0);
