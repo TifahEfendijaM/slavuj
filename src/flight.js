@@ -84,11 +84,11 @@ export class Flight {
     });
   }
 
-  // the body seen from above is an ellipse (0.4 long, 0.26 wide, times the bird's scale). Feel all round it, at the height
+  // the body seen from above is an ellipse (0.64 long, beak to tail, and 0.26 wide, times the bird's scale). Feel all round it, at the height
   // of the body and of the head, for walls closer than its edge; return the spot moved clear of them, null if it is
   // clear already, or false if it cannot fit there at all (a narrow gap between a wall and a flower box)
   wallPush(p) {
-    const sc = S.bird.scale, az = 0.4 * sc + 0.03, ax = 0.26 * sc + 0.03, push = new THREE.Vector3(), d = new THREE.Vector3();
+    const sc = S.bird.scale, az = 0.64 * sc + 0.03, ax = 0.26 * sc + 0.03, push = new THREE.Vector3(), d = new THREE.Vector3();
     // only the fixed solid things within reach are felt for (their bounds are worked out once); people and animals are not walls
     const near = [];
     for (const c of this.colliders) {
@@ -140,7 +140,7 @@ export class Flight {
       return true;
     };
     const hopTo = (hit) => { if (!clearTo(hit.point.clone().setY(hit.point.y + this.perchH))) { this.walk = 0; return false; } const dy = hit.point.y - gy; this.feet = null; this.hop = { from: this.pos.clone(), to: hit.point.clone().setY(hit.point.y + this.perchH), point: hit.point.clone(), obj: hit.object, t: 0, dur: 0.38 + Math.abs(dy) * 0.3, arc: 0.16 + Math.max(0, dy) * 0.3 + Math.abs(dy) * 0.12 }; return true; };
-    const ahead = this.cast(this.pos, fw, step + reach);
+    const ahead = this.cast(this.pos, fw, step + Math.max(reach, 0.66 * sc + 0.04));      // (it stops with its beak clear of the wall)
     if (ahead && !ahead.object.userData.water) {                          // something in the way: hop onto it if it is low enough
       const top = this.cast(new THREE.Vector3(this.pos.x + fw.x * (ahead.distance + reach), gy + f.hopUp + 0.3, this.pos.z + fw.z * (ahead.distance + reach)), DOWN, f.hopUp + 0.32);
       if (top && this.landable(top) && top.point.y - gy > 0.04 && top.point.y - gy <= f.hopUp) hopTo(top); else this.walk = 0;
