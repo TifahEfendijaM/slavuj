@@ -4,7 +4,6 @@ import * as THREE from 'three';
 import { paintGeo, washMat, addHull, tag, inkMaterial } from './paper.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TOPS = ['#b8452c', '#3f6f9a', '#4f8068', '#c69a3a', '#8a5a8a', '#e6dccb', '#5d7b8a', '#c9744a'];
 const BOTTOMS = ['#4a4a52', '#6a5a44', '#3d5066', '#7a6a58', '#5a4a40'];
@@ -78,11 +77,25 @@ function keeperShuffle(p, dt) {
 }
 const cap = (r, l) =>new THREE.CapsuleGeometry(r, l, 4, 8);
 const lathe = (pts) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 12);
-// a hijab: close round the top, sides and back of the head down to the chin, open in front for the face (the face points
-// along +z, where a sphere's phi is pi/2). The neck is covered by the top's high collar
+// a hijab: close round the head, with a round opening for the face (the face points along +z), then narrowing below
+// the head down round the neck to where the top's high collar begins. Built row by row from the crown down; on the
+// rows that cross the face each row stops at the edge of the opening, so the opening is a smooth oval
 function hijab() {
-  const r = 0.137, top = 0.98, chin = 2.05, open = 0.62;
-  return mergeGeometries([new THREE.SphereGeometry(r, 14, 3, 0, Math.PI * 2, 0, top), new THREE.SphereGeometry(r, 11, 6, Math.PI / 2 + open, Math.PI * 2 - 2 * open, top, chin - top)]);
+  const R = 0.137, M = 56, N = 30, t1 = 2.1, r1 = R * Math.sin(t1), y1 = R * Math.cos(t1), neckR = 0.077, neckY = -0.165;
+  const tc = 1.49, tb = 0.53, half = 0.6;      // the opening: centre and half height (from the crown), half width
+  const pos = [], uv = [], idx = [];
+  for (let i = 0; i <= M; i++) {
+    const t = (i / M) * Math.PI, u = Math.max(0, (t - t1) / (Math.PI - t1));
+    const r = t <= t1 ? R * Math.sin(t) : r1 + (neckR - r1) * u, y = t <= t1 ? R * Math.cos(t) : y1 + (neckY - y1) * u;
+    const k = (t - tc) / tb, w = Math.abs(k) < 1 ? half * Math.sqrt(1 - k * k) / Math.max(0.3, Math.sin(t)) : 0;
+    for (let j = 0; j <= N; j++) {
+      const ph = Math.PI / 2 + w + (j / N) * (Math.PI * 2 - 2 * w);
+      pos.push(-Math.cos(ph) * r, y, Math.sin(ph) * r); uv.push(j / N, 1 - i / M);
+    }
+  }
+  for (let i = 0; i < M; i++) for (let j = 0; j < N; j++) { const a = i * (N + 1) + j, b = a + N + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  return g;
 }
 const G = {
   thigh: cap(0.085, 0.26), calf: cap(0.068, 0.26), foot: cap(0.05, 0.12), arm: cap(0.052, 0.5), hand: new THREE.SphereGeometry(0.058, 8, 6),
@@ -181,8 +194,9 @@ export function createPeople(scene, world, R) {
     }
     if (o.kind === 'eat') {       // an ice cream cone held up to the mouth
       const P = painter('icecream', pos), e = arms[1].el;
-      P(G.cone, '#d9a25a', e, 0, -0.33, 0.02, '#b97f3a').scale.setScalar(1.1);      // (gripped low in her fist, the scoops just above it)
-      P(G.ball, '#f08fb0', e, 0, -0.44, 0.02).scale.setScalar(0.075); P(G.ball, '#f6e3b0', e, 0.01, -0.53, 0.02).scale.setScalar(0.062);
+      const w = grp(e, 0, -0.3, 0); w.rotation.set(0.2, 0, -0.8);      // her wrist, tipping the cone towards her mouth
+      P(G.cone, '#d9a25a', w, 0, -0.03, 0.02, '#b97f3a').scale.setScalar(1.1);      // (gripped low in her fist, the scoops just above it)
+      P(G.ball, '#f08fb0', w, 0, -0.14, 0.02).scale.setScalar(0.075); P(G.ball, '#f6e3b0', w, 0.01, -0.23, 0.02).scale.setScalar(0.062);
     }
     if (o.kind === 'photo') {     // a camera held in both hands, lifted to the eye
       const e = arms[1].el, cam = P(G.box, '#3a3632', e, -0.08, -0.34, -0.03, '#22201e'); cam.scale.set(0.22, 0.14, 0.1);
@@ -570,7 +584,8 @@ export function createPeople(scene, world, R) {
           a1.sh.rotation.x = -2.5 + (alive ? Math.sin(t * 1.6) * 0.12 : 0); a0.sh.rotation.z = -0.3; p.head.rotation.x = -0.45; p.root.rotation.z = alive ? Math.sin(t * 1.3) * 0.03 : 0;
         } else if (o.kind === 'eat') {       // a lick, a look around, another lick
           const lick = alive ? Math.max(0, Math.sin(t * 1.5)) : 0.5;
-          a1.sh.rotation.set(-0.5 - lick * 0.12, -0.2, 1.3); a1.el.rotation.x = -2.4 - lick * 0.12;      // (found by search, elbow out to the side: at each lick the top scoop reaches her lips, under 1 cm short; still, 3.6 cm off; the arm 3 cm clear of her chest, nothing in her head) p.head.rotation.x = 0.1 + lick * 0.2; p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.3 * (1 - lick) : 0; a0.sh.rotation.z = -0.1;
+          a1.sh.rotation.set(-0.5 - lick * 0.12, -0.2, 0.3); a1.el.rotation.x = -2.4 - lick * 0.12; p.head.rotation.x = 0.1 + lick * 0.2; p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.3 * (1 - lick) : 0; a0.sh.rotation.z = -0.1;
+          // (arm and wrist found by search, the elbow near her side: at each lick the top scoop reaches her lips, under 1 cm short; still, 4 cm off; her arm clear of her chest, nothing in her head)
         } else if (o.kind === 'photo') {     // lowers the camera to look, lifts it again
           const up = alive ? sm(Math.sin(t * 0.6) * 2 + 1.2) : 1;
           for (const a of p.arms) { a.sh.rotation.x = -0.55 - 0.95 * up; a.el.rotation.x = -1.15 - 0.15 * up; } p.head.rotation.x = 0.12 * up;
