@@ -78,12 +78,11 @@ function keeperShuffle(p, dt) {
 }
 const cap = (r, l) =>new THREE.CapsuleGeometry(r, l, 4, 8);
 const lathe = (pts) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 12);
-// a hijab: round the top, sides and back of the head and under the chin, open in front for the face (the face points
-// along +z, where a sphere's phi is pi/2), then falling over the neck onto the shoulders
+// a hijab: close round the top, sides and back of the head down to the chin, open in front for the face (the face points
+// along +z, where a sphere's phi is pi/2). The neck is covered by the top's high collar
 function hijab() {
-  const r = 0.15, top = 0.78, chin = 2.02, open = 0.95, S = (p0, pl, t0, tl, w, h) => new THREE.SphereGeometry(r, w, h, p0, pl, t0, tl);
-  const drape = lathe([[0.235, -0.285], [0.2, -0.2], [0.14, -0.14], [0.085, -0.12]]);      // (bottom to top, so it faces outwards)
-  return mergeGeometries([S(0, Math.PI * 2, 0, top, 14, 3), S(Math.PI / 2 + open, Math.PI * 2 - 2 * open, top, chin - top, 11, 5), S(0, Math.PI * 2, chin, 2.6 - chin, 14, 2), drape]);
+  const r = 0.137, top = 0.98, chin = 2.05, open = 0.62;
+  return mergeGeometries([new THREE.SphereGeometry(r, 14, 3, 0, Math.PI * 2, 0, top), new THREE.SphereGeometry(r, 11, 6, Math.PI / 2 + open, Math.PI * 2 - 2 * open, top, chin - top)]);
 }
 const G = {
   thigh: cap(0.085, 0.26), calf: cap(0.068, 0.26), foot: cap(0.05, 0.12), arm: cap(0.052, 0.5), hand: new THREE.SphereGeometry(0.058, 8, 6),
@@ -150,7 +149,7 @@ export function createPeople(scene, world, R) {
     if (sc < 1) head.scale.setScalar(1.25);                       // children: a bigger head
     if (o.fes) painter('fes', pos, undefined, false, o.fesAt)(G.fes, '#b3312c', head, 0, 0.15, 0, '#8f2420'); else if (o.robe) P(G.cap, '#f3efe6', head, 0, 0.02, 0);
     else if (o.kind === 'post') { P(G.cap, '#23405e', head, 0, 0.03, 0, '#1a2f45'); const v = P(G.box, '#1a2f45', head, 0, 0.05, 0.13); v.scale.set(0.2, 0.025, 0.11); }
-    else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl' && sc >= 1) P(G.scarf, pick(TOPS), head, 0, 0.012, -0.012);
+    else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl' && sc >= 1) P(G.scarf, pick(TOPS), head, 0, 0, 0);
     else {      // (a girl who drew a hijab gets hair instead. One draw either way, so nobody else changes)
       const hc = pick(HAIRS), h = P(G.hair, hc, head, 0, 0.012, -0.012); h.rotation.x = -0.3;
       if (o.woman) { const long = P(G.head, hc, head, 0, -0.13, -0.075); long.scale.set(1.02, 1.75, 0.62); }      // long hair down the back
