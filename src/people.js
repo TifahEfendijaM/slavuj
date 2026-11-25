@@ -88,7 +88,11 @@ function hijab() {
     const t = (i / M) * Math.PI, u = Math.max(0, (t - t1) / (Math.PI - t1)), v = 1 - u;
     // below the head: a soft curve from the sphere in under the jaw (0.09) and out onto the collar (0.11)
     const r = t <= t1 ? R * Math.sin(t) : v * v * r1 + 2 * u * v * 0.09 + u * u * 0.11, y = t <= t1 ? R * Math.cos(t) : v * v * y1 + 2 * u * v * -0.13 + u * u * -0.195;
-    const k = (t - tc) / tb, w = Math.abs(k) < 1 ? Math.min(Math.PI - 0.05, half * Math.sqrt(1 - k * k) / Math.max(0.5, Math.sin(t))) : 0;
+    // the opening: round over the brow, then open all the way down the front (the chin and the throat stay bare; the turtleneck covers the neck),
+    // narrowing a little from the cheeks to the jaw so the sides and back come down to the collar
+    const k = (t - tc) / tb, wide = half * R;
+    const lw = t < tc ? (k > -1 ? wide * Math.sqrt(1 - k * k) : 0) : wide - (wide - 0.1) * Math.min(1, (t - tc) / (Math.PI - tc)) ** 1.5;
+    const w = lw > 0 ? Math.min(Math.PI - 0.05, lw / Math.max(0.05, r)) : 0;
     for (let j = 0; j <= N; j++) {
       const ph = Math.PI / 2 + w + (j / N) * (Math.PI * 2 - 2 * w);
       pos.push(-Math.cos(ph) * r, y, Math.sin(ph) * r); uv.push(j / N, 1 - i / M);
@@ -404,7 +408,7 @@ export function createPeople(scene, world, R) {
       piece((u, v) => [0.06 + (cx + (u - 0.5) * r * 2) * FW, (cy + (v - 0.5) * r * 2 * FW / FH) * FH], '#fbf7ec', '#e6dfd0', z * 1.6, 2, 2);
     }
   }
-  block(FL.x, FL.y + FL.h / 2, FL.z, 0.16, FL.h, 0.16, { wall: true }); block(FL.x, FL.y + FL.h + 0.12, FL.z, 0.3, 0.12, 0.3, { orb: 'zastava' });
+  block(FL.x, FL.y + FL.h / 2, FL.z, 0.16, FL.h, 0.16, { wall: true }); block(FL.x + 0.06 + FW / 2, FL.y + ftop - FH / 2 - 0.06, FL.z, FW + 0.1, FH + 0.2, 0.36, { wall: true });     // the cloth (thick enough for its ripple) block(FL.x, FL.y + FL.h + 0.12, FL.z, 0.3, 0.12, 0.3, { orb: 'zastava' });
   // its ink outline, bent with the cloth (a flat cloth gets no outline shell, so it is drawn as a line)
   const rim = [];
   for (let i = 0; i < 16; i++) rim.push([0.06 + (i / 16) * FW, 0]);

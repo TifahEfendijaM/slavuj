@@ -818,7 +818,7 @@ export function buildWorld(scene) {
       const L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / 2.4)), ry = Math.atan2(x1 - x0, z1 - z0);
       for (let i = 0; i <= n; i++) { const u = i / n; box(0.13, 1.05, 0.13, x0 + (x1 - x0) * u, BANK + 0.53, z0 + (z1 - z0) * u, { ...F, pat: 0 }, ry); }
       for (const y of [0.45, 0.88]) box(0.06, 0.09, L, (x0 + x1) / 2, BANK + y, (z0 + z1) / 2, F, ry);
-      b.block(BOX, mat4((x0 + x1) / 2, BANK + 0.96, (z0 + z1) / 2, ry, 0, 0, [0.26, 0.08, L]), { orb: 'ograda' });     // a perch along the top
+      b.block(BOX, mat4((x0 + x1) / 2, BANK + 0.885, (z0 + z1) / 2, ry, 0, 0, [0.26, 0.08, L]), { orb: 'ograda' });     // a perch along the top, flush with the top rail
     };
     const X0 = 40.3, X1 = 61.7, Z0 = 36.3, Z1 = 59.7;
     run(X0, Z0, X1, Z0); run(X1, Z0, X1, Z1); run(X1, Z1, X0, Z1); run(X0, Z1, X0, 49.6); run(X0, 46.4, X0, Z0);
