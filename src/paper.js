@@ -7,8 +7,17 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import S from './settings.js';
 
-// the look: the original watercolour, or the oil paint trial (only this file's shader and src/oil.js differ between them)
-export const OIL = (new URLSearchParams(location.search).get('style') || S.style) === 'oil';
+// the look: the original watercolour, or the oil paint trial (only this file's shader and src/oil.js differ between them).
+// ?style= in the address wins, then the choice made in the pause menu, then settings.js
+const STYLE_KEY = 'slavuj-style';
+const storedStyle = () => { try { return localStorage.getItem(STYLE_KEY); } catch (e) { return null; } };
+export const look = { oil: (new URLSearchParams(location.search).get('style') || storedStyle() || S.style) === 'oil' };
+const washMats = [];
+// switch the look while playing: every painted material is rebuilt with or without the oil part of the shader
+export function setOil(on) {
+  look.oil = on; try { localStorage.setItem(STYLE_KEY, on ? 'oil' : 'watercolor'); } catch (e) { /* no storage */ }
+  for (const m of washMats) { m.defines = on ? { OIL: '' } : {}; m.needsUpdate = true; }
+}
 
 export function rng(seed) {
   return () => {
@@ -264,8 +273,8 @@ export function tag(name) {
 }
 
 export function washMat(tagName, o = {}) {
-  return new THREE.ShaderMaterial({
-    vertexShader: VERT, fragmentShader: FRAG, side: o.side ?? THREE.FrontSide, defines: OIL ? { OIL: '' } : {},
+  const m = new THREE.ShaderMaterial({
+    vertexShader: VERT, fragmentShader: FRAG, side: o.side ?? THREE.FrontSide, defines: look.oil ? { OIL: '' } : {},
     polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
     uniforms: {
       uNoise: shared.uNoise, uPaper: shared.uPaper, uInk: shared.uInk, uLight: shared.uLight, uSunDir: shared.uSunDir,
@@ -273,6 +282,7 @@ export function washMat(tagName, o = {}) {
       uT: tag(tagName).uT, uVivid: { value: o.vivid ?? 0 },
     },
   });
+  washMats.push(m); return m;
 }
 
 // ---- ink ----

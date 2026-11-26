@@ -26,7 +26,7 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 
 ## Art style
 - Everything is drawn by one shader in `src/paper.js` (`FRAG`). Colours live in the geometry; all pieces with the same "paint tag" (house, tree, river...) are merged into one mesh, coloured in as a spreading wet front by moving one number (`uT`). Ink outlines are `LineSegments2` lines plus "hull" shells (inflated back faces) for round shapes. Pencil hatching and the drawn patterns (cobbles, roof slabs, planks, kilim, water streaks) are in the shader too.
-- **Style switch:** `style` in `src/settings.js` (`'oil'` on `dev`, the original is `'watercolor'`). `?style=watercolor` or `?style=oil` in the address overrides it, for comparing.
+- **Style switch:** the pause menu's "Style" button switches the look while playing (remembered in the browser). The default is `style` in `src/settings.js` (`'oil'` on `dev`, the original is `'watercolor'`). `?style=watercolor` or `?style=oil` in the address overrides both.
   - Oil = the `#ifdef OIL` branch of the shader (canvas, brush strokes, warm lights and cool shadows, impasto ridges) plus `src/oil.js`. That file paints the frame into a buffer and smears it into dabs with a Kuwahara filter, then draws the ink on top, sharp, using the same depth.
   - With `'watercolor'` nothing of that runs: `createDraw()` is plain `renderer.render()`, and the watercolour shader code is untouched.
   - To drop oil entirely, revert the oil commit(s) on `dev`. To keep it, merge it into `main` only after the user approves.
@@ -44,7 +44,7 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 - `assets/audio/words/`: the user's own recordings, one per word, made with `record.html` (dev server only). Words with no recording use the browser's synthetic voice. `assets/photos/`: the default journal photos (exported with `?exportPhotos` after a full play-through). `assets/CREDITS.md`: the sources of downloaded assets.
 
 ## Working on it
-- The dev server: `npm run dev` (port 5183; the launch config is named `slavuj`). Test with `?map=mostar&slot=test` (add `&fresh` for a new game), so the user's own save is untouched. The `slot=test` save is currently the finished, coloured town.
+- The dev server: `npm run dev` (port 5183; the launch config is named `slavuj`). Test with `?map=mostar&slot=test` (add `&fresh` for a new game), so the user's own save is untouched. The `slot=test` save is a test save; `skipToFinale()` puts it back to everything coloured.
 - `window.__game` test hooks:
   - Moving the bird and camera: `flight.placeAt(x, z, yaw)`, `view(camX, camY, camZ, lookX, lookY, lookZ)`.
   - Turning things on: `start()` and `shared.uLife.value = 1` (alive).

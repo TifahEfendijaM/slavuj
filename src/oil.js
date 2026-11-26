@@ -2,8 +2,9 @@
 // smeared into flat dabs of colour with an edge-keeping (Kuwahara) filter, the way oil paint sits in patches. The ink
 // (outlines and the thick lines round people and trees) is drawn afterwards, on top and sharp, against the same depth,
 // so it is never smeared away. With the watercolour style draw() is just renderer.render().
+// (The look can be switched while playing: pause menu, "Style".)
 import * as THREE from 'three';
-import { OIL } from './paper.js';
+import { look } from './paper.js';
 
 const INK = 1;      // the layer the ink is moved to
 
@@ -36,7 +37,6 @@ void main(){
 }`;
 
 export function createDraw(renderer) {
-  if (!OIL) return { draw: (scene, camera) => renderer.render(scene, camera), resize() {} };
   const rt = new THREE.WebGLRenderTarget(1, 1, { samples: 4, depthTexture: new THREE.DepthTexture(1, 1) });
   rt.texture.colorSpace = THREE.SRGBColorSpace;
   const mat = new THREE.ShaderMaterial({
@@ -53,6 +53,7 @@ export function createDraw(renderer) {
   });
   return {
     draw(scene, camera) {
+      if (!look.oil) { const k = camera.layers.mask; camera.layers.enable(INK); renderer.render(scene, camera); camera.layers.mask = k; return; }      // (ink already moved to its layer stays seen)
       if (n++ % 30 === 0) sortInk(scene);      // (new things, such as the finale's, are found within half a second)
       const keep = camera.layers.mask;
       camera.layers.set(0); renderer.setRenderTarget(rt); renderer.render(scene, camera);

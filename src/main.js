@@ -13,6 +13,7 @@ import { createDiver } from './diver.js';
 import { createPeople } from './people.js';
 import { rng } from './paper.js';
 import { createDraw } from './oil.js';
+import { look as artLook, setOil } from './paper.js';
 import { Flight } from './flight.js';
 import * as audio from './audio.js';
 import * as platform from './platform.js';
@@ -253,6 +254,9 @@ function skipToFinale() { save = { done: orbs.map((o) => o.id), finale: false, s
 $('reset').addEventListener('click', restartLevel);
 { const b = $('mute'), show = () => { b.querySelector('.lb').textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'; b.classList.toggle('muted', audio.isMuted()); }; show();
   b.addEventListener('click', (e) => { e.stopPropagation(); audio.setMuted(!audio.isMuted()); show(); }); }
+// the oil paint trial: switch between it and the watercolour (remembered in this browser)
+{ const b = $('style'), show = () => { b.querySelector('.lb').textContent = artLook.oil ? 'Style: oil paint' : 'Style: watercolour'; }; show();
+  b.addEventListener('click', (e) => { e.stopPropagation(); setOil(!artLook.oil); show(); }); }
 for (const [id, fn] of [['restart', restartLevel], ['toFinale', skipToFinale]]) {
   const b = $(id), lb = b.querySelector('.lb'), label = lb.textContent; let armed = 0;
   b.addEventListener('click', (e) => {
