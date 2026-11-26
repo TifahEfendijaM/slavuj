@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { look, setResolution } from './paper.js';
 
-const PIX = 3;      // screen pixels (CSS) per pixel of the pixel art
+const PIX = 1.5;      // screen pixels (CSS) per pixel of the pixel art (fine: the pixels show in the edges and the colour steps, not as big blocks)
 
 const VERT = /* glsl */`varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 const FRAG = /* glsl */`uniform sampler2D tColor; varying vec2 vUv;
