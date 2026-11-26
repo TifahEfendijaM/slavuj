@@ -7,6 +7,9 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import S from './settings.js';
 
+// the look: the original watercolour, or the oil paint trial (only this file's shader and src/oil.js differ between them)
+export const OIL = (new URLSearchParams(location.search).get('style') || S.style) === 'oil';
+
 export function rng(seed) {
   return () => {
     seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
@@ -196,6 +199,43 @@ void main(){
   float rim = m * smoothstep(front - 0.11, front - 0.04, d);
   float damp = (1.0 - m) * (1.0 - smoothstep(front, front + 0.25, d)) * step(0.001, p);
 
+#ifdef OIL
+  // ---- oil paint: canvas with a pencil underdrawing, and thick, brushy paint ----
+  vec2 cq = gl_FragCoord.xy / uPx;
+  float weave = 0.5 + 0.25 * (sin(cq.x * 2.1 + grain * 1.5) + sin(cq.y * 2.1 + grain * 2.0));
+  vec3 canvasC = uPaper * vec3(0.98, 0.95, 0.89) * (0.9 + 0.06 * weave + 0.06 * grain);
+  // brush strokes: dabs laid in a direction that turns slowly across each surface
+  float ang = (blotch * 2.2 + mid * 0.8) * 3.14159;
+  vec2 sdir = vec2(cos(ang), sin(ang));
+  vec2 sp = wuv * (sky ? 22.0 : 1.6);
+  vec2 bs = vec2(dot(sp, sdir), dot(sp, vec2(-sdir.y, sdir.x)));
+  float br = texture2D(uNoise, bs * vec2(0.035, 0.42)).b, br2 = texture2D(uNoise, bs * vec2(0.08, 0.9) + 0.37).g;
+  float paintTex = mix(br * 0.65 + br2 * 0.35, 0.5, (1.0 - nearK) * 0.6);
+  // impasto: the ridges of the strokes catch the light (from the upper left of the picture)
+  vec2 gtx = vec2(dFdx(paintTex), dFdy(paintTex));
+  float ridge = clamp((-gtx.x + gtx.y) * 9.0, -1.0, 1.0) * nearK;
+  // colour: richer than the wash, warm lights and cool violet shadows, the step between them broken by the brush
+  vec3 base = col; float lum = dot(base, vec3(0.3, 0.59, 0.11));
+  base = clamp(mix(vec3(lum), base, 1.3), 0.0, 1.0);
+  float lit = dot(N, L) * 0.5 + 0.5;
+  float band = smoothstep(0.28, 0.72, lit + (paintTex - 0.5) * 0.3);
+  vec3 shadowC = base * mix(vec3(0.52, 0.5, 0.7), vec3(0.5, 0.42, 0.62), sun);
+  vec3 lightC = base * mix(vec3(1.05, 1.02, 0.95), vec3(1.14, 0.99, 0.8), sun);
+  vec3 oil = sky ? col * (0.92 + 0.16 * paintTex) : mix(shadowC, lightC, band) * (0.76 + 0.46 * paintTex);
+  oil += (vec3(br2, br, 1.0 - br2) - 0.5) * 0.09 * nearK;                  // each stroke mixed a little differently
+  vec2 e = min(vUv, 1.0 - vUv);
+  float pool = vPar.x * (1.0 - smoothstep(0.0, 0.06 + 0.05 * mid, min(e.x, e.y)));
+  oil = mix(oil, vBleed * 0.85, pool * 0.25);
+  oil = mix(oil, base * 0.42, clamp(pink * 1.6, 0.0, 1.0));                 // the drawn patterns, painted in a darker tone
+  oil = mix(oil, vec3(0.97, 0.95, 0.86), streak * 0.6);                    // light on the water
+  oil += sky ? vec3(0.0) : vec3(0.16, 0.14, 0.11) * ridge;
+  oil += sun * 0.15 * max(dot(N, uSunDir), 0.0) * vec3(1.0, 0.7, 0.32) + sun * streak * vec3(0.3, 0.16, 0.02);
+  oil *= 1.0 - 0.3 * rim;                                                   // a thick ridge of paint where it is being laid on
+  vec3 c = mix(canvasC * (1.0 - 0.06 * damp), oil, m);
+  c = mix(c, uInk, (1.0 - m) * max(hatch * 0.5, pink));                    // the underdrawing, until the paint covers it
+  c *= mix(vec3(1.0), vec3(1.05, 0.95, 0.84), sun);
+  gl_FragColor = vec4(c, 1.0);
+#else
   float strength = mix((0.8 + 0.2 * mid) * (0.86 + 0.26 * grain), 1.0, max(uVivid, sky ? 0.7 : 0.0));
   vec2 e = min(vUv, 1.0 - vUv);
   float pool = vPar.x * (1.0 - smoothstep(0.0, 0.06 + 0.05 * mid, min(e.x, e.y)));
@@ -213,6 +253,7 @@ void main(){
   c = mix(c, uInk, max(hatch * mix(0.5, 0.3, m), max(pink, streak * 0.75) * (1.0 - m * (streak > 0.0 ? 1.0 : 0.45))));
   c *= mix(vec3(1.0), vec3(1.05, 0.95, 0.84), sun);
   gl_FragColor = vec4(c, 1.0);
+#endif
   #include <colorspace_fragment>
 }`;
 
@@ -224,7 +265,7 @@ export function tag(name) {
 
 export function washMat(tagName, o = {}) {
   return new THREE.ShaderMaterial({
-    vertexShader: VERT, fragmentShader: FRAG, side: o.side ?? THREE.FrontSide,
+    vertexShader: VERT, fragmentShader: FRAG, side: o.side ?? THREE.FrontSide, defines: OIL ? { OIL: '' } : {},
     polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
     uniforms: {
       uNoise: shared.uNoise, uPaper: shared.uPaper, uInk: shared.uInk, uLight: shared.uLight, uSunDir: shared.uSunDir,

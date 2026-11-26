@@ -1,5 +1,6 @@
 // Values you can tweak. Save the file and the game reloads with the new values.
 export default {
+  style: 'oil',          // the look: 'oil' (the oil paint trial) or 'watercolor' (the original). Adding ?style=watercolor or ?style=oil to the address overrides it
   flight: {
     cruiseSpeed: 14,      // normal flying speed
     minSpeed: 6,          // slowest the bird can fly

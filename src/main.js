@@ -12,6 +12,7 @@ import { createBird } from './bird.js';
 import { createDiver } from './diver.js';
 import { createPeople } from './people.js';
 import { rng } from './paper.js';
+import { createDraw } from './oil.js';
 import { Flight } from './flight.js';
 import * as audio from './audio.js';
 import * as platform from './platform.js';
@@ -39,6 +40,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setClearColor(S.colors.paper);
 renderer.domElement.id = 'gl'; document.body.prepend(renderer.domElement);
 const canvas = renderer.domElement;
+const brush = createDraw(renderer);      // (the oil paint trial adds a brush filter; the watercolour just renders)
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(S.camera.fov, 1, 0.1, 2000);
 if (M.bounds) Object.assign(S.world, M.bounds);      // how far out and up this map lets the bird fly
@@ -67,7 +69,7 @@ let live = false;
 function resize() {
   const r = renderer.domElement.getBoundingClientRect(), w = Math.max(1, Math.round(r.width || innerWidth)), h = Math.max(1, Math.round(r.height || innerHeight)), px = Math.min(devicePixelRatio, 2);
   renderer.setPixelRatio(px); renderer.setSize(w, h, false);
-  camera.aspect = w / h; camera.updateProjectionMatrix(); setResolution(w, h, px);
+  camera.aspect = w / h; camera.updateProjectionMatrix(); setResolution(w, h, px); brush.resize(w, h, px);
 }
 addEventListener('resize', resize); visualViewport?.addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 300));
 if (window.ResizeObserver) new ResizeObserver(resize).observe(renderer.domElement);
@@ -659,7 +661,7 @@ function snapshot(id) {
   else { const sh = setShots(byId[id])[0]; from = sh.from.clone().lerp(sh.to, 0.7); to = sh.lookFrom.clone().lerp(sh.lookTo, 0.7); }
   camera.position.copy(from); camera.lookAt(to); camera.fov = S.cutscene.fov; camera.updateProjectionMatrix(); bird.root.visible = false;
   const shown = orbs.filter((o) => o.vis.visible); for (const o of shown) o.vis.visible = false;
-  renderer.render(scene, camera);
+  brush.draw(scene, camera);
   for (const o of shown) o.vis.visible = true;
   const data = grabFrame();
   camera.position.copy(keep.p); camera.quaternion.copy(keep.q); camera.fov = keep.fov; camera.updateProjectionMatrix(); bird.root.visible = vis;
@@ -875,7 +877,7 @@ function tick(dt) {
   if (cut) updateCutscene(dt); else if (!fin) updateCamera(dt);
   if (dbg) { camera.position.set(dbg[0], dbg[1], dbg[2]); camera.lookAt(dbg[3], dbg[4], dbg[5]); }
   updateHint(); $('skip').classList.toggle('off', !((cut && !cut.ending) || (fin && !fin.ending && fin.t < 25.5)));
-  renderer.render(scene, camera);
+  brush.draw(scene, camera);
   if (snapId) { keepPic(snapId, grabFrame()); snapId = null; }
 }
 audio.setMusic(0.2 + 0.6 * (save.done.length / orbs.length), save.finale);
