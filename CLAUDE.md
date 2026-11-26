@@ -7,11 +7,11 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 ## Where it stands (2026-11-26)
 - **Mostar (summer) is finished and approved**, and is the only public map. Lately the work has been polish from the user's screenshots: no clipping, natural poses and animations, clothes, sounds.
 - **Sarajevo (autumn), Jahorina (winter), Jajce (spring), Neum (summer, extra)** are built as drafts, marked `wip` in `src/maps/index.js`. On the public site they show on the Bosnia map, locked, as "in development"; locally they play with a "Work in progress" banner. The user is leaning towards redoing them properly, to Mostar's level. Also liked as possible maps: Trebević, Igman, Vrelo Bosne, Blagaj.
-- **Oil paint trial (on `dev` only):** an oil paint look for the whole Mostar map, as a switch. See "Art style" below. The user is comparing it with the watercolour and has not decided.
+- **Art style trials (on `dev` only):** coloured pencil, gouache and risograph print, beside the original watercolour, switchable from the pause menu. See "Art style" below. Oil paint was tried and dropped (it didn't suit the game, and its filter lagged). The user hasn't chosen yet.
 - **11 recordings not committed:** `assets/audio/words/` has the user's new recordings casa, dvorac, hrid, jezero, kisobran, mahala, peskir, rak, suncobran, trg and vijecnica (`.wav`, for the other maps). Leave them uncommitted until the user says they are done.
 
 ## What's next
-1. The oil paint decision: keep it, adjust it, or drop it.
+1. The art style decision: keep the watercolour or switch to one of the trials (and tune it).
 2. The other maps, one at a time, to Mostar's standard (about 40 words each, every word colouring only what it names, people and a finale). Start a new map only when the user says so.
 3. Back onto easybosnian once there are more towns (see below).
 
@@ -26,10 +26,11 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 
 ## Art style
 - Everything is drawn by one shader in `src/paper.js` (`FRAG`). Colours live in the geometry; all pieces with the same "paint tag" (house, tree, river...) are merged into one mesh, coloured in as a spreading wet front by moving one number (`uT`). Ink outlines are `LineSegments2` lines plus "hull" shells (inflated back faces) for round shapes. Pencil hatching and the drawn patterns (cobbles, roof slabs, planks, kilim, water streaks) are in the shader too.
-- **Style switch:** the pause menu's "Style" button switches the look while playing (remembered in the browser). The default is `style` in `src/settings.js` (`'oil'` on `dev`, the original is `'watercolor'`). `?style=watercolor` or `?style=oil` in the address overrides both.
-  - Oil = the `#ifdef OIL` branch of the shader (canvas, brush strokes, warm lights and cool shadows, impasto ridges) plus `src/oil.js`. That file paints the frame into a buffer and smears it into dabs with a Kuwahara filter, then draws the ink on top, sharp, using the same depth.
-  - With `'watercolor'` nothing of that runs: `createDraw()` is plain `renderer.render()`, and the watercolour shader code is untouched.
-  - To drop oil entirely, revert the oil commit(s) on `dev`. To keep it, merge it into `main` only after the user approves.
+- **Style switch:** the pause menu's "Style" button cycles watercolour → coloured pencil → gouache → risograph print while playing (remembered in the browser). The default is `style` in `src/settings.js` (`'watercolor'`). `?style=watercolor|pencil|gouache|riso` in the address overrides both.
+  - Each trial is a `#ifdef STYLE_PENCIL` / `STYLE_GOUACHE` / `STYLE_RISO` part of `FRAG` (helpers `lineCov` and `halftone`). Switching rebuilds the materials with that define (`setStyle()` in `paper.js`). The watercolour code is untouched and runs when no style define is set.
+  - Pencil: diagonal colour strokes on the paper's tooth, with a blue-violet layer over shadows. Gouache: flat matte colour in a few steps of light, with dry-brush edges. Riso: the colour split into blue, fluorescent pink and yellow halftone dots (split in screen colours, since the shader works in linear colour).
+  - All are drawn in the one shader with no extra pass, so they cost about the same as the watercolour. Avoid full-screen filters like oil's Kuwahara: it lagged badly.
+  - When the user chooses: drop the unused styles (and the button, if only one is left), then merge into `main` only after they approve.
 
 ## Where things are
 - `index.html`: the page, menus and HUD (CSS inline). It decides at the very start whether the device is touch-only (phone controls) and whether this is the platform build.
