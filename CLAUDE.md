@@ -7,7 +7,7 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 ## Where it stands (2026-11-26)
 - **Mostar (summer) is finished and approved**, and is the only public map. Lately the work has been polish from the user's screenshots: no clipping, natural poses and animations, clothes, sounds.
 - **Sarajevo (autumn), Jahorina (winter), Jajce (spring), Neum (summer, extra)** are built as drafts, marked `wip` in `src/maps/index.js`. On the public site they show on the Bosnia map, locked, as "in development"; locally they play with a "Work in progress" banner. The user is leaning towards redoing them properly, to Mostar's level. Also liked as possible maps: Trebević, Igman, Vrelo Bosne, Blagaj.
-- **Art style trials (on `dev` only):** coloured pencil, gouache and risograph print, beside the original watercolour, switchable from the pause menu. See "Art style" below. Oil paint was tried and dropped (it didn't suit the game, and its filter lagged). The user hasn't chosen yet.
+- **Art style trials (on `dev` only):** coloured pencil, crayon, gouache, spray paint and pixel art, beside the original watercolour, switchable from the pause menu. See "Art style" below. Tried and dropped: oil paint (didn't suit the game, and its filter lagged) and risograph print. The user hasn't chosen yet.
 - **11 recordings not committed:** `assets/audio/words/` has the user's new recordings casa, dvorac, hrid, jezero, kisobran, mahala, peskir, rak, suncobran, trg and vijecnica (`.wav`, for the other maps). Leave them uncommitted until the user says they are done.
 
 ## What's next
@@ -26,10 +26,11 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 
 ## Art style
 - Everything is drawn by one shader in `src/paper.js` (`FRAG`). Colours live in the geometry; all pieces with the same "paint tag" (house, tree, river...) are merged into one mesh, coloured in as a spreading wet front by moving one number (`uT`). Ink outlines are `LineSegments2` lines plus "hull" shells (inflated back faces) for round shapes. Pencil hatching and the drawn patterns (cobbles, roof slabs, planks, kilim, water streaks) are in the shader too.
-- **Style switch:** the pause menu's "Style" button cycles watercolour → coloured pencil → gouache → risograph print while playing (remembered in the browser). The default is `style` in `src/settings.js` (`'watercolor'`). `?style=watercolor|pencil|gouache|riso` in the address overrides both.
-  - Each trial is a `#ifdef STYLE_PENCIL` / `STYLE_GOUACHE` / `STYLE_RISO` part of `FRAG` (helpers `lineCov` and `halftone`). Switching rebuilds the materials with that define (`setStyle()` in `paper.js`). The watercolour code is untouched and runs when no style define is set.
-  - Pencil: diagonal colour strokes on the paper's tooth, with a blue-violet layer over shadows. Gouache: flat matte colour in a few steps of light, with dry-brush edges. Riso: the colour split into blue, fluorescent pink and yellow halftone dots (split in screen colours, since the shader works in linear colour).
-  - All are drawn in the one shader with no extra pass, so they cost about the same as the watercolour. Avoid full-screen filters like oil's Kuwahara: it lagged badly.
+- **Style switch:** the pause menu's "Style" button cycles watercolour → coloured pencil → crayon → gouache → spray paint → pixel art while playing (remembered in the browser). The default is `style` in `src/settings.js` (`'watercolor'`). `?style=watercolor|pencil|crayon|gouache|spray|pixel` in the address overrides both.
+  - Each trial is a `#ifdef STYLE_…` part of `FRAG` (helper `lineCov`). Switching rebuilds the materials with that define (`setStyle()` in `paper.js`; `onStyle` callbacks run after). The watercolour code is untouched and runs when no style define is set.
+  - Pencil, crayon, gouache and spray draw their strokes and dots in each object's own coordinates (`vLocal`, `vLN`, scaled per axis), so the pattern stays on the bird and people as they move. The watercolour still uses world coordinates. Things drawn with `vivid` (the bird) are fully coloured in every style.
+  - Pixel art is also drawn at a third of the screen size into a buffer and scaled up with sharp pixels (`src/look.js`), with outlines about 1.5 of its pixels wide (thinner ones break up). The shader gives it flat colour in crisp light steps and a limited palette.
+  - Everything else is drawn in the one shader with no extra pass, so each style costs about the same as the watercolour. Avoid full-screen filters like oil's Kuwahara: it lagged badly.
   - When the user chooses: drop the unused styles (and the button, if only one is left), then merge into `main` only after they approve.
 
 ## Where things are

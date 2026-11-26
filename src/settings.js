@@ -1,6 +1,6 @@
 // Values you can tweak. Save the file and the game reloads with the new values.
 export default {
-  style: 'watercolor',   // the look: 'watercolor' (the original), or the trials 'pencil', 'gouache', 'riso'. The pause menu's Style button and ?style=... in the address override it
+  style: 'watercolor',   // the look: 'watercolor' (the original), or the trials 'pencil', 'crayon', 'gouache', 'spray', 'pixel'. The pause menu's Style button and ?style=... in the address override it
   flight: {
     cruiseSpeed: 14,      // normal flying speed
     minSpeed: 6,          // slowest the bird can fly
