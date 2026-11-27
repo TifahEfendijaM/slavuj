@@ -6,7 +6,7 @@ export const MAPS = [
   { id: 'sarajevo', name: 'Sarajevo', season: 'Jesen', en: 'autumn', lat: 43.859, lon: 18.431 },
   { id: 'jahorina', name: 'Jahorina', season: 'Zima', en: 'winter', lat: 43.738, lon: 18.567 },
   { id: 'jajce', name: 'Jajce', season: 'Proljeće', en: 'spring', lat: 44.342, lon: 17.270 },
-  { id: 'neum', name: 'Neum', season: 'Ljeto', en: 'summer', lat: 42.923, lon: 17.615, extra: true, wip: true },      // (extra: off the season route)
+  { id: 'neum', name: 'Neum', season: 'Ljeto', en: 'summer', lat: 42.923, lon: 17.615, extra: true },      // (extra: off the season route)
   // towns planned for later: only a pin on the Bosnia map for now (no season yet, no world)
   { id: 'banjaluka', name: 'Banja Luka', lat: 44.772, lon: 17.191, extra: true, soon: true },
   { id: 'bihac', name: 'Bihać', lat: 44.817, lon: 15.871, extra: true, soon: true },
@@ -18,7 +18,7 @@ for (const m of MAPS) if (m.wip && import.meta.env.PROD) m.soon = true;
 
 const params = new URLSearchParams(location.search);
 const slot = params.get('slot') ? '-' + params.get('slot') : '';
-const SAVE_VER = { sarajevo: 2, jahorina: 2, jajce: 2 };
+const SAVE_VER = { sarajevo: 2, jahorina: 2, jajce: 2, neum: 2 };
 export const saveKey = (id) => `slavuj-${id}-${SAVE_VER[id] || 1}` + slot;      // (Mostar's key is the one it always had; Sarajevo uses -2 for a fresh save)
 export const MAP_ID = MAPS.some((m) => m.id === params.get('map') && !m.soon) ? params.get('map') : null;
 
