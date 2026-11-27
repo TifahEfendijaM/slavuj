@@ -11,8 +11,9 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | `journal-sarajevo.webp` | Painting of Old Sarajevo in autumn on the journal's Sarajevo page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
 | `journal-jahorina.webp` | Painting of Mount Jahorina in winter on the journal's Jahorina page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
 | `journal-jajce.webp` | Painting of Jajce in spring on the journal's Jajce page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
+| `journal-neum.webp` | Painting of Neum on the Adriatic Sea in summer on the journal's Neum page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
 | `journal-travnik.webp` | Painting of Travnik in summer on the journal's Travnik page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
-| `audio/words/*.wav` | Pronunciation of every word | Recorded by the project owner (native speaker); temporary Sarajevo, Jahorina, Jajce and Travnik placeholders listed in `_tts.json` generated with Azure Neural Speech (`bs-BA-GoranNeural`) until replaced via `record.html` | Owned by the project |
+| `audio/words/*.wav` | Pronunciation of every word | Recorded by the project owner (native speaker); temporary Sarajevo, Jahorina, Jajce, Neum and Travnik placeholders listed in `_tts.json` generated with Azure Neural Speech (`bs-BA-GoranNeural`) until replaced via `record.html` | Owned by the project |
 | `audio/sfx/sheep-2348.mp3`, `sheep-2349.mp3` | Sheep bleating (played pitched up) | BigSoundBank, Joseph Sardin: "Sheep #6" (2348), "Sheep #7" (2349) | CC0 |
 | `audio/sfx/applause.mp3` | The crowd's applause | BigSoundBank, Joseph Sardin: "Applause about 25-50 people #1" (0812) | CC0 |
 | `audio/sfx/horse-neigh.mp3` | The horse neighing | BigSoundBank, Joseph Sardin: "Horse Neighing #3" (0863) | CC0 |
@@ -32,6 +33,7 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | `audio/sfx/jajce/tower-bell.mp3` | Distant bell of St. Luke's tower (4.5 s clip, mono) | Wikimedia Commons: "SevenumBells.ogg" | Public Domain |
 | `audio/sfx/jajce/spring-guitar.mp3` | Acoustic guitar at the spring picnic (10 s loop, mono) | Wikimedia Commons: "Audio files of spanish guitar chords 01.wav" | CC0 |
 | `audio/sfx/jajce/waterfall-roar.mp3`, `watermill-stream.mp3`, `spring-bird.mp3`, `frog-croak.mp3` | Jajce waterfall, Mlinčići stream, spring songbird and lake frog | Procedurally generated for the project | Owned by the project |
+| `audio/sfx/neum/sea-waves.mp3`, `seagulls.mp3`, `cicadas.mp3`, `harbour-creak.mp3` | Neum Adriatic waves, seagulls, Mediterranean cicadas and harbour ambience | Original, synthesised in code for the project | Owned by the project |
 | `audio/sfx/travnik/plava-voda.mp3`, `grill-sizzle.mp3`, `summer-cicadas.mp3`, `rooster-crow.mp3`, `sheep-bell.mp3`, `clock-chime.mp3` | Travnik Plava voda stream, grill sizzle, summer cicadas, farm rooster, Vlašić sheep bell and Sahat-kula chime | Procedurally generated for the project | Owned by the project |
 
 Everything else is generated in code and belongs to the project: the bird, the town, all textures, the journal drawing, the music and the other sound effects.

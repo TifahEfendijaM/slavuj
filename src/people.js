@@ -154,7 +154,7 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : (o.bottom || bottom0), gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
     if ((!gown || seated || winterTrousers || (skirtC && sc < 1) || o.coatTag || o.topTag) && o.kind !== 'girl' && o.kind !== 'raft' && o.kind !== 'sarNana') for (const s of [-1, 1]) {
@@ -188,6 +188,17 @@ export function createPeople(scene, world, R) {
       const hc = o.hatCol || '#b84434', hb = o.hatBleed || '#8c2e22';
       const bn = BP(G.cap, hc, head, 0, 0.04, 0, hb); bn.scale.set(1.08, 1.25, 1.08);
       BP(G.ball, '#f3efe6', head, 0, 0.18, 0, '#d8d2c4').scale.setScalar(0.05);
+    } else if (o.sunHatTag || o.sunHat) {
+      const SHP = o.sunHatTag ? painter(o.sunHatTag, pos, undefined, false, o.sunHatAt) : P;
+      const brim = SHP(G.disc, o.sunHatCol || '#e4c788', head, 0, 0.09, 0, '#c2a264'); brim.scale.set(0.32, 0.32, 0.025); brim.rotation.x = Math.PI / 2;
+      const crown = SHP(G.fes, o.sunHatCol || '#e4c788', head, 0, 0.16, 0, '#c2a264'); crown.scale.set(1.25, 0.72, 1.25);
+      const band = SHP(G.disc, '#c84238', head, 0, 0.115, 0, '#962c24'); band.scale.set(0.165, 0.165, 0.032); band.rotation.x = Math.PI / 2;
+    } else if (o.capCap) {
+      const CP = painter(o.capTag || o.tag, pos);
+      const topC = CP(G.disc, '#f8f6f0', head, 0, 0.14, 0.01, '#d8d2c6'); topC.scale.set(0.17, 0.17, 0.055); topC.rotation.x = Math.PI / 2;
+      CP(G.cap, '#1e3554', head, 0, 0.04, 0, '#13243b').scale.set(1.04, 0.85, 1.04);
+      const vis = CP(G.box, '#162436', head, 0, 0.06, 0.14); vis.scale.set(0.22, 0.024, 0.12);
+      const badge = CP(G.ball, '#e0b83a', head, 0, 0.10, 0.13); badge.scale.setScalar(0.028);
     } else if (o.kind === 'post') { P(G.cap, '#23405e', head, 0, 0.03, 0, '#1a2f45'); const v = P(G.box, '#1a2f45', head, 0, 0.05, 0.13); v.scale.set(0.2, 0.025, 0.11); }
     else if (useScarf) P(G.scarf, o.scarfCol || pick(TOPS), head, 0, 0, 0);
     else {      // (a girl who drew a hijab gets hair instead. One draw either way, so nobody else changes)
@@ -557,6 +568,62 @@ export function createPeople(scene, world, R) {
       const turb = P(G.ball, '#f5efe2', head, 0, 0.18, 0, '#d9d0be'); turb.scale.set(0.21, 0.14, 0.21);
       const crest = P(G.ball, '#d94c38', head, 0, 0.22, 0.16, '#a63322'); crest.scale.set(0.045, 0.07, 0.045);
     }
+    // ---- Neum Adriatic summer figures (all brand-new neu* kinds) ----
+    if (o.kind === 'neuSunbathe') {
+      root.rotation.order = 'YXZ';
+      root.rotation.x = -1.24;
+      hips.position.set(0, 0.54, 0);
+      legs[0].hip.rotation.x = -0.22; legs[0].knee.rotation.x = 0.25;
+      legs[1].hip.rotation.x = -0.18; legs[1].knee.rotation.x = 0.20;
+      for (const a of arms) { a.sh.rotation.set(-2.45, 0, a.s * 0.42); a.el.rotation.x = -1.65; }
+    }
+    if (o.kind === 'neuNap') {
+      root.rotation.order = 'YXZ';
+      root.rotation.x = -Math.PI / 2;
+      hips.position.set(0, 0.16, 0);
+      legs[0].hip.rotation.x = -0.05; legs[0].knee.rotation.x = 0.08;
+      legs[1].hip.rotation.x = -0.12; legs[1].knee.rotation.x = 0.16;
+      arms[0].sh.rotation.set(-0.2, 0, -0.35); arms[0].el.rotation.x = -1.1;
+      arms[1].sh.rotation.set(-2.3, 0, 0.35); arms[1].el.rotation.x = -1.2;
+      head.rotation.y = 0.35;
+    }
+    if (o.kind === 'neuRead') {
+      const BP = o.bookTag ? painter(o.bookTag, pos, undefined, false, o.bookAt) : P;
+      const bk = p.book = grp(torso, 0, 0.42, 0.38); bk.rotation.x = -0.48;
+      const lft = BP(G.box, '#f6f1e4', bk, -0.11, 0, 0, '#dcd4c0'); lft.scale.set(0.20, 0.26, 0.02); lft.rotation.y = 0.22;
+      const rgt = BP(G.box, '#f6f1e4', bk, 0.11, 0, 0, '#dcd4c0'); rgt.scale.set(0.20, 0.26, 0.02); rgt.rotation.y = -0.22;
+      const cov = BP(G.box, o.bookCol || '#2b78a8', bk, 0, 0, -0.014, '#1b5478'); cov.scale.set(0.42, 0.28, 0.012);
+      for (const a of arms) { a.sh.rotation.set(-0.85, 0, a.s * -0.18); a.el.rotation.x = -0.85; }
+    }
+    if (o.kind === 'neuFan') {
+      const fn = p.fan = grp(arms[1].el, 0, -0.32, 0.06);
+      const blade = P(G.disc, '#e8684a', fn, 0, 0, 0, '#b84830'); blade.scale.set(0.18, 0.14, 0.015);
+      rod(P, fn, [0, -0.12, 0], [0, 0.02, 0], 0.012, '#7a5430');
+    }
+    if (o.kind === 'neuSnorkel') {
+      root.rotation.order = 'YXZ';
+      root.rotation.x = 1.48;
+      hips.position.set(0, 0.45, 0);
+      const MP = o.maskTag ? painter(o.maskTag, pos, undefined, false, o.maskAt) : P;
+      const mk = MP(G.box, '#2b86c4', head, 0, 0.02, 0.135, '#1c5e8c'); mk.scale.set(0.19, 0.095, 0.05);
+      rod(MP, head, [0.12, 0.02, 0.10], [0.16, 0.36, -0.04], 0.016, '#f2b82a');
+      const FP = o.finTag ? painter(o.finTag, pos, undefined, false, o.finAt) : P;
+      for (const l of legs) {
+        const fin = FP(G.box, '#f2b82a', l.knee, 0, -0.50, 0.14, '#c48d18'); fin.scale.set(0.15, 0.03, 0.44);
+      }
+      if (o.orbit) p.orbit = o.orbit;
+    }
+    if (o.kind === 'neuLifeguard') {
+      const tube = P(G.box, '#d9382c', torso, 0, 0.24, 0.30, '#a3241c'); tube.scale.set(0.54, 0.10, 0.11);
+      arms[0].sh.rotation.set(-2.2, 0, -0.35); arms[0].el.rotation.x = -1.25;
+      arms[1].sh.rotation.set(-0.7, 0, 0.12); arms[1].el.rotation.x = -0.6;
+    }
+    if (o.kind === 'neuSailor') {
+      rod(P, arms[0].el, [0, -0.3, 0], [0, -0.3, -0.55], 0.018, '#7a5230');
+    }
+    if (o.kind === 'neuDine') {
+      const gl = P(G.rod, '#f2da5e', arms[1].el, 0, -0.32, 0.06, '#d4b838'); gl.scale.set(0.038, 0.11, 0.038);
+    }
     list.push(p); return p;
   }
   function a0pose(arms, x0, x1) { arms[0].sh.rotation.x = x0; arms[1].sh.rotation.x = x1; }
@@ -707,6 +774,77 @@ export function createPeople(scene, world, R) {
       for (const s of [-0.05, 0.05]) rod(AP, body, [s, 0.12, 0], [s, 0, 0], 0.01, '#3a3e44');
     }
     return { o, g, body, hd, tl, neck, legs, wings, home: ap.clone(), phase: R() * 6 };
+  });
+  // ---- Neum Adriatic coastal & marine wildlife: seagull, dolphin, crab, octopus, jellyfish, lizard ----
+  const neuAnimals = (world.neuAnimals || []).map((o) => {
+    const ap = new THREE.Vector3(o.x, o.y, o.z), AP = painter(o.tag, ap, 2.2), g = new THREE.Group();
+    g.position.copy(ap); g.rotation.y = o.ry || 0; scene.add(g);
+    const body = grp(g, 0, 0, 0); let hd = null, tl = null; const legs = [], wings = [], armsA = [];
+    if (o.kind === 'gull') {
+      const W = '#fbfaf6', G1 = '#8e9aa6', BK = '#e6a828';
+      AP(G.catBody, W, body, 0, 0.24, 0, '#dce2e8').scale.set(0.13, 0.13, 0.28);
+      hd = grp(body, 0, 0.36, 0.22); AP(G.ball, W, hd, 0, 0, 0).scale.setScalar(0.095);
+      const bk = AP(G.cone, BK, hd, 0, -0.01, 0.15); bk.scale.set(0.32, 0.72, 0.32); bk.rotation.x = Math.PI / 2;
+      tl = grp(body, 0, 0.24, -0.28); AP(G.box, W, tl, 0, 0, -0.08).scale.set(0.14, 0.025, 0.18);
+      for (const s of [-1, 1]) {
+        const w = grp(body, s * 0.10, 0.28, 0.02);
+        const wm = AP(G.box, G1, w, s * 0.30, 0, -0.02, '#6c7884'); wm.scale.set(0.62, 0.026, 0.19);
+        const wt = AP(G.box, '#2b3036', w, s * 0.58, 0, -0.04); wt.scale.set(0.16, 0.024, 0.13);
+        if (!o.fly) { w.rotation.z = s * -1.15; w.scale.set(0.55, 1, 0.85); }
+        wings.push(w);
+      }
+      if (!o.fly) for (const s of [-0.05, 0.05]) rod(AP, body, [s, 0.14, 0], [s, 0, 0], 0.011, BK);
+    } else if (o.kind === 'dolphin') {
+      const C1 = '#6f8ea8', C2 = '#4a6680', BL = '#d8e4ee';
+      AP(G.catBody, C1, body, 0, 0, 0, C2).scale.set(0.28, 0.30, 0.92);
+      AP(G.catBody, BL, body, 0, -0.09, 0.05).scale.set(0.22, 0.18, 0.74);
+      const snout = AP(G.cone, C1, body, 0, -0.04, 1.02, C2); snout.scale.set(1.1, 1.4, 1.1); snout.rotation.x = Math.PI / 2;
+      const dorsal = AP(G.ear, C2, body, 0, 0.34, -0.06); dorsal.scale.set(0.9, 2.2, 1.8); dorsal.rotation.x = -0.35;
+      for (const s of [-1, 1]) { const fl = AP(G.box, C2, body, s * 0.34, -0.10, 0.24); fl.scale.set(0.32, 0.04, 0.16); fl.rotation.z = s * -0.45; }
+      tl = grp(body, 0, 0, -0.92);
+      AP(G.catBody, C2, tl, 0, 0, -0.22).scale.set(0.12, 0.12, 0.32);
+      const fluke = AP(G.box, C2, tl, 0, 0, -0.52); fluke.scale.set(0.62, 0.045, 0.24);
+    } else if (o.kind === 'crab') {
+      const C1 = '#d94c2c', C2 = '#a33218';
+      AP(G.catBody, C1, body, 0, 0.15, 0, C2).scale.set(0.24, 0.11, 0.19);
+      for (const s of [-1, 1]) {
+        AP(G.ball, '#1e2024', body, s * 0.08, 0.25, 0.12).scale.setScalar(0.028);
+        const cl = grp(body, s * 0.18, 0.16, 0.18);
+        AP(G.catBody, C1, cl, s * 0.06, 0.02, 0.10, C2).scale.set(0.08, 0.065, 0.12);
+        armsA.push(cl);
+        for (const z of [-0.10, 0, 0.09]) { const lg = grp(body, s * 0.22, 0.13, z); rod(AP, lg, [0, 0, 0], [s * 0.18, -0.12, z * 0.3], 0.018, C2); legs.push(lg); }
+      }
+    } else if (o.kind === 'octopus') {
+      const C1 = '#c45848', C2 = '#8f3a2e';
+      AP(G.catBody, C1, body, 0, 0.34, 0, C2).scale.set(0.24, 0.28, 0.26);
+      for (const s of [-1, 1]) AP(G.ball, '#f2e8c8', body, s * 0.12, 0.26, 0.20).scale.setScalar(0.045);
+      for (let i = 0; i < 6; i++) {
+        const ang = (i / 6) * Math.PI * 2;
+        const tn = grp(body, Math.cos(ang) * 0.16, 0.14, Math.sin(ang) * 0.16);
+        tn.rotation.y = -ang;
+        rod(AP, tn, [0, 0, 0], [0.32, -0.08, 0.06], 0.042, C1);
+        rod(AP, tn, [0.32, -0.08, 0.06], [0.56, 0.04, -0.04], 0.026, C2);
+        armsA.push(tn);
+      }
+    } else if (o.kind === 'jellyfish') {
+      const C1 = '#d89ce6', C2 = '#b372c4';
+      const dome = AP(G.cap, C1, body, 0, 0.22, 0, C2); dome.scale.set(2.2, 1.9, 2.2);
+      for (let i = 0; i < 5; i++) {
+        const ang = (i / 5) * Math.PI * 2;
+        const tn = grp(body, Math.cos(ang) * 0.10, 0.14, Math.sin(ang) * 0.10);
+        rod(AP, tn, [0, 0, 0], [Math.cos(ang) * 0.05, -0.44, Math.sin(ang) * 0.05], 0.015, '#e8c4f2');
+        armsA.push(tn);
+      }
+    } else if (o.kind === 'lizard') {
+      const C1 = '#589c42', C2 = '#396e28';
+      AP(G.catBody, C1, body, 0, 0.08, 0, C2).scale.set(0.08, 0.06, 0.22);
+      hd = grp(body, 0, 0.09, 0.24); AP(G.catBody, C1, hd, 0, 0, 0.04, C2).scale.set(0.065, 0.05, 0.10);
+      tl = grp(body, 0, 0.07, -0.22); rod(AP, tl, [0, 0, 0], [0, -0.02, -0.36], 0.022, C2);
+      for (const [x, z] of [[0.08, 0.12], [-0.08, 0.12], [0.08, -0.10], [-0.08, -0.10]]) {
+        const lg = grp(body, x, 0.06, z); rod(AP, lg, [0, 0, 0], [Math.sign(x) * 0.09, -0.06, 0.02], 0.014, C2); legs.push(lg);
+      }
+    }
+    return { o, g, body, hd, tl, legs, wings, armsA, home: ap.clone(), phase: R() * 6 };
   });
   let fishT0 = 0;      // the fish's jumps count from here (the finale sets it so one comes early in the diver's shot)
   const FS = world.fish || { x: 0, z: 0 }, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7;
@@ -1386,6 +1524,66 @@ export function createPeople(scene, world, R) {
           a0.sh.rotation.set(-0.42, 0, -0.14); a0.el.rotation.x = -0.75;
           a1.sh.rotation.set(-0.42, 0, 0.14); a1.el.rotation.x = -0.75;
           p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.28 : 0;
+        } else if (o.kind === 'neuSunbathe') {
+          const br = alive ? Math.sin(t * 1.1) * 0.03 : 0;
+          p.torso.rotation.x = br;
+          p.head.rotation.y = alive ? Math.sin(t * 0.45) * 0.18 : 0.08;
+        } else if (o.kind === 'neuNap') {
+          const br = alive ? Math.sin(t * 0.9) * 0.025 : 0;
+          p.torso.rotation.x = br;
+        } else if (o.kind === 'neuRead') {
+          const pg = alive ? Math.max(0, Math.sin(t * 0.6)) ** 5 : 0;
+          a1.sh.rotation.set(-0.85 - pg * 0.25, 0, 0.18 - pg * 0.15);
+          p.head.rotation.x = 0.30; p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.12 : 0;
+        } else if (o.kind === 'neuFan') {
+          const fw = alive ? Math.sin(t * 6.5) : 0.4;
+          a1.sh.rotation.set(-1.15, 0, 0.18); a1.el.rotation.x = -0.95;
+          a1.el.rotation.z = fw * 0.35;
+          a0.sh.rotation.set(-0.25, 0, -0.18); a0.el.rotation.x = -0.25;
+          p.head.rotation.x = -0.06;
+        } else if (o.kind === 'neuSnorkel') {
+          if (alive && p.orbit) {
+            const ang = time * (p.orbit.speed || 0.25) + p.phase;
+            const nx = p.orbit.cx + Math.cos(ang) * p.orbit.rx, nz = p.orbit.cz + Math.sin(ang) * p.orbit.rz;
+            p.root.position.set(nx, p.y0 + Math.sin(t * 2.2) * 0.04, nz);
+            p.root.rotation.y = Math.atan2(-Math.sin(ang) * p.orbit.rx, Math.cos(ang) * p.orbit.rz);
+            if (p.block) p.block.matrixWorld.setPosition(nx, p.y0 + 0.3, nz);
+            go(p.root.position, p.root.rotation.y, 0.7, 0.9, 1.0);
+          }
+          const kk = alive ? Math.sin(t * 4.5) * 0.32 : 0.15;
+          p.legs[0].hip.rotation.x = kk; p.legs[1].hip.rotation.x = -kk;
+          a0.sh.rotation.set(-0.3, 0, -0.45); a1.sh.rotation.set(-0.3, 0, 0.45);
+        } else if (o.kind === 'neuLifeguard') {
+          p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.6 : 0.2;
+          a0.sh.rotation.set(-2.2, 0, -0.35); a0.el.rotation.x = -1.25;
+        } else if (o.kind === 'neuVolley') {
+          const jp = o.jump ? (alive ? Math.max(0, Math.sin(t * 2.2)) ** 2 : 0.65) : 0;
+          p.root.position.y = p.y0 + jp * 0.75;
+          if (o.jump) {
+            a0.sh.rotation.set(-2.65, 0, -0.22); a0.el.rotation.x = -0.2;
+            a1.sh.rotation.set(-2.45, 0, 0.28); a1.el.rotation.x = -0.3;
+            p.legs[0].knee.rotation.x = 0.5 * jp; p.legs[1].knee.rotation.x = 0.4 * jp;
+          } else {
+            const b = alive ? Math.sin(t * 2.2 + 1.4) * 0.15 : 0;
+            p.hips.position.y = 0.82; p.torso.rotation.x = 0.25;
+            a0.sh.rotation.set(-1.05 + b, 0, -0.28); a0.el.rotation.x = -0.15;
+            a1.sh.rotation.set(-1.05 + b, 0, 0.28); a1.el.rotation.x = -0.15;
+          }
+        } else if (o.kind === 'neuSailor') {
+          const sw = alive ? Math.sin(t * 1.4) * 0.16 : 0.08;
+          p.torso.rotation.z = sw;
+          a0.sh.rotation.set(-0.75, 0, -0.3); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-0.55, 0, 0.35); a1.el.rotation.x = -0.35;
+        } else if (o.kind === 'neuCaptain') {
+          const wv = alive ? Math.sin(t * 4.2) * 0.32 : 0;
+          a0.sh.rotation.set(-2.2, 0, -0.45 + wv * 0.4); a0.el.rotation.x = -0.35; a0.el.rotation.z = wv;
+          a1.sh.rotation.set(-0.65, 0, 0.12); a1.el.rotation.x = -0.5;
+          p.head.rotation.y = alive ? Math.sin(t * 0.6) * 0.35 : 0.1;
+        } else if (o.kind === 'neuDine') {
+          const sip = alive ? Math.max(0, Math.sin(t * 0.8)) ** 4 : 0.2;
+          a1.sh.rotation.set(-0.75 - sip * 0.55, 0, 0.15); a1.el.rotation.x = -0.75 - sip * 0.55;
+          a0.sh.rotation.set(-0.6, 0, -0.15); a0.el.rotation.x = -0.65;
+          p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.25 : 0;
         }
         if (o.lookUpOnClimax && alive && pigeonsForced > 0) p.head.rotation.x = -0.45;
       }
@@ -1519,6 +1717,49 @@ export function createPeople(scene, world, R) {
           const hop = Math.max(0, Math.sin(t * 3.0)) ** 6;
           a.g.position.y = a.home.y + hop * 0.14;
           if (a.hd) a.hd.rotation.y = Math.sin(t * 1.9) * 0.45;
+        }
+      }
+      // Neum coastal & marine wildlife
+      for (const a of neuAnimals) {
+        if (!alive) continue;
+        const t = time + a.phase;
+        if (a.o.kind === 'gull') {
+          if (a.o.fly) {
+            const ang = t * (a.o.speed || 0.34), r = a.o.r || 12;
+            a.g.position.set(a.home.x + Math.cos(ang) * r, a.home.y + Math.sin(t * 1.1) * 1.4, a.home.z + Math.sin(ang) * r * 0.72);
+            a.g.rotation.y = Math.atan2(-Math.sin(ang) * r, Math.cos(ang) * r * 0.72);
+            const fl = Math.sin(t * 5.2) * 0.32;
+            a.wings.forEach((w, i) => { w.rotation.z = (i ? 1 : -1) * fl; });
+          } else {
+            if (a.hd) a.hd.rotation.y = Math.sin(t * 1.2) * 0.55;
+            a.g.position.y = a.home.y + Math.max(0, Math.sin(t * 2.1)) ** 8 * 0.08;
+          }
+        } else if (a.o.kind === 'dolphin') {
+          const cyc = (t * 0.32) % 1;
+          const ang = t * 0.22, r = a.o.r || 7.5;
+          const bx = a.home.x + Math.cos(ang) * r, bz = a.home.z + Math.sin(ang) * r * 0.65;
+          const leap = cyc < 0.42 ? Math.sin((cyc / 0.42) * Math.PI) : 0;
+          a.g.position.set(bx, a.home.y - 0.15 + leap * 2.1, bz);
+          a.g.rotation.y = Math.atan2(-Math.sin(ang) * r, Math.cos(ang) * r * 0.65);
+          a.body.rotation.x = cyc < 0.42 ? -Math.cos((cyc / 0.42) * Math.PI) * 0.62 : 0.08;
+          if (a.tl) a.tl.rotation.x = Math.sin(t * 7) * 0.25;
+        } else if (a.o.kind === 'crab') {
+          const sc = Math.sin(t * 1.4) * 0.45;
+          a.g.position.x = a.home.x + Math.cos(a.o.ry || 0) * sc;
+          a.g.position.z = a.home.z - Math.sin(a.o.ry || 0) * sc;
+          a.armsA.forEach((c, i) => { c.rotation.x = -0.25 - Math.sin(t * 4.5 + i) * 0.2; });
+        } else if (a.o.kind === 'octopus') {
+          a.g.position.y = a.home.y + Math.sin(t * 1.8) * 0.06;
+          a.armsA.forEach((tn, i) => { tn.rotation.z = Math.sin(t * 2.6 + i * 1.1) * 0.22; });
+        } else if (a.o.kind === 'jellyfish') {
+          const p2 = Math.sin(t * 2.4);
+          a.g.position.y = a.home.y + p2 * 0.18;
+          a.body.scale.set(1 + p2 * 0.08, 1 - p2 * 0.07, 1 + p2 * 0.08);
+        } else if (a.o.kind === 'lizard') {
+          const dart = Math.max(0, Math.sin(t * 0.7)) ** 6;
+          a.g.position.x = a.home.x + Math.sin(a.o.ry || 0) * dart * 0.35;
+          a.g.position.z = a.home.z + Math.cos(a.o.ry || 0) * dart * 0.35;
+          if (a.tl) a.tl.rotation.y = Math.sin(t * 6) * 0.28;
         }
       }
       // the fish jumps now and then
