@@ -154,7 +154,7 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : (o.bottom || bottom0), gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit'].includes(o.kind), skirtC = o.woman && !o.robe && !o.sport && o.kind !== 'girl' && !o.coatTag ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit'].includes(o.kind), skirtC = o.woman && !o.robe && !o.sport && o.kind !== 'girl' && !o.coatTag ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
     if ((!gown || seated || (skirtC && sc < 1) || o.coatTag) && o.kind !== 'girl' && o.kind !== 'raft' && o.kind !== 'sarNana') for (const s of [-1, 1]) {
@@ -394,6 +394,55 @@ export function createPeople(scene, world, R) {
     }
     if (o.kind === 'sarDriver') {
       p.isTramDriver = true;
+    }
+    // ---- Jajce spring activities ----
+    if (o.kind === 'jajBinoc') {
+      const BP = painter('dvogled', pos);
+      const bg = grp(arms[0].el, -0.05, -0.30, 0.03);
+      for (const sx of [-0.045, 0.045]) {
+        const tube = BP(G.rod, '#33363b', bg, sx, 0, 0.07, '#222428');
+        tube.scale.set(0.032, 0.14, 0.032); tube.rotation.x = Math.PI / 2;
+      }
+      const bridge = BP(G.box, '#4a4e54', bg, 0, 0, 0.05, '#2f3236');
+      bridge.scale.set(0.07, 0.025, 0.035);
+    }
+    if (o.kind === 'jajHiker') {
+      const RP = painter('ruksak', pos);
+      const pack = RP(G.box, '#c95b32', torso, 0, 0.30, -0.22, '#994020');
+      pack.scale.set(0.32, 0.44, 0.20);
+      const flap = RP(G.box, '#e07a42', torso, 0, 0.49, -0.22, '#b05526');
+      flap.scale.set(0.34, 0.10, 0.22);
+      const pocket = RP(G.box, '#a84422', torso, 0, 0.20, -0.33, '#7d2f16');
+      pocket.scale.set(0.22, 0.18, 0.06);
+    }
+    if (o.kind === 'jajMiller') {
+      const VP = painter('vreca', pos);
+      const sk = VP(G.catBody, '#dfd3b8', torso, 0.12, 0.56, -0.04, '#bfb090');
+      sk.scale.set(0.22, 0.24, 0.36); sk.rotation.z = -0.35;
+    }
+    if (o.kind === 'jajFish') {
+      const UP = painter('udica', pos);
+      const rodG = p.rod = grp(arms[0].el, 0, -0.30, 0.02);
+      rod(UP, rodG, [0, 0, 0], [0, 0.45, 2.3], 0.014, '#7d5a34');
+      rod(UP, rodG, [0, 0.45, 2.3], [0, -1.65, 2.55], 0.005, '#d8e4ea');
+      const bob = UP(G.ball, '#d94232', rodG, 0, -1.52, 2.55, '#a82c20');
+      bob.scale.set(0.045, 0.075, 0.045);
+    }
+    if (o.kind === 'jajGarden') {
+      const WP = painter('zalijevati', pos);
+      const can = grp(arms[0].el, 0, -0.32, 0.05);
+      const body = WP(G.rod, '#4f8a68', can, 0, -0.06, 0.08, '#38694c'); body.scale.set(0.11, 0.22, 0.11);
+      rod(WP, can, [0, -0.10, 0.16], [0, 0.04, 0.38], 0.018, '#4f8a68');
+      const rose = WP(G.cone, '#c9a648', can, 0, 0.05, 0.40, '#9c7c2c'); rose.scale.set(0.55, 0.45, 0.55); rose.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'jajGuitar') {
+      const GP = painter('gitara', pos);
+      const gg = p.guitar = grp(torso, 0.04, 0.22, 0.24);
+      gg.rotation.set(0.08, 0.15, -0.32);
+      const lo = GP(G.disc, '#c97e38', gg, -0.08, 0, 0, '#965820'); lo.scale.set(0.17, 0.19, 0.065);
+      const up = GP(G.disc, '#c97e38', gg, 0.08, 0.04, 0, '#965820'); up.scale.set(0.13, 0.14, 0.065);
+      const hole = GP(G.disc, '#3a2416', gg, 0.01, 0.01, 0.036, '#22140c'); hole.scale.set(0.055, 0.055, 0.008);
+      rod(GP, gg, [0.16, 0.06, 0], [0.56, 0.16, 0], 0.024, '#5e3a20');
     }
     list.push(p); return p;
   }
@@ -1003,6 +1052,44 @@ export function createPeople(scene, world, R) {
           a0.el.rotation.x = -0.55 - 0.2 * stepBack;
           a1.sh.rotation.set(-0.85, 0, 0.22); a1.el.rotation.x = -0.95;
           p.torso.rotation.x = -0.08 * stepBack; p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.2 * stepBack : 0;
+        } else if (o.kind === 'jajBinoc') {
+          const pan = alive ? Math.sin(t * 0.6) * 0.35 : 0;
+          a0.sh.rotation.set(-1.35, 0, -0.18); a0.el.rotation.x = -1.35;
+          a1.sh.rotation.set(-1.35, 0, 0.18); a1.el.rotation.x = -1.35;
+          p.head.rotation.y = pan; p.torso.rotation.y = pan * 0.45;
+        } else if (o.kind === 'jajHiker') {
+          a0.sh.rotation.set(-0.35 + (alive ? Math.sin(t * 0.7) * 0.15 : 0), 0, -0.12); a0.el.rotation.x = -0.5;
+          a1.sh.rotation.set(-0.25, 0, 0.12); a1.el.rotation.x = -0.4;
+          p.head.rotation.y = alive ? Math.sin(t * 0.55) * 0.35 : 0.15;
+        } else if (o.kind === 'jajMiller') {
+          const bob = alive ? Math.sin(t * 1.8) * 0.08 : 0;
+          a0.sh.rotation.set(-1.55 + bob, 0, -0.25); a0.el.rotation.x = -1.1;
+          a1.sh.rotation.set(-0.35 - bob, 0, 0.12); a1.el.rotation.x = -0.4;
+          p.torso.rotation.x = 0.08; p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.25 : 0;
+        } else if (o.kind === 'jajFish') {
+          const tug = alive ? Math.sin(t * 1.4) * 0.08 : 0;
+          a0.sh.rotation.set(-0.85 + tug, 0, -0.08); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-0.78 + tug * 0.7, 0, 0.12); a1.el.rotation.x = -0.7;
+          p.head.rotation.x = 0.18; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.18 : 0;
+        } else if (o.kind === 'jajGarden') {
+          const pour = alive ? 0.5 + 0.5 * Math.sin(t * 1.4) : 0.65;
+          a0.sh.rotation.set(-0.75 - 0.35 * pour, 0, -0.12); a0.el.rotation.x = -0.55;
+          a1.sh.rotation.set(-0.35, 0, 0.15); a1.el.rotation.x = -0.45;
+          p.torso.rotation.x = 0.16 * pour; p.head.rotation.x = 0.28 * pour;
+        } else if (o.kind === 'jajGuitar') {
+          const strum = alive ? Math.sin(t * 7.5) * 0.18 : 0;
+          a0.sh.rotation.set(-0.62 + strum, 0, -0.18); a0.el.rotation.x = -0.95 + strum * 0.5;
+          a1.sh.rotation.set(-0.82, 0, 0.26); a1.el.rotation.x = -0.85;
+          p.head.rotation.x = alive ? Math.sin(t * 3.75) * 0.09 : 0.05;
+        } else if (o.kind === 'jajSing') {
+          const sway = alive ? Math.sin(t * 2.2) : 0;
+          a0.sh.rotation.set(-0.72 + sway * 0.18, 0, -0.25); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-0.72 - sway * 0.18, 0, 0.25); a1.el.rotation.x = -0.75;
+          p.torso.rotation.z = sway * 0.08; p.head.rotation.x = -0.12 + sway * 0.06;
+        } else if (o.kind === 'jajWarmSit') {
+          a0.sh.rotation.set(-0.45, 0, -0.15); a0.el.rotation.x = -0.55;
+          a1.sh.rotation.set(-0.45, 0, 0.15); a1.el.rotation.x = -0.55;
+          p.head.rotation.x = -0.22; p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.3 : 0;
         }
         if (o.lookUpOnClimax && alive && pigeonsForced > 0) p.head.rotation.x = -0.45;
       }
