@@ -154,7 +154,7 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : (o.bottom || bottom0), gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine', 'blDrum', 'blListen', 'blDraw'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu') || o.kind?.startsWith('bl'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
     if ((!gown || seated || winterTrousers || (skirtC && sc < 1) || o.coatTag || o.topTag) && o.kind !== 'girl' && o.kind !== 'raft' && o.kind !== 'sarNana') for (const s of [-1, 1]) {
@@ -596,6 +596,80 @@ export function createPeople(scene, world, R) {
     if (o.kind === 'neuDine') {
       const gl = P(G.rod, '#f2da5e', arms[1].el, 0, -0.32, 0.06, '#d4b838'); gl.scale.set(0.038, 0.11, 0.038);
     }
+    // ---- Banja Luka figures (all brand-new bl* kinds) ----
+    if (o.kind === 'blDajak') {
+      const MP = o.poleTag ? painter(o.poleTag, pos, undefined, false, o.poleAt) : P;
+      const pole = p.pole = grp(torso, 0.24, 0.36, 0.18);
+      rod(MP, pole, [0, 1.35, 0.28], [0, -2.15, -0.65], 0.028, '#a67b48');
+      const tip = MP(G.cone, '#5a6066', pole, 0, -2.2, -0.68, '#363b40'); tip.scale.set(0.55, 1.2, 0.55); tip.rotation.x = Math.PI;
+    }
+    if (o.kind === 'blViolin') {
+      const VP = o.violinTag ? painter(o.violinTag, pos) : P;
+      const vl = grp(torso, -0.14, 0.62, 0.28); vl.rotation.set(0.15, 0.45, 0.25);
+      VP(G.disc, '#9c4c24', vl, 0, 0, 0, '#6e3214').scale.set(0.11, 0.17, 0.05);
+      rod(VP, vl, [0, 0.14, 0], [0, 0.42, 0], 0.018, '#4a2614');
+      rod(VP, arms[1].el, [0, -0.3, -0.04], [0, -0.3, 0.52], 0.010, '#d8be8a');
+    }
+    if (o.kind === 'blDrum') {
+      const DP = o.drumTag ? painter(o.drumTag, pos) : P;
+      const dr = DP(G.rod, '#cc3e32', root, 0, 0.56, 0.56, '#96281e'); dr.scale.set(0.32, 0.42, 0.32);
+      const topD = DP(G.disc, '#f4eedc', root, 0, 0.78, 0.56, '#d8d0be'); topD.scale.set(0.31, 0.31, 0.02); topD.rotation.x = Math.PI / 2;
+      for (const a of arms) rod(DP, a.el, [0, -0.3, 0], [0, -0.3, 0.34], 0.012, '#d8be8a');
+    }
+    if (o.kind === 'blTrumpet') {
+      const TP2 = o.trumpetTag ? painter(o.trumpetTag, pos) : P;
+      const tr = grp(head, 0, -0.06, 0.14);
+      rod(TP2, tr, [0, 0, 0], [0, 0.04, 0.44], 0.02, '#e8bc38');
+      const bell = TP2(G.cone, '#e8bc38', tr, 0, 0.05, 0.50, '#b88e1e'); bell.scale.set(1.4, 1.4, 1.4); bell.rotation.x = -Math.PI / 2;
+    }
+    if (o.kind === 'blWaitress') {
+      const tr = P(G.disc, '#c8ced4', arms[1].el, 0, -0.30, 0.08, '#969ea6'); tr.scale.set(0.24, 0.24, 0.022); tr.rotation.x = Math.PI / 2;
+      P(G.rod, '#f8f4ea', arms[1].el, -0.06, -0.24, 0.08).scale.set(0.036, 0.08, 0.036);
+      P(G.rod, '#f8f4ea', arms[1].el, 0.07, -0.24, 0.09).scale.set(0.036, 0.08, 0.036);
+    }
+    if (o.kind === 'blScooter') {
+      const SP = o.scooterTag ? painter(o.scooterTag, pos) : P;
+      const scG = grp(root, 0, 0, 0);
+      SP(G.box, '#e24a38', scG, 0, 0.10, 0.02, '#aa2e20').scale.set(0.18, 0.04, 0.72);
+      for (const z of [-0.32, 0.34]) { const w = SP(G.disc, '#2e343a', scG, 0, 0.09, z); w.scale.set(0.09, 0.09, 0.04); w.rotation.y = Math.PI / 2; }
+      rod(SP, scG, [0, 0.12, 0.34], [0, 0.88, 0.28], 0.022, '#e24a38');
+      rod(SP, scG, [-0.22, 0.88, 0.28], [0.22, 0.88, 0.28], 0.02, '#2e343a');
+    }
+    if (o.kind === 'blFrisbee') {
+      const FP = o.frisbeeTag ? painter(o.frisbeeTag, pos) : P;
+      const fb = p.frisbee = FP(G.disc, '#f25c38', arms[1].el, 0, -0.32, 0.12, '#c03c1e'); fb.scale.set(0.18, 0.18, 0.024); fb.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'blTennis') {
+      const RP = o.racketTag ? painter(o.racketTag, pos) : P;
+      const rk = grp(arms[1].el, 0, -0.30, 0);
+      rod(RP, rk, [0, 0, 0], [0, 0, 0.34], 0.016, '#2a3440');
+      const hd = RP(G.disc, '#e8e4da', rk, 0, 0, 0.50, '#2a6cb8'); hd.scale.set(0.16, 0.21, 0.025);
+    }
+    if (o.kind === 'blBasket') {
+      const BP = o.ballTag ? painter(o.ballTag, pos) : P;
+      const bb = p.bball = BP(G.ball, '#e07228', arms[1].el, -0.06, -0.36, 0.12, '#a84c14'); bb.scale.setScalar(0.13);
+    }
+    if (o.kind === 'blStroller') {
+      const CP = o.strollerTag ? painter(o.strollerTag, pos) : P;
+      const st = grp(root, 0, 0, 0.82);
+      CP(G.box, '#2b6ea8', st, 0, 0.56, 0.12, '#1c4d78').scale.set(0.56, 0.38, 0.78);
+      const hood = CP(G.cap, '#2b6ea8', st, 0, 0.74, -0.10, '#1c4d78'); hood.scale.set(2.2, 1.8, 2.2);
+      for (const sx of [-0.26, 0.26]) for (const sz of [-0.26, 0.34]) {
+        const w = CP(G.disc, '#2e343a', st, sx, 0.14, sz); w.scale.set(0.14, 0.14, 0.05); w.rotation.y = Math.PI / 2;
+        rod(CP, st, [sx, 0.14, sz], [sx, 0.45, sz * 0.5], 0.018, '#8a949e');
+      }
+      for (const sx of [-0.26, 0.26]) rod(CP, st, [sx, 0.55, -0.22], [sx, 0.92, -0.52], 0.018, '#8a949e');
+      rod(CP, st, [-0.26, 0.92, -0.52], [0.26, 0.92, -0.52], 0.02, '#2e343a');
+    }
+    if (o.kind === 'blPhoto') {
+      const e = arms[1].el;
+      const cam = P(G.box, '#2e3238', e, -0.08, -0.34, -0.02, '#1a1d20'); cam.scale.set(0.24, 0.15, 0.12);
+      const lens = P(G.rod, '#58606a', e, -0.08, -0.34, -0.12); lens.scale.set(0.05, 0.10, 0.05); lens.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'blDraw') {
+      const pad = P(G.box, '#faf6ea', torso, 0, 0.44, 0.38, '#d8d2c2'); pad.scale.set(0.38, 0.28, 0.025); pad.rotation.x = -0.55;
+      rod(P, arms[1].el, [0, -0.30, 0], [0, -0.30, 0.22], 0.01, '#e8a828');
+    }
     list.push(p); return p;
   }
   function a0pose(arms, x0, x1) { arms[0].sh.rotation.x = x0; arms[1].sh.rotation.x = x1; }
@@ -818,6 +892,58 @@ export function createPeople(scene, world, R) {
     }
     return { o, g, body, hd, tl, legs, wings, armsA, home: ap.clone(), phase: R() * 6 };
   });
+  // ---- Banja Luka river & park wildlife: heron, otter, hedgehog, sparrow, ladybug, goose ----
+  const blAnimals = (world.blAnimals || []).map((o) => {
+    const ap = new THREE.Vector3(o.x, o.y, o.z), AP = painter(o.tag, ap, 2.0), g = new THREE.Group();
+    g.position.copy(ap); g.rotation.y = o.ry || 0; scene.add(g);
+    const body = grp(g, 0, 0, 0); let hd = null, neck = null, tl = null; const legs = [], wings = [];
+    if (o.kind === 'heron') {
+      const C1 = '#96a4b0', C2 = '#6a7886', W = '#f2f4f6';
+      for (const s of [-0.08, 0.08]) rod(AP, body, [s, 0.72, 0], [s, 0, 0], 0.018, '#5a5244');
+      AP(G.catBody, C1, body, 0, 0.84, 0, C2).scale.set(0.18, 0.22, 0.38);
+      neck = grp(body, 0, 0.96, 0.28);
+      rod(AP, neck, [0, 0, 0], [0, 0.42, 0.08], 0.042, W);
+      hd = grp(neck, 0, 0.46, 0.10);
+      AP(G.catBody, W, hd, 0, 0, 0, C1).scale.set(0.08, 0.08, 0.13);
+      const bk = AP(G.cone, '#e4a828', hd, 0, -0.01, 0.24); bk.scale.set(0.32, 1.4, 0.32); bk.rotation.x = Math.PI / 2;
+    } else if (o.kind === 'otter') {
+      const C1 = '#6e4a30', C2 = '#4a301d';
+      AP(G.catBody, C1, body, 0, 0.22, 0, C2).scale.set(0.18, 0.16, 0.46);
+      hd = grp(body, 0, 0.34, 0.42); AP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.13, 0.11, 0.15);
+      AP(G.catBody, '#d8c8b0', hd, 0, -0.03, 0.12).scale.set(0.08, 0.06, 0.07);
+      tl = grp(body, 0, 0.18, -0.44); rod(AP, tl, [0, 0, 0], [0, -0.06, -0.46], 0.05, C2);
+    } else if (o.kind === 'hedgehog') {
+      const C1 = '#6e5848', C2 = '#4a3a2e';
+      AP(G.catBody, C1, body, 0, 0.18, 0, C2).scale.set(0.20, 0.18, 0.25);
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        coneH(AP, C2, body, Math.cos(a) * 0.14, 0.26, Math.sin(a) * 0.16);
+      }
+      hd = grp(body, 0, 0.14, 0.24); AP(G.cone, '#c8b49a', hd, 0, 0, 0.06).rotation.x = Math.PI / 2;
+    } else if (o.kind === 'sparrow') {
+      const C1 = '#8e6844', C2 = '#5e4228';
+      AP(G.catBody, C1, body, 0, 0.14, 0, C2).scale.set(0.085, 0.09, 0.14);
+      hd = grp(body, 0, 0.22, 0.10); AP(G.ball, C2, hd, 0, 0, 0).scale.setScalar(0.065);
+      const bk = AP(G.cone, '#d4a238', hd, 0, -0.01, 0.09); bk.scale.set(0.24, 0.45, 0.24); bk.rotation.x = Math.PI / 2;
+      for (const s of [-0.035, 0.035]) rod(AP, body, [s, 0.07, 0], [s, 0, 0], 0.008, '#4a3828');
+    } else if (o.kind === 'ladybug') {
+      AP(G.cap, '#d92e28', body, 0, 0.05, 0, '#9e1c18').scale.set(2.2, 2.0, 2.6);
+      AP(G.ball, '#1e2024', body, 0, 0.12, 0.24).scale.setScalar(0.095);
+      for (const [sx, sz] of [[-0.10, 0.06], [0.10, 0.06], [-0.11, -0.08], [0.11, -0.08], [0, -0.14]]) {
+        AP(G.ball, '#1e2024', body, sx, 0.24, sz).scale.setScalar(0.042);
+      }
+    } else if (o.kind === 'goose') {
+      const W = '#faf8f2', B = '#e68c28';
+      AP(G.catBody, W, body, 0, 0.36, 0, '#dcd6c6').scale.set(0.20, 0.20, 0.36);
+      neck = grp(body, 0, 0.48, 0.26);
+      rod(AP, neck, [0, 0, 0], [0, 0.34, 0.06], 0.052, W);
+      hd = grp(neck, 0, 0.36, 0.08); AP(G.ball, W, hd, 0, 0, 0).scale.setScalar(0.085);
+      const bk = AP(G.box, B, hd, 0, -0.01, 0.12); bk.scale.set(0.06, 0.036, 0.12);
+      for (const s of [-0.08, 0.08]) rod(AP, body, [s, 0.20, 0], [s, 0, 0], 0.018, B);
+    }
+    return { o, g, body, hd, neck, tl, legs, wings, home: ap.clone(), phase: R() * 6 };
+  });
+  function coneH(AP, col, parent, x, y, z) { const m = AP(G.cone, col, parent, x, y, z); m.scale.set(0.45, 0.55, 0.45); return m; }
   let fishT0 = 0;      // the fish's jumps count from here (the finale sets it so one comes early in the diver's shot)
   const FS = world.fish || { x: 0, z: 0 }, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7;
   if (world.fish) {
@@ -1528,6 +1654,74 @@ export function createPeople(scene, world, R) {
           a1.sh.rotation.set(-0.75 - sip * 0.55, 0, 0.15); a1.el.rotation.x = -0.75 - sip * 0.55;
           a0.sh.rotation.set(-0.6, 0, -0.15); a0.el.rotation.x = -0.65;
           p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.25 : 0;
+        } else if (o.kind === 'blDajak') {
+          const st = alive ? Math.sin(t * 1.9) : 0.3;
+          p.torso.rotation.x = 0.12 + st * 0.14;
+          a0.sh.rotation.set(-0.75 - st * 0.35, 0, -0.14); a0.el.rotation.x = -0.55;
+          a1.sh.rotation.set(-1.05 - st * 0.45, 0, 0.14); a1.el.rotation.x = -0.45;
+          if (p.pole) p.pole.rotation.x = st * 0.24;
+        } else if (o.kind === 'blViolin') {
+          const bw = alive ? Math.sin(t * 5.2) : 0.2;
+          a0.sh.rotation.set(-1.2, 0, -0.25); a0.el.rotation.x = -1.1;
+          a1.sh.rotation.set(-0.85 + bw * 0.22, 0, 0.25 + bw * 0.15); a1.el.rotation.x = -0.95;
+          p.head.rotation.z = 0.22;
+        } else if (o.kind === 'blDrum') {
+          const b0 = alive ? Math.sin(t * 7.5) : 0.3, b1 = alive ? Math.sin(t * 7.5 + Math.PI) : -0.3;
+          a0.sh.rotation.set(-0.65 + b0 * 0.2, 0, -0.16); a0.el.rotation.x = -0.85 - b0 * 0.3;
+          a1.sh.rotation.set(-0.65 + b1 * 0.2, 0, 0.16); a1.el.rotation.x = -0.85 - b1 * 0.3;
+        } else if (o.kind === 'blTrumpet') {
+          const sw = alive ? Math.sin(t * 2.2) * 0.12 : 0;
+          a0.sh.rotation.set(-1.35, 0, -0.28); a0.el.rotation.x = -1.25;
+          a1.sh.rotation.set(-1.35, 0, 0.28); a1.el.rotation.x = -1.25;
+          p.torso.rotation.x = -0.10 + sw;
+        } else if (o.kind === 'blDance') {
+          const sw = alive ? Math.sin(t * 3.4) : 0.3;
+          p.hips.position.y = 0.92 + Math.abs(sw) * 0.05;
+          p.torso.rotation.y = sw * 0.28;
+          a0.sh.rotation.set(-1.6 - sw * 0.35, 0, -0.45); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-1.6 + sw * 0.35, 0, 0.45); a1.el.rotation.x = -0.45;
+        } else if (o.kind === 'blListen') {
+          p.head.rotation.x = alive ? Math.sin(t * 3.2) * 0.10 : 0.04;
+          a0.sh.rotation.set(-0.55, 0, -0.1); a0.el.rotation.x = -0.85;
+          a1.sh.rotation.set(-0.55, 0, 0.1); a1.el.rotation.x = -0.85;
+        } else if (o.kind === 'blWaitress') {
+          a1.sh.rotation.set(-0.85, 0, 0.22); a1.el.rotation.x = -1.25;
+          a0.sh.rotation.set(-0.25, 0, -0.15); a0.el.rotation.x = -0.35;
+          p.head.rotation.y = alive ? Math.sin(t * 0.8) * 0.3 : 0.1;
+        } else if (o.kind === 'blScooter') {
+          const ps = alive ? Math.sin(t * 3.6) : 0.3;
+          a0.sh.rotation.set(-0.95, 0, -0.1); a0.el.rotation.x = -0.35;
+          a1.sh.rotation.set(-0.95, 0, 0.1); a1.el.rotation.x = -0.35;
+          p.legs[1].hip.rotation.x = 0.25 + Math.max(0, ps) * 0.55;
+        } else if (o.kind === 'blFrisbee') {
+          const tw = alive ? Math.sin(t * 2.4) : 0.4;
+          p.torso.rotation.y = tw * 0.55;
+          a1.sh.rotation.set(-1.05, 0, 0.35 + tw * 0.45); a1.el.rotation.x = -0.45;
+          a0.sh.rotation.set(-0.4, 0, -0.35);
+        } else if (o.kind === 'blTennis') {
+          const sw = alive ? Math.sin(t * 2.8) : 0.3;
+          p.torso.rotation.y = sw * 0.45;
+          a1.sh.rotation.set(-0.95 - sw * 0.55, 0, 0.35); a1.el.rotation.x = -0.45;
+          a0.sh.rotation.set(-0.5, 0, -0.25);
+        } else if (o.kind === 'blBasket') {
+          const sh = alive ? Math.max(0, Math.sin(t * 2.0)) ** 2 : 0.6;
+          p.root.position.y = p.y0 + sh * 0.45;
+          a1.sh.rotation.set(-2.3 - sh * 0.4, 0, 0.12); a1.el.rotation.x = -0.35;
+          a0.sh.rotation.set(-2.1 - sh * 0.3, 0, -0.15); a0.el.rotation.x = -0.45;
+        } else if (o.kind === 'blStroller') {
+          const sw = alive ? Math.sin(t * 3.0) * 0.25 : 0.15;
+          p.legs[0].hip.rotation.x = sw; p.legs[1].hip.rotation.x = -sw;
+          a0.sh.rotation.set(-0.82, 0, -0.12); a0.el.rotation.x = -0.28;
+          a1.sh.rotation.set(-0.82, 0, 0.12); a1.el.rotation.x = -0.28;
+        } else if (o.kind === 'blPhoto') {
+          a0.sh.rotation.set(-1.35, 0, -0.35); a0.el.rotation.x = -1.2;
+          a1.sh.rotation.set(-1.35, 0, 0.35); a1.el.rotation.x = -1.2;
+          p.head.rotation.y = alive ? Math.sin(t * 0.55) * 0.35 : 0;
+        } else if (o.kind === 'blDraw') {
+          const sk = alive ? Math.sin(t * 6.0) * 0.14 : 0.1;
+          a0.sh.rotation.set(-0.85, 0, -0.18); a0.el.rotation.x = -0.95;
+          a1.sh.rotation.set(-0.92 + sk, 0, 0.15 + sk); a1.el.rotation.x = -0.95;
+          p.head.rotation.x = 0.30;
         }
         if (o.lookUpOnClimax && alive && pigeonsForced > 0) p.head.rotation.x = -0.45;
       }
@@ -1704,6 +1898,32 @@ export function createPeople(scene, world, R) {
           a.g.position.x = a.home.x + Math.sin(a.o.ry || 0) * dart * 0.35;
           a.g.position.z = a.home.z + Math.cos(a.o.ry || 0) * dart * 0.35;
           if (a.tl) a.tl.rotation.y = Math.sin(t * 6) * 0.28;
+        }
+      }
+      // Banja Luka river & park wildlife
+      for (const a of blAnimals) {
+        if (!alive) continue;
+        const t = time + a.phase;
+        if (a.o.kind === 'heron') {
+          const dip = Math.max(0, Math.sin(t * 0.65)) ** 5;
+          if (a.neck) a.neck.rotation.x = 0.75 * dip;
+        } else if (a.o.kind === 'otter') {
+          if (a.hd) a.hd.rotation.y = Math.sin(t * 1.4) * 0.45;
+          if (a.tl) a.tl.rotation.y = Math.sin(t * 3.0) * 0.22;
+        } else if (a.o.kind === 'hedgehog') {
+          const w = Math.sin(t * 1.1) * 0.42;
+          a.g.position.x = a.home.x + Math.sin(a.o.ry || 0) * w;
+          a.g.position.z = a.home.z + Math.cos(a.o.ry || 0) * w;
+        } else if (a.o.kind === 'sparrow') {
+          const hop = Math.max(0, Math.sin(t * 3.8)) ** 4;
+          a.g.position.y = a.home.y + hop * 0.12;
+          if (a.hd) a.hd.rotation.y = Math.sin(t * 2.2) * 0.5;
+        } else if (a.o.kind === 'ladybug') {
+          a.g.rotation.y = (a.o.ry || 0) + Math.sin(t * 0.8) * 0.35;
+        } else if (a.o.kind === 'goose') {
+          const w = Math.sin(t * 2.6) * 0.12;
+          a.body.rotation.z = w;
+          if (a.neck) a.neck.rotation.x = Math.max(0, Math.sin(t * 0.8)) ** 4 * 0.5;
         }
       }
       // the fish jumps now and then

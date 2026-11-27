@@ -4,5 +4,6 @@ import { ORDER as sarajevo } from './sarajevo-words.js';
 import { ORDER as jahorina } from './jahorina-words.js';
 import { ORDER as jajce } from './jajce-words.js';
 import { ORDER as neum } from './neum-words.js';
+import { ORDER as banjaluka } from './banjaluka-words.js';
 
-export const WORD_COUNTS = { mostar: mostar.length, sarajevo: sarajevo.length, jahorina: jahorina.length, jajce: jajce.length, neum: neum.length };
+export const WORD_COUNTS = { mostar: mostar.length, sarajevo: sarajevo.length, jahorina: jahorina.length, jajce: jajce.length, neum: neum.length, banjaluka: banjaluka.length };
