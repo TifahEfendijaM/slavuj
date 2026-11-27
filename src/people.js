@@ -107,6 +107,8 @@ const G = {
   head: new THREE.SphereGeometry(0.13, 12, 10), hair: new THREE.SphereGeometry(0.139, 12, 7, 0, Math.PI * 2, 0, 1.75), scarf: hijab(),
   torso: lathe([[0.001, 0], [0.15, 0], [0.155, 0.14], [0.145, 0.28], [0.19, 0.5], [0.2, 0.57], [0.15, 0.64], [0.07, 0.68], [0.06, 0.74], [0.001, 0.74]]),
   skirt: lathe([[0.001, -0.89], [0.31, -0.89], [0.17, 0.02], [0.001, 0.02]]), robe: lathe([[0.001, -0.88], [0.27, -0.88], [0.18, 0.02], [0.001, 0.02]]),   // listed bottom to top, so the surface faces outwards
+  coat: lathe([[0.001, -0.68], [0.27, -0.68], [0.22, -0.2], [0.17, 0.04], [0.175, 0.28], [0.215, 0.52], [0.22, 0.59], [0.16, 0.66], [0.08, 0.72], [0.001, 0.72]]),
+  neckScarf: new THREE.TorusGeometry(0.115, 0.042, 7, 14).rotateX(Math.PI / 2),
   uarm: cap(0.052, 0.2), farm: cap(0.048, 0.2),
   fes: new THREE.CylinderGeometry(0.085, 0.1, 0.13, 10), cap: new THREE.SphereGeometry(0.137, 10, 5, 0, Math.PI * 2, 0, 1.1), bloom: new THREE.IcosahedronGeometry(0.07, 0),
   catBody: new THREE.SphereGeometry(1, 12, 10), catLeg: new THREE.CylinderGeometry(0.04, 0.035, 0.26, 6).translate(0, -0.13, 0), catTail: new THREE.CylinderGeometry(0.035, 0.05, 0.6, 6).translate(0, 0.3, 0), ear: new THREE.ConeGeometry(0.07, 0.14, 4),
@@ -149,35 +151,46 @@ export function createPeople(scene, world, R) {
   function person(o) {
     const pos = new THREE.Vector3(o.x, o.y, o.z), sc = o.sc || 1, P = painter(o.tag, pos, undefined, o.first, o.paintAt);
     const root = new THREE.Group(); root.position.copy(pos); root.rotation.y = o.ry || 0; root.scale.setScalar(1.05 * sc); scene.add(root);
-    const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : bottom0, gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
+    const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : (o.bottom || bottom0), gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled'].includes(o.kind), skirtC = o.woman && !o.robe && !o.sport && o.kind !== 'girl' ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit'].includes(o.kind), skirtC = o.woman && !o.robe && !o.sport && o.kind !== 'girl' && !o.coatTag ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
-    if ((!gown || seated || (skirtC && sc < 1)) && o.kind !== 'girl' && o.kind !== 'raft') for (const s of [-1, 1]) {
+    if ((!gown || seated || (skirtC && sc < 1) || o.coatTag) && o.kind !== 'girl' && o.kind !== 'raft' && o.kind !== 'sarNana') for (const s of [-1, 1]) {
       const hip = grp(hips, s * 0.09, 0, 0); P(G.thigh, legC, hip, 0, -0.2, 0);
       const knee = grp(hip, 0, -0.42, 0); P(G.calf, (skirtC && seated) || o.sport ? skin : bottom, knee, 0, -0.2, 0);      // (shorts: bare calves)
       const f = P(G.foot, o.trunks ? skin : '#3a322c', knee, 0, -0.42, 0.06); f.rotation.x = Math.PI / 2;
       legs.push({ hip, knee, foot: f });
     }
-    const torso = grp(hips, 0, 0, 0); const body = P(G.torso, top, torso, 0, 0, 0); body.scale.z = 0.72;
+    const torso = grp(hips, 0, 0, 0);
+    const coatP = o.coatTag ? painter(o.coatTag, pos, undefined, o.coatFirst, o.coatAt) : null;
+    if (coatP) { const ct = coatP(G.coat, o.coatCol || '#7a3c34', torso, 0, 0, 0, o.coatBleed || '#592922'); ct.scale.z = 0.78; }
+    else { const body = P(G.torso, top, torso, 0, 0, 0); body.scale.z = 0.72; }
+    if (o.neckScarfTag) {
+      const SP = painter(o.neckScarfTag, pos, undefined, o.neckScarfFirst, o.neckScarfAt);
+      const scC = o.neckScarfCol || '#b8452c', scB = o.neckScarfBleed || '#8a3020';
+      SP(G.neckScarf, scC, torso, 0, 0.69, 0.01, scB);
+      const tail = SP(G.box, scC, torso, 0.05, 0.48, 0.145, scB); tail.scale.set(0.09, 0.34, 0.035); tail.rotation.z = -0.08;
+    }
     if (o.trunks) { const tr = P(G.catBody, '#c0392b', hips, 0, -0.06, 0, '#8f2a20'); tr.scale.set(0.19, 0.17, 0.15); }      // swimming trunks
     const head = grp(torso, 0, 0.85, 0.01); P(G.head, skin, head, 0, 0, 0);
     if (sc < 1) head.scale.setScalar(1.25);                       // children: a bigger head
+    const useScarf = o.scarfChoice !== undefined ? o.scarfChoice === 'yes' : (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl' && sc >= 1);
     if (o.fes) painter('fes', pos, undefined, false, o.fesAt)(G.fes, '#b3312c', head, 0, 0.15, 0, '#8f2420'); else if (o.robe) P(G.cap, '#f3efe6', head, 0, 0.02, 0);
     else if (o.kind === 'post') { P(G.cap, '#23405e', head, 0, 0.03, 0, '#1a2f45'); const v = P(G.box, '#1a2f45', head, 0, 0.05, 0.13); v.scale.set(0.2, 0.025, 0.11); }
-    else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl' && sc >= 1) P(G.scarf, pick(TOPS), head, 0, 0, 0);
+    else if (useScarf) P(G.scarf, o.scarfCol || pick(TOPS), head, 0, 0, 0);
     else {      // (a girl who drew a hijab gets hair instead. One draw either way, so nobody else changes)
-      const hc = pick(HAIRS), h = P(G.hair, hc, head, 0, 0.012, -0.012); h.rotation.x = -0.3;
+      const hc = o.hairCol || pick(HAIRS), h = P(G.hair, hc, head, 0, 0.012, -0.012); h.rotation.x = -0.3;
       if (o.woman) { const long = P(G.head, hc, head, 0, -0.13, -0.075); long.scale.set(1.02, 1.75, 0.62); }      // long hair down the back
       if (o.kind === 'girl') { const fl = P(G.bloom, '#f2c230', head, 0.1, 0.09, 0.06); fl.scale.setScalar(0.7); }
     }
-    const arms = [-1, 1].map((s) => { const sh = grp(torso, s * 0.2, 0.56, 0); P(G.uarm, top, sh, 0, -0.135, 0); const el = grp(sh, 0, -0.27, 0); P(G.farm, top, el, 0, -0.14, 0); const hand = P(G.hand, skin, el, 0, -0.3, 0); return { sh, el, hand, s }; });
+    const sleeveP = coatP || P, sleeveC = coatP ? (o.coatCol || '#7a3c34') : top;
+    const arms = [-1, 1].map((s) => { const sh = grp(torso, s * 0.2, 0.56, 0); sleeveP(G.uarm, sleeveC, sh, 0, -0.135, 0); const el = grp(sh, 0, -0.27, 0); sleeveP(G.farm, sleeveC, el, 0, -0.14, 0); const hand = P(G.hand, skin, el, 0, -0.3, 0); return { sh, el, hand, s }; });
     const p = { o, root, hips, torso, head, legs, arms, phase: R() * 6, clap: 0, s: 0, dir: 1, P, sc, y0: o.y };
-    const moving = o.kind === 'walk' || o.kind === 'bike' || o.kind === 'keeper' || o.kind === 'swimmer' || o.kind === 'skate';
+    const moving = o.kind === 'walk' || o.kind === 'bike' || o.kind === 'keeper' || o.kind === 'swimmer' || o.kind === 'skate' || o.kind === 'sarCarry';
     if (o.kind === 'swimmer') p.block = block(o.x, 0.3, o.z, 1.0, 1.1, 2.3, { wall: true, person: true });
-    else if (o.kind !== 'girl' && o.kind !== 'swing') p.block = block(o.x, o.y + sc, o.z, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), 2 * sc, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), { wall: true, person: true });
+    else if (o.kind !== 'girl' && o.kind !== 'swing' && o.kind !== 'sarNana' && o.kind !== 'sarDriver') p.block = block(o.x, o.y + sc, o.z, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), 2 * sc, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), { wall: true, person: true });
     if (moving && o.to) { p.from = pos.clone(); p.to = new THREE.Vector3(o.to[0], o.y, o.to[1]); root.rotation.y = Math.atan2(p.to.x - p.from.x, p.to.z - p.from.z); }
     if (moving && o.to && o.dog) { p.loopS = 0; loopAt(p, 0); }
     if (seated || o.kind === 'raft') { hips.position.y = 0.5; for (const l of legs) { l.hip.rotation.x = -1.5; l.knee.rotation.x = o.kind === 'raft' ? 0.55 : 1.45; } }
@@ -295,6 +308,93 @@ export function createPeople(scene, world, R) {
     if (o.dog) p.dogBlock = block(o.x, o.y + 0.4, o.z, 0.5, 0.8, 0.9, { wall: true, person: true });
     if (o.kind === 'keeper') { for (const l of legs) { l.hip.rotation.x = -0.45; l.knee.rotation.x = 0.8; l.hip.rotation.z = 0; } hips.position.y = 0.84; for (const a of arms) a.sh.rotation.z = a.s * 0.95; }
     if (o.kind === 'cheer') { arms[1].sh.rotation.z = 2.5; }
+
+    // ---- Sarajevo activities (built fresh to Mostar's hand-contact standard) ----
+    if (o.kind === 'sarCornSell') {
+      const cup = P(G.fes, '#e8e0cf', arms[0].el, 0, -0.31, 0.03, '#cfc6b0'); cup.scale.set(0.45, 0.65, 0.45); cup.rotation.x = Math.PI;
+      const KP = painter('kukuruz', pos);
+      const corn = KP(G.ball, '#f0be2d', arms[0].el, 0, -0.34, 0.03, '#d49a1a'); corn.scale.set(0.042, 0.025, 0.042);
+    }
+    if (o.kind === 'sarSweep') {
+      // broom parented to left forearm at the hand, angled down so right hand grips the upper shaft
+      const br = grp(arms[1].el, 0, -0.3, 0); br.rotation.set(0.35, 0, 0.35);
+      rod(P, br, [0, 0.45, 0], [0, -0.95, 0], 0.017, '#8c6a42');
+      const headB = P(G.box, '#c9a252', br, 0, -0.97, 0, '#9c7834'); headB.scale.set(0.38, 0.14, 0.09);
+      p.broom = br;
+    }
+    if (o.kind === 'sarHammer') {
+      const h = grp(arms[0].el, 0, -0.3, 0);
+      rod(P, h, [0, 0, -0.04], [0, 0, 0.24], 0.015, '#7a5432');
+      const hd = P(G.box, '#52565c', h, 0, 0, 0.25, '#383b40'); hd.scale.set(0.11, 0.055, 0.065);
+    }
+    if (o.kind === 'sarCarry') {
+      const SP = painter('somun', pos);
+      const st = p.somunStack = grp(torso, 0, 0.32, 0.26);
+      for (let i = 0; i < 3; i++) {
+        const loaf = SP(G.catBody, '#d9a45a', st, (i - 1) * 0.02, i * 0.075, 0, '#b57e38');
+        loaf.scale.set(0.15, 0.038, 0.15);
+      }
+    }
+    if (o.kind === 'sarWaiter') {
+      const tr = grp(arms[0].el, 0.06, -0.32, 0.06); tr.rotation.x = Math.PI / 2;
+      const tray = P(G.disc, '#c48d56', tr, 0, 0, 0, '#9a6838'); tray.scale.set(0.105, 0.105, 0.014);
+      const DP = painter('dzezva', pos);
+      const pot = DP(G.fes, '#c97848', tr, 0, 0.02, -0.06, '#99522c'); pot.scale.set(0.45, 0.62, 0.45); pot.rotation.x = -Math.PI / 2;
+      rod(DP, tr, [0, 0.02, -0.07], [0.13, 0.02, -0.11], 0.007, '#99522c');
+      p.tray = tr;
+      if (o.loop) p.loopPts = o.loop.map(([x, z]) => new THREE.Vector3(x, o.y, z));
+    }
+    if (o.kind === 'sarChestnutSell') {
+      const sp = grp(arms[0].el, 0, -0.3, 0);
+      rod(P, sp, [0, 0, -0.02], [0, 0, 0.32], 0.014, '#7a5634');
+      const cn = P(G.cone, '#d9c8a6', arms[1].el, 0, -0.32, 0.02, '#b8a580'); cn.scale.setScalar(0.9); cn.rotation.x = Math.PI;
+      const KP = painter('kesteni', pos);
+      const nuts = KP(G.ball, '#5c3422', arms[1].el, 0, -0.37, 0.02, '#3d2014'); nuts.scale.set(0.045, 0.032, 0.045);
+    }
+    if (o.kind === 'sarBuy') {
+      const cn = P(G.cone, '#d9c8a6', arms[1].el, 0, -0.32, 0.02, '#b8a580'); cn.scale.setScalar(0.85); cn.rotation.x = Math.PI;
+      const KP = painter('kesteni', pos);
+      const nuts = KP(G.ball, '#5c3422', arms[1].el, 0, -0.37, 0.02, '#3d2014'); nuts.scale.set(0.04, 0.028, 0.04);
+      const coin = P(G.disc, '#e0b84a', arms[0].el, 0, -0.31, 0.03, '#b58d28'); coin.scale.set(0.022, 0.022, 0.006);
+    }
+    if (o.kind === 'sarUmbrellaWait') {
+      // closed umbrella hanging cleanly from her bent right hand/wrist; coloured ONLY by 'kisobran'
+      const UP = painter('kisobran', pos);
+      const ug = p.umb = grp(arms[0].el, 0, -0.3, 0.01); ug.rotation.set(0.25, 0, 0);
+      rod(UP, ug, [0, 0.02, 0], [0, -0.78, 0], 0.013, '#4a382c');
+      const furled = UP(G.cone, '#2f5878', ug, 0, -0.44, 0, '#1f3e58'); furled.scale.set(0.95, 3.6, 0.95); furled.rotation.x = Math.PI;
+      const hook = UP(G.box, '#4a382c', ug, 0, 0.04, -0.03, '#33261d'); hook.scale.set(0.022, 0.055, 0.075);
+    }
+    if (o.kind === 'sarReadBench') {
+      const NP = painter('novine', pos);
+      const pg = p.paper = grp(torso, 0, 0.42, 0.43); pg.rotation.x = -0.32;
+      const leftP = NP(G.box, '#f2ece0', pg, -0.11, 0, 0, '#d8d0be'); leftP.scale.set(0.22, 0.30, 0.01); leftP.rotation.y = 0.14;
+      const rightP = NP(G.box, '#f2ece0', pg, 0.11, 0, 0, '#d8d0be'); rightP.scale.set(0.22, 0.30, 0.01); rightP.rotation.y = -0.14;
+    }
+    if (o.kind === 'sarRoast') {
+      const tg = grp(arms[0].el, 0, -0.3, 0);
+      rod(P, tg, [0, 0, -0.02], [0, 0, 0.28], 0.01, '#585c62');
+      const PP = painter('paprike', pos);
+      const pep = PP(G.catBody, '#c93828', tg, 0, 0, 0.30, '#962218'); pep.scale.set(0.04, 0.035, 0.09);
+    }
+    if (o.kind === 'sarPick') {
+      const AP = painter('jabuka', pos);
+      const ap = AP(G.ball, '#cf3e2e', arms[0].el, 0, -0.33, 0.01, '#a02b1f'); ap.scale.setScalar(0.045);
+    }
+    if (o.kind === 'sarNana') {
+      hips.position.y = 0.74; torso.rotation.x = 0.14;
+      for (const l of legs) l.hip.visible = false;
+      for (const ch of hips.children) if (ch !== torso && !legs.some((l) => l.hip === ch)) ch.visible = false;
+    }
+    if (o.kind === 'sarPaint') {
+      const br = grp(arms[0].el, 0, -0.3, 0);
+      rod(P, br, [0, 0, -0.02], [0, 0, 0.22], 0.008, '#7a5432');
+      const tip = P(G.cone, '#d97832', br, 0, 0, 0.24, '#a64d1e'); tip.scale.set(0.25, 0.28, 0.25); tip.rotation.x = Math.PI / 2;
+      const pal = P(G.disc, '#c99f6b', arms[1].el, 0, -0.3, 0.02, '#a37b4b'); pal.scale.set(0.11, 0.085, 0.014); pal.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'sarDriver') {
+      p.isTramDriver = true;
+    }
     list.push(p); return p;
   }
   function a0pose(arms, x0, x1) { arms[0].sh.rotation.x = x0; arms[1].sh.rotation.x = x1; }
@@ -333,18 +433,66 @@ export function createPeople(scene, world, R) {
   });
   // (each map has its own set of these features; a map without one simply does not get it)
   const PG = world.pigeons || { x: 0, y: -999, z: 0 }, pcentre = new THREE.Vector3(PG.x, PG.y, PG.z), pigeons = [];
-  for (let i = 0; i < (world.pigeons ? 8 : 0); i++) {
-    const ang = (i / 8) * 6.28 + R(), rad = 0.5 + R() * 1.5, home = new THREE.Vector3(PG.x + Math.cos(ang) * rad, PG.y, PG.z + Math.sin(ang) * rad);
-    const P = painter('pigeon', home, 1.2), g = new THREE.Group(); g.position.copy(home); g.rotation.y = R() * 6.28; scene.add(g);
+  const pCount = world.pigeons ? (PG.count || 8) : 0, pTag = PG.tag || 'pigeon';
+  for (let i = 0; i < pCount; i++) {
+    const ang = (i / pCount) * 6.28 + R(), rad = 0.5 + R() * (PG.spread || 1.5), home = new THREE.Vector3(PG.x + Math.cos(ang) * rad, PG.y, PG.z + Math.sin(ang) * rad);
+    const P = painter(pTag, home, 1.2), g = new THREE.Group(); g.position.copy(home); g.rotation.y = R() * 6.28; scene.add(g);
     const col = ['#8f9aa6', '#a7aeb5', '#7d8794', '#c9c4bc'][i % 4], b = P(G.catBody, col, g, 0, 0.11, 0, '#6a7480'); b.scale.set(0.07, 0.075, 0.13);
     const hd = grp(g, 0, 0.2, 0.09); P(G.catBody, '#6f8a84', hd, 0, 0, 0).scale.set(0.045, 0.045, 0.045); const bk = P(G.cone, '#d9a25a', hd, 0, 0, 0.055); bk.scale.set(0.3, 0.3, 0.3); bk.rotation.x = Math.PI / 2;
     const tl = P(G.box, '#6a7480', g, 0, 0.1, -0.15); tl.scale.set(0.07, 0.015, 0.12);
     const wings = [-1, 1].map((s) => { const w = grp(g, s * 0.05, 0.14, 0); const m = P(G.box, col, w, s * 0.11, 0, 0, '#6a7480'); m.scale.set(0.22, 0.012, 0.12); w.visible = false; return w; });
     pigeons.push({ g, hd, wings, home, mode: 'ground', t: 0, phase: R() * 6, r: 3 + R() * 2.5, h: 3 + R() * 2.5, yaw: g.rotation.y });
   }
+  let pigeonsForced = 0;
+
+  // ---- Sarajevo wildlife: ducks on the Miljacka, squirrel on walnut branch, kitten in courtyard ----
+  const ducks = (world.ducks || []).map((dk, i) => {
+    const dp = new THREE.Vector3(dk.x, dk.y, dk.z), DP = painter(dk.tag || 'patke', dp, 1.4), g = new THREE.Group();
+    g.position.copy(dp); g.rotation.y = dk.ry || 0; scene.add(g);
+    const drake = i === 0, bodyC = drake ? '#9e978c' : '#8f7254', headC = drake ? '#2b6b4c' : '#7b6046';
+    const b = DP(G.catBody, bodyC, g, 0, 0.13, 0, '#6a5b48'); b.scale.set(0.16, 0.12, 0.24);
+    const neck = grp(g, 0, 0.22, 0.18);
+    DP(G.catBody, headC, neck, 0, 0.08, 0.02, '#1e4a34').scale.set(0.085, 0.085, 0.095);
+    const bill = DP(G.box, '#e2a332', neck, 0, 0.07, 0.13, '#c4831e'); bill.scale.set(0.06, 0.026, 0.09);
+    const tail = DP(G.cone, '#5a4e42', g, 0, 0.18, -0.24); tail.scale.set(1.2, 0.8, 1.2); tail.rotation.x = -0.9;
+    return { g, neck, home: dp.clone(), r: dk.r || 1.6, phase: i * 2.1, speed: 0.38 + i * 0.08 };
+  });
+
+  let squirrel = null;
+  if (world.squirrel) {
+    const SQ = world.squirrel, sp = new THREE.Vector3(SQ.x, SQ.y, SQ.z), SP = painter(SQ.tag || 'vjeverica', sp, 1.2), g = new THREE.Group();
+    g.position.copy(sp); g.rotation.y = SQ.ry || 0; scene.add(g);
+    const C1 = '#a85124', C2 = '#7a3615';
+    const bd = SP(G.catBody, C1, g, 0, 0.14, 0, C2); bd.scale.set(0.09, 0.11, 0.16);
+    const hd = grp(g, 0, 0.24, 0.12); SP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.07, 0.068, 0.08);
+    for (const s of [-1, 1]) SP(G.ear, C2, hd, s * 0.04, 0.07, -0.01).scale.set(0.35, 0.4, 0.35);
+    const nut = SP(G.ball, '#7a5230', hd, 0, -0.05, 0.09, '#57381e'); nut.scale.setScalar(0.032);
+    const tl = grp(g, 0, 0.15, -0.14);
+    const t1 = SP(G.catBody, C1, tl, 0, 0.14, -0.05, C2); t1.scale.set(0.07, 0.17, 0.09); t1.rotation.x = -0.4;
+    const t2 = SP(G.catBody, '#c96832', tl, 0, 0.28, -0.02, C1); t2.scale.set(0.075, 0.13, 0.08); t2.rotation.x = 0.45;
+    squirrel = { g, hd, tl, home: sp.clone(), dir: new THREE.Vector3(Math.sin(SQ.ry || 0), 0, Math.cos(SQ.ry || 0)), span: SQ.span || 1.2 };
+  }
+
+  let kitten = null;
+  if (world.kitten) {
+    const KT = world.kitten, kp = new THREE.Vector3(KT.x, KT.y, KT.z), KP = painter(KT.tag || 'mace', kp, 1.2), g = new THREE.Group();
+    g.position.copy(kp); g.rotation.y = KT.ry || 0; g.scale.setScalar(0.62); scene.add(g);
+    const C1 = '#e39a4a', C2 = '#c9752f';
+    const body = grp(g, 0, 0, 0);
+    KP(G.catBody, C1, body, 0, 0.34, 0, C2).scale.set(0.19, 0.21, 0.36);
+    const hd = grp(body, 0, 0.56, 0.34); KP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.18, 0.17, 0.18);
+    for (const s of [-1, 1]) KP(G.ear, C2, hd, s * 0.1, 0.18, 0.02).scale.setScalar(0.95);
+    const tl = grp(body, 0, 0.38, -0.35); KP(G.catTail, C1, tl, 0, 0, 0, C2); tl.rotation.x = -0.5;
+    const legs = [[0.1, 0.2], [-0.1, 0.2], [0.1, -0.2], [-0.1, -0.2]].map(([x, z]) => { const lg = grp(body, x, 0.24, z); KP(G.catLeg, C1, lg, 0, 0, 0, C2); return lg; });
+    kitten = { g, body, hd, tl, legs, home: kp.clone(), ry: KT.ry || 0 };
+  }
   let fishT0 = 0;      // the fish's jumps count from here (the finale sets it so one comes early in the diver's shot)
-  const FS = world.fish || { x: 0, z: 0 }, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), FP = painter('fish', fishHome, 1), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7; if (world.fish) scene.add(fish);
-  if (world.fish) FP(G.catBody, '#9fb6c2', fish, 0, 0, 0, '#6f8a9a').scale.set(0.05, 0.1, 0.24); if (world.fish) { const t = FP(G.ear, '#6f8a9a', fish, 0, 0, -0.27); t.scale.set(0.5, 1.3, 1.6); t.rotation.x = Math.PI / 2; }
+  const FS = world.fish || { x: 0, z: 0 }, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7;
+  if (world.fish) {
+    const FP = painter('fish', fishHome, 1); scene.add(fish);
+    FP(G.catBody, '#9fb6c2', fish, 0, 0, 0, '#6f8a9a').scale.set(0.05, 0.1, 0.24);
+    const t = FP(G.ear, '#6f8a9a', fish, 0, 0, -0.27); t.scale.set(0.5, 1.3, 1.6); t.rotation.x = Math.PI / 2;
+  }
   const birdD = new THREE.Vector3();
 
   // ---- smoke from a chimney: still curls in the sketch, then it rises and drifts ----
@@ -353,7 +501,7 @@ export function createPeople(scene, world, R) {
     return { SM, k, puffs: Array.from({ length: 9 }, (_, i) => SMP(G.ball, i % 2 ? '#e2dfd8' : '#d0ccc4', scene, 0, 0, 0, '#b4b0a8')) };
   });
   // ---- the šadrvan: eight thin streams fall from the rim of its upper bowl into the basin (still in the sketch) ----
-  const FT = world.fountain || { x: 0, y: 0, z: 0 }, FTP = painter('fountain', new THREE.Vector3(FT.x, FT.y + 1.6, FT.z), 2.4);
+  const FT = world.fountain || { x: 0, y: 0, z: 0 }, FTP = world.fountain ? painter(world.fountainTag || 'fountain', new THREE.Vector3(FT.x, FT.y + 1.6, FT.z), 2.4) : null;
   const FALL = 0.574, DROPS = 16, R0F = 0.86, R1F = 1.3, Y0F = FT.y + 2.29, VY0 = 0.25;      // seconds to fall; from the rim to the water
   const streams = Array.from({ length: world.fountain ? 8 : 0 }, (_, i) => {
     const a = (i + 0.5) * Math.PI / 4, dx = Math.sin(a), dz = Math.cos(a);
@@ -440,7 +588,7 @@ export function createPeople(scene, world, R) {
 
   // ---- the football ----
   const kickers = list.filter((p) => p.o.ball !== undefined).sort((a, b) => a.o.ball - b.o.ball);
-  const ballHome = new THREE.Vector3(...(world.ball || [31.2, 12.29, 76.2])), BP = painter('ball', ballHome, 1), ball = kickers.length ? BP(G.ball, '#f8f4ea', scene, 0, 0, 0, '#cfd6d8') : new THREE.Object3D();
+  const ballHome = new THREE.Vector3(...(world.ball || [31.2, 12.29, 76.2])), ball = kickers.length ? painter('ball', ballHome, 1)(G.ball, '#f8f4ea', scene, 0, 0, 0, '#cfd6d8') : new THREE.Object3D();
   ball.scale.setScalar(0.17); ball.position.copy(ballHome);
   const ballBlock = kickers.length ? block(ballHome.x, ballHome.y, ballHome.z, 0.4, 0.4, 0.4, { wall: true, person: true }) : new THREE.Object3D(), dogP = new THREE.Vector3();
   const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3();
@@ -469,26 +617,33 @@ export function createPeople(scene, world, R) {
   }
 
   // ---- the cat ----
-  const C = world.cat || { x: 0, y: -999, z: 0, x0: 0, x1: 0 }, cpos = new THREE.Vector3(C.x, C.y, C.z), ctm = timing('cat', cpos), cmat = washMat('cat');
-  const cat = new THREE.Group(); cat.position.copy(cpos); if (world.cat) scene.add(cat);
-  const CP = (geo, parent, x, y, z, sx = 1, sy = 1, sz = 1, col = '#e39a4a') => {
-    const m = new THREE.Mesh(paintGeo(geo, { col, bleed: '#c9752f', seed: [C.x, C.y + 0.4, C.z], radius: 1.4, delay: ctm.delay, dur: 3, hatch: 0.4 }), cmat);
-    m.position.set(x, y, z); m.scale.set(sx, sy, sz); addHull(m, 1.5); parent.add(m); return m;
-  };
+  const C = world.cat || { x: 0, y: -999, z: 0, x0: 0, x1: 0 }, cpos = new THREE.Vector3(C.x, C.y, C.z);
+  const cat = new THREE.Group(); cat.position.copy(cpos);
   const cbody = new THREE.Group(); cat.add(cbody);
-  CP(G.catBody, cbody, 0, 0.36, 0, 0.4, 0.22, 0.19);
   const chead = new THREE.Group(); chead.position.set(0.38, 0.6, 0); cbody.add(chead);
-  CP(G.catBody, chead, 0, 0, 0, 0.2, 0.19, 0.2); for (const s of [-1, 1]) CP(G.ear, chead, 0.02, 0.2, s * 0.11);
-  const ctail = new THREE.Group(); ctail.position.set(-0.4, 0.4, 0); cbody.add(ctail); CP(G.catTail, ctail, 0, 0, 0);
-  const clegs = [[0.24, 0.1], [0.24, -0.1], [-0.24, 0.1], [-0.24, -0.1]].map(([x, z]) => { const g = new THREE.Group(); g.position.set(x, 0.26, z); cbody.add(g); CP(G.catLeg, g, 0, 0, 0); return g; });
+  const ctail = new THREE.Group(); ctail.position.set(-0.4, 0.4, 0); cbody.add(ctail);
+  const clegs = [[0.24, 0.1], [0.24, -0.1], [-0.24, 0.1], [-0.24, -0.1]].map(([x, z]) => { const g = new THREE.Group(); g.position.set(x, 0.26, z); cbody.add(g); return g; });
+  if (world.cat) {
+    scene.add(cat);
+    const ctm = timing('cat', cpos), cmat = washMat('cat');
+    const CP = (geo, parent, x, y, z, sx = 1, sy = 1, sz = 1, col = '#e39a4a') => {
+      const m = new THREE.Mesh(paintGeo(geo, { col, bleed: '#c9752f', seed: [C.x, C.y + 0.4, C.z], radius: 1.4, delay: ctm.delay, dur: 3, hatch: 0.4 }), cmat);
+      m.position.set(x, y, z); m.scale.set(sx, sy, sz); addHull(m, 1.5); parent.add(m); return m;
+    };
+    CP(G.catBody, cbody, 0, 0.36, 0, 0.4, 0.22, 0.19);
+    CP(G.catBody, chead, 0, 0, 0, 0.2, 0.19, 0.2); for (const s of [-1, 1]) CP(G.ear, chead, 0.02, 0.2, s * 0.11);
+    CP(G.catTail, ctail, 0, 0, 0);
+    for (const g of clegs) CP(G.catLeg, g, 0, 0, 0);
+  }
   const catS = { walk: 0, x: C.x, dir: 1, rest: 2 };
   const CAT_SIT = { tilt: 0.5, drop: 0.04, front: 1.17, hind: 0.95, walkY: 0.0 };
 
   return {
     flagCloth: cloth, animals,
-    list, cat, ball,
+    list, cat, ball, ducks,
     fishJumpAt(t) { fishT0 = t; },
     applaud() { for (const p of list) if (p.o.kind === 'watch') p.cheer = true; },
+    launchPigeons(dur = 9) { pigeonsForced = dur; for (const q of pigeons) { q.mode = 'fly'; q.t = 0; q.back = 0; for (const w of q.wings) w.visible = true; } this.onScatter?.(); },
     update(dt, time, life, bird) {
       const mv = this.movers = [];      // whatever is walking this frame (where, which way, how wide): main.js lifts the bird out of their way
       const go = (pos, ry, r, h, v = 1.2) => mv.push({ x: pos.x, y: pos.y, z: pos.z, fx: Math.sin(ry), fz: Math.cos(ry), r, h, v });      // v: how fast it comes (the faster, the sooner the bird must go)
@@ -711,7 +866,145 @@ export function createPeople(scene, world, R) {
             p.arms.forEach((a, i) => { a.sh.rotation.set(-2.2 - (i === lead ? 0.35 * lift : 0), 0, a.s * 0.12); a.el.rotation.x = -0.35; });
             p.torso.rotation.x = 0.12;
           } else { p.torso.rotation.x = 0; for (const a of p.arms) a.el.rotation.x = 0; }
+        } else if (o.kind === 'sarCornSell') {
+          a0.sh.rotation.set(-1.05 + (alive ? Math.sin(t * 2.2) * 0.16 : 0), 0, -0.15); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-0.25 + (alive ? Math.sin(t * 1.7) * 0.18 : 0), 0, 0.12); a1.el.rotation.x = -0.35;
+          p.head.rotation.y = alive ? Math.sin(t * 0.9) * 0.35 : 0.1;
+          if (alive && pigeonsForced > 0) p.head.rotation.x = -0.38; else p.head.rotation.x = 0.05;
+        } else if (o.kind === 'sarFeed') {
+          const thr = alive ? Math.sin(t * 2.6) : 0.65;
+          a0.sh.rotation.set(-0.9 - thr * 0.45, 0, -0.18); a0.el.rotation.x = -0.55 + thr * 0.35;
+          a1.sh.rotation.set(-0.45, 0, 0.14); a1.el.rotation.x = -0.6;
+          p.torso.rotation.x = 0.12 + thr * 0.06;
+          p.head.rotation.x = alive && pigeonsForced > 0 ? -0.42 : 0.22;
+        } else if (o.kind === 'sarSweep') {
+          const w = alive ? Math.sin(t * 2.2) : 0.35;
+          p.torso.rotation.y = w * 0.24; p.torso.rotation.x = 0.14;
+          a1.sh.rotation.set(-0.88, 0, 0.16); a1.el.rotation.x = -0.48;
+          a0.sh.rotation.set(-0.62, 0, -0.26); a0.el.rotation.x = -0.78;
+          if (p.broom) p.broom.rotation.z = 0.35 + w * 0.22;
+          p.head.rotation.x = alive && pigeonsForced > 0 ? -0.35 : 0.28;
+        } else if (o.kind === 'sarDrinkSpout') {
+          const c = alive ? (time + p.phase) % 6.0 : 0.5;
+          const bend = alive ? (c < 2.6 ? 1 : c < 3.4 ? 1 - sm((c - 2.6) / 0.8) : c < 5.2 ? 0 : sm((c - 5.2) / 0.8)) : 1;
+          const wipe = alive && c >= 3.4 && c < 4.7 ? Math.sin(((c - 3.4) / 1.3) * Math.PI) : 0;
+          p.torso.rotation.x = 0.58 * bend;
+          a0.sh.rotation.set(-0.85 * bend - 1.15 * wipe, 0, -0.22 * bend - 0.15 * wipe); a0.el.rotation.x = -0.85 * bend - 1.45 * wipe;
+          a1.sh.rotation.set(-0.85 * bend, 0, 0.22 * bend); a1.el.rotation.x = -0.85 * bend;
+          p.head.rotation.x = 0.12 * bend - 0.1 * wipe;
+        } else if (o.kind === 'sarHammer') {
+          const c = alive ? (time + p.phase) % 3.6 : 0.15;
+          const strike = c < 2.4 ? Math.max(0, Math.sin(c * Math.PI * 3.0)) : 0;
+          a0.sh.rotation.set(-0.75 - 0.72 * strike, 0, -0.14); a0.el.rotation.x = -0.95 - 0.35 * strike;
+          a1.sh.rotation.set(-0.85, 0, 0.18); a1.el.rotation.x = -0.75;
+          p.torso.rotation.x = 0.16; p.head.rotation.x = 0.34;
+          p.head.rotation.y = alive && c >= 2.4 ? Math.sin((c - 2.4) * 3.2) * 0.22 : 0;
+        } else if (o.kind === 'sarCarry') {
+          const speed = o.speed || 1.0;
+          if (alive && p.from && p.to) {
+            p.s += p.dir * dt * speed / p.from.distanceTo(p.to);
+            if (p.s > 1 || p.s < 0) { p.dir *= -1; p.s = Math.min(1, Math.max(0, p.s)); }
+            p.root.position.lerpVectors(p.from, p.to, p.s);
+            const want = Math.atan2((p.to.x - p.from.x) * p.dir, (p.to.z - p.from.z) * p.dir);
+            p.root.rotation.y += Math.atan2(Math.sin(want - p.root.rotation.y), Math.cos(want - p.root.rotation.y)) * k(5, dt);
+            p.block.matrixWorld.setPosition(p.root.position.x, p.root.position.y + p.sc, p.root.position.z);
+            go(p.root.position, p.root.rotation.y, 0.45 * p.sc, 1.9 * p.sc, speed);
+          }
+          const sw = alive ? Math.sin(t * 4.8) * 0.42 : 0.28;
+          p.legs.forEach((l, i) => { const s = i ? sw : -sw; l.hip.rotation.x = s; l.knee.rotation.x = Math.max(0, -s) * 0.85; });
+          for (const a of p.arms) { a.sh.rotation.set(-0.52, 0, a.s * -0.14); a.el.rotation.x = -1.25; }
+          p.torso.rotation.x = -0.05;
+          p.hips.position.y = 0.92 + (alive ? Math.abs(Math.cos(t * 4.8)) * 0.014 : 0);
+        } else if (o.kind === 'sarWaiter') {
+          if (alive && p.loopPts && p.loopPts.length >= 2) {
+            const speed = o.speed || 0.95;
+            p.wi = p.wi ?? 0; p.ws = p.ws ?? 0;
+            const A = p.loopPts[p.wi], B = p.loopPts[(p.wi + 1) % p.loopPts.length], L = Math.max(0.1, A.distanceTo(B));
+            p.ws += dt * speed / L;
+            if (p.ws >= 1) { p.ws -= 1; p.wi = (p.wi + 1) % p.loopPts.length; }
+            const A2 = p.loopPts[p.wi], B2 = p.loopPts[(p.wi + 1) % p.loopPts.length];
+            p.root.position.lerpVectors(A2, B2, p.ws);
+            const want = Math.atan2(B2.x - A2.x, B2.z - A2.z);
+            p.root.rotation.y += Math.atan2(Math.sin(want - p.root.rotation.y), Math.cos(want - p.root.rotation.y)) * k(6, dt);
+            p.block.matrixWorld.setPosition(p.root.position.x, p.root.position.y + p.sc, p.root.position.z);
+            go(p.root.position, p.root.rotation.y, 0.45 * p.sc, 1.9 * p.sc, speed);
+          }
+          const sw = alive ? Math.sin(t * 4.4) * 0.36 : 0.22;
+          p.legs.forEach((l, i) => { const s = i ? sw : -sw; l.hip.rotation.x = s; l.knee.rotation.x = Math.max(0, -s) * 0.75; });
+          a0.sh.rotation.set(-1.35, 0, -0.22); a0.el.rotation.x = -1.55;
+          a1.sh.rotation.set(sw * 0.4, 0, 0.08); a1.el.rotation.x = -0.2;
+          p.hips.position.y = 0.92 + (alive ? Math.abs(Math.cos(t * 4.4)) * 0.012 : 0);
+        } else if (o.kind === 'sarTalk') {
+          const mine = alive ? sm(Math.sin(t * 0.65 + (o.turn ? Math.PI : 0)) * 2.5) : (o.turn ? 0 : 1);
+          const gest = alive ? Math.sin(t * 4.2) : 0.4;
+          p.torso.rotation.x = 0.05 + 0.14 * mine;
+          a0.sh.rotation.set(-0.6 - 0.45 * mine, 0, -0.15 - 0.2 * mine * gest); a0.el.rotation.x = -0.8 - 0.3 * mine;
+          a1.sh.rotation.set(-0.55 - 0.25 * mine, 0, 0.15 + 0.15 * mine * gest); a1.el.rotation.x = -0.85;
+          p.head.rotation.y = alive ? Math.sin(t * 1.1) * 0.22 : (o.turn ? -0.15 : 0.15);
+          p.head.rotation.x = alive && !mine ? Math.sin(t * 2.8) * 0.08 : 0;
+        } else if (o.kind === 'sarDriver') {
+          a0.sh.rotation.set(-0.85, 0, -0.15); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-0.85, 0, 0.15); a1.el.rotation.x = -0.45;
+          p.head.rotation.y = alive ? Math.sin(t * 0.6) * 0.18 : 0;
+        } else if (o.kind === 'sarChestnutSell') {
+          const st = alive ? Math.sin(t * 3.1) : 0.3;
+          a0.sh.rotation.set(-0.78 + st * 0.14, 0, -0.18 + st * 0.12); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-1.05 + (alive ? Math.sin(t * 1.4) * 0.15 : 0), 0, 0.12); a1.el.rotation.x = -0.5;
+          p.head.rotation.x = 0.18; p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.25 : 0;
+        } else if (o.kind === 'sarBuy') {
+          const bite = alive ? sm(Math.sin(t * 1.2) * 2.2) : 0;
+          a1.sh.rotation.set(-0.85 - 0.35 * bite, 0, 0.14); a1.el.rotation.x = -0.75 - 0.5 * bite;
+          a0.sh.rotation.set(-0.75, 0, -0.1); a0.el.rotation.x = -0.45;
+          p.head.rotation.x = 0.08 * bite;
+        } else if (o.kind === 'sarUmbrellaWait') {
+          const watch = alive ? sm(Math.sin(t * 0.5) * 3 - 1.6) : 0;
+          a0.sh.rotation.set(-0.35, 0, -0.1); a0.el.rotation.x = -1.25;
+          a1.sh.rotation.set(-0.85 * watch, 0, 0.1); a1.el.rotation.x = -1.35 * watch;
+          p.head.rotation.x = 0.32 * watch; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.65 * (1 - watch) : 0.45;
+        } else if (o.kind === 'sarChess') {
+          const myTurn = alive ? sm(Math.sin(t * 0.55 + (o.turn ? Math.PI : 0)) * 3) : (o.turn ? 0 : 1);
+          p.torso.rotation.x = 0.15 + 0.32 * myTurn;
+          a0.sh.rotation.set(-0.45 - 0.85 * myTurn, 0, -0.1); a0.el.rotation.x = -0.4 - 0.35 * myTurn;
+          a1.sh.rotation.set(-0.3, 0, 0.12); a1.el.rotation.x = -0.35;
+          p.head.rotation.x = 0.35;
+        } else if (o.kind === 'sarReadBench') {
+          const up = alive ? sm(Math.sin(t * 0.45) * 3 - 1.8) : 0;
+          for (const a of p.arms) { a.sh.rotation.set(-0.72, 0, a.s * 0.06); a.el.rotation.x = -1.05; }
+          p.head.rotation.x = 0.28 - 0.38 * up; p.head.rotation.y = alive ? Math.sin(t * 0.35) * 0.25 * up : 0;
+          if (p.paper) p.paper.rotation.z = alive ? Math.sin(t * 0.9) * 0.025 : 0;
+        } else if (o.kind === 'sarRoast') {
+          const c = alive ? (time + p.phase) % 5.5 : 0.4;
+          const wipe = alive && c > 4.0 ? Math.sin(((c - 4.0) / 1.5) * Math.PI) : 0;
+          const turn = alive && c <= 4.0 ? Math.sin(c * 3.5) : 0.25;
+          a0.sh.rotation.set(-0.85 + turn * 0.14, 0, -0.14); a0.el.rotation.x = -0.68;
+          a1.sh.rotation.set(-0.35 - 1.55 * wipe, 0, 0.15 - 0.25 * wipe); a1.el.rotation.x = -0.45 - 1.1 * wipe;
+          p.torso.rotation.x = 0.16 * (1 - wipe); p.head.rotation.x = 0.24 * (1 - wipe);
+        } else if (o.kind === 'sarPick') {
+          const reach = alive ? 0.5 + 0.5 * Math.sin(t * 1.4) : 0.85;
+          a0.sh.rotation.set(-2.05 - 0.42 * reach, 0, -0.18); a0.el.rotation.x = -0.55 + 0.3 * reach;
+          a1.sh.rotation.set(-1.05, 0, 0.18); a1.el.rotation.x = -0.75;
+          p.head.rotation.x = -0.35; p.torso.rotation.x = -0.06;
+        } else if (o.kind === 'sarNana') {
+          const wave = alive ? sm(Math.sin(t * 0.6) * 2.2) : 0;
+          a0.sh.rotation.set(-0.95 - 0.95 * wave, 0, -0.22 - 0.35 * wave); a0.el.rotation.x = -1.15 + 0.5 * wave;
+          a0.el.rotation.z = alive && wave > 0.2 ? Math.sin(t * 5.2) * 0.28 * wave : 0;
+          a1.sh.rotation.set(-0.95, 0, 0.22); a1.el.rotation.x = -1.15;
+          p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.35 : 0.1; p.head.rotation.x = 0.15;
+        } else if (o.kind === 'sarRimSit') {
+          const pt = o.point ? 1 : 0;
+          a0.sh.rotation.set(-0.55 - 1.1 * pt + (alive ? Math.sin(t * 1.2) * 0.18 : 0), 0, -0.15); a0.el.rotation.x = -0.65 + 0.45 * pt;
+          a1.sh.rotation.set(-0.5 + (alive ? Math.sin(t * 1.5 + 1) * 0.16 : 0), 0, 0.15); a1.el.rotation.x = -0.75;
+          p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.35 : (pt ? -0.15 : 0.2);
+          p.head.rotation.x = 0.08;
+        } else if (o.kind === 'sarPaint') {
+          const st = alive ? Math.sin(t * 3.4) : 0.2;
+          const stepBack = alive ? sm(Math.sin(t * 0.45) * 2.4 - 1.4) : 0;
+          a0.sh.rotation.set(-1.15 + st * 0.16 * (1 - stepBack), 0, -0.12 + Math.cos(t * 2.1) * 0.12 * (1 - stepBack));
+          a0.el.rotation.x = -0.55 - 0.2 * stepBack;
+          a1.sh.rotation.set(-0.85, 0, 0.22); a1.el.rotation.x = -0.95;
+          p.torso.rotation.x = -0.08 * stepBack; p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.2 * stepBack : 0;
         }
+        if (o.lookUpOnClimax && alive && pigeonsForced > 0) p.head.rotation.x = -0.45;
       }
       // the ball goes back and forth between the two who chase it
       if (alive && kickers.length === 2) {
@@ -765,6 +1058,7 @@ export function createPeople(scene, world, R) {
         a.legs.forEach((l, i) => { l.rotation.x = i === 0 || i === 3 ? sw : -sw; });
       }
       // pigeons peck about; once the town is alive they scatter when the nightingale comes close, circle, and come back
+      if (pigeonsForced > 0) pigeonsForced = Math.max(0, pigeonsForced - dt);
       const near = bird ? bird.pos.distanceTo(pcentre) : 99, scare = alive && (near < 3 || (near < 5.5 && bird.mode === 'perched'));
       if (scare && pigeons[0]?.mode === 'ground') this.onScatter?.();
       for (const q of pigeons) {
@@ -773,12 +1067,43 @@ export function createPeople(scene, world, R) {
           if (scare) { q.mode = 'fly'; q.t = 0; for (const w of q.wings) w.visible = true; }
           q.hd.rotation.x = alive ? Math.max(0, Math.sin(t * 2.3)) ** 4 * 1.1 : 0; if (alive) { q.yaw += Math.sin(t * 0.5) * dt * 0.6; q.g.rotation.y = q.yaw; q.g.position.x = q.home.x + Math.sin(t * 0.3) * 0.25; q.g.position.z = q.home.z + Math.cos(t * 0.23) * 0.25; }
         } else {
-          q.t += dt; const back = near > 7 && q.t > 5 ? (q.back = (q.back || 0) + dt / 2.2) : (q.back = 0), up = sm(q.t / 1.3) * (1 - sm(back));
+          q.t += dt; const back = pigeonsForced <= 0 && near > 7 && q.t > 5 ? (q.back = (q.back || 0) + dt / 2.2) : (q.back = 0), up = sm(q.t / 1.3) * (1 - sm(back));
           const a = q.t * 1.5 + q.phase, rr = 2 + (q.r - 3) * 0.9, tx = PG.fx + Math.cos(a) * rr, tz = PG.fz + Math.sin(a) * rr;
           q.g.position.set(q.home.x + (tx - q.home.x) * up, q.home.y + (PG.fh + q.h * 0.4) * up + Math.sin(t * 3) * 0.15 * up, q.home.z + (tz - q.home.z) * up);
           q.g.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a)); q.hd.rotation.x = 0;
           q.wings.forEach((w, i) => { w.rotation.z = (i ? 1 : -1) * Math.sin(t * 38) * 0.9; });
           if (back >= 1) { q.mode = 'ground'; q.back = 0; for (const w of q.wings) w.visible = false; q.g.position.copy(q.home); }
+        }
+      }
+      // ducks paddling on the Miljacka
+      for (const dk of ducks) {
+        const a = (alive ? time * dk.speed : 0) + dk.phase;
+        if (alive) {
+          dk.g.position.set(dk.home.x + Math.cos(a) * dk.r, dk.home.y + Math.sin(time * 2.5 + dk.phase) * 0.025, dk.home.z + Math.sin(a) * dk.r * 0.65);
+          dk.g.rotation.y = Math.atan2(-Math.sin(a) * dk.r, Math.cos(a) * dk.r * 0.65);
+          const dab = Math.max(0, Math.sin(time * 0.9 + dk.phase)) ** 6;
+          dk.neck.rotation.x = dab * 0.75;
+        }
+      }
+      // squirrel on the walnut branch
+      if (squirrel) {
+        if (alive) {
+          const c = (time * 0.45) % 4.0, scurry = c < 1.5 ? sm(c / 1.5) : c < 2.2 ? 1 : c < 3.7 ? 1 - sm((c - 2.2) / 1.5) : 0;
+          squirrel.g.position.copy(squirrel.home).addScaledVector(squirrel.dir, scurry * squirrel.span);
+          squirrel.g.position.y += Math.abs(Math.sin(scurry * Math.PI * 4)) * 0.05;
+          squirrel.hd.rotation.x = (c >= 1.5 && c < 2.2) || c >= 3.7 ? Math.sin(time * 12) * 0.14 : 0;
+          squirrel.tl.rotation.x = Math.sin(time * 4.5) * 0.16;
+        }
+      }
+      // kitten pouncing at leaves in the old house courtyard
+      if (kitten) {
+        if (alive) {
+          const c = (time * 0.55) % 4.2, pounce = c < 0.7 ? Math.sin((c / 0.7) * Math.PI) : 0;
+          const off = c < 0.7 ? sm(c / 0.7) * 0.55 : c < 2.4 ? 0.55 : c < 3.4 ? 0.55 * (1 - sm((c - 2.4) / 1.0)) : 0;
+          kitten.g.position.set(kitten.home.x + Math.sin(kitten.ry) * off, kitten.home.y + pounce * 0.24, kitten.home.z + Math.cos(kitten.ry) * off);
+          kitten.body.rotation.x = -pounce * 0.35 + (c >= 3.4 ? 0.18 : 0);
+          kitten.tl.rotation.z = Math.sin(time * 5.2) * 0.4;
+          kitten.hd.rotation.y = Math.sin(time * 1.4) * 0.35;
         }
       }
       // the fish jumps now and then

@@ -16,6 +16,12 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | `audio/sfx/cat-meow.mp3` | The cat miaowing | BigSoundBank, Joseph Sardin: "Little Meow of a Cat #1" (0494) | CC0 |
 | `audio/sfx/dog-bark.mp3`, `audio/sfx/dog-bark2.mp3` | The dog barking (two double barks cut from the recording) | BigSoundBank, Joseph Sardin: "Barking Dog #2" (2954) | CC0 |
 | `audio/sfx/fountain.mp3` | The šadrvan's water (24 s loop, mono) | BigSoundBank, Joseph Sardin: "Fountain of a Japanese Temple" (0913) | CC0 |
+| `audio/sfx/sarajevo/kazandziluk-tapping.mp3` | Quiet coppersmith hammer tapping in Kazandžiluk (14 s loop, mono) | BigSoundBank, Pablo Bergel: "Anvil #1" (3589) | CC0 |
+| `audio/sfx/sarajevo/pigeon-coo.mp3` | Pigeon cooing on Pigeon Square (3.2 s clip, mono) | Wikimedia Commons, mary905: "Dove cooing.ogg" | Public Domain |
+| `audio/sfx/sarajevo/duck-quack.mp3` | Ducks quacking on the Miljacka (2.2 s clip, mono) | BigSoundBank, Joseph Sardin: "Ducks" (0276) | CC0 |
+| `audio/sfx/sarajevo/tram-bell.mp3` | Sarajevo tram bell (1.6 s clip, mono) | BigSoundBank, Joseph Sardin: "Bicycle bell #3" (0974) | CC0 |
+| `audio/sfx/sarajevo/tram-rumble.mp3` | Sarajevo tram rolling on steel rails (10 s loop, mono) | BigSoundBank, Joseph Sardin: "Metro Paris #2" (0092) | CC0 |
+| `audio/sfx/sarajevo/chestnut-crackle.mp3` | Roasting chestnuts crackle on the quay (12 s loop, mono) | BigSoundBank, Joseph Sardin: "Fireplace #4" (2856) | CC0 |
 
 Everything else is generated in code and belongs to the project: the bird, the town, all textures, the journal drawing, the music and the other sound effects.
 
