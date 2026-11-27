@@ -22,8 +22,9 @@ export function progress(id) { try { return JSON.parse(localStorage.getItem(save
 export const wonKey = (id) => saveKey(id) + '-finished';
 export function markFinished(id) { try { localStorage.setItem(wonKey(id), '1'); } catch (e) { /* no storage */ } }
 export const finished = (id) => { try { if (localStorage.getItem(wonKey(id))) return true; } catch (e) { /* */ } return !!progress(id).finale; };
-// a map is open once the one before it has been finished (?unlock opens them all, for testing)
-export const unlocked = (i) => i === 0 || params.has('unlock') || finished(MAPS[i - 1].id);
+// finished maps (not wip/soon) are all open for now so players can fly straight to any ready town;
+// wip maps stay behind the previous town locally (?unlock opens them too) and are marked soon in builds
+export const unlocked = (i) => (!MAPS[i].wip && !MAPS[i].soon) || params.has('unlock') || (i > 0 && finished(MAPS[i - 1].id));
 
 // the address of a map (or of the Bosnia map, with id null), keeping the save slot
 export function mapUrl(id) {
