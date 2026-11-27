@@ -4,8 +4,9 @@ import mostar from './mostar.js';
 import sarajevo from './sarajevo.js';
 import jahorina from './jahorina.js';
 import jajce from './jajce.js';
+import travnik from './travnik.js';
 import neum from './neum.js';
 import banjaluka from './banjaluka.js';
 
-const ALL = { mostar, sarajevo, jahorina, jajce, neum, banjaluka };
+const ALL = { mostar, sarajevo, jahorina, jajce, travnik, neum, banjaluka };
 export default ALL[MAP_ID] || mostar;

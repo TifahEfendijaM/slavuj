@@ -28,7 +28,7 @@ audio.loadMapSfx(M.id);
 document.title = 'Slavuj · ' + M.name; for (const e of document.querySelectorAll('.town')) e.textContent = M.name;
 document.getElementById('backMap').href = mapUrl(null);
 document.getElementById('toMap').addEventListener('click', () => { location.href = mapUrl(null); });
-{ const i = MAPS.findIndex((m) => m.id === M.id), nx = MAPS[i + 1];
+{ const i = MAPS.findIndex((m) => m.id === M.id), nx = MAPS.slice(i + 1).find((m) => m.season);      // (the planned towns, with no season yet, are only pins on the Bosnia map)
   if (nx) document.getElementById('nextMap').innerHTML = nx.soon ? `Next: ${nx.name}, still in development. Coming soon!` : `<a href="${mapUrl(nx.id)}">Fly on to ${nx.name} →</a>`; }
 
 const $ = (id) => document.getElementById(id);
