@@ -22,6 +22,8 @@ import { isTouch, setupTouch } from './touch.js';
 // a map still in development carries a notice that it is a pre-release
 if (MAPS.find((m) => m.id === M.id)?.wip) { const b = document.createElement('div'); b.id = 'wip'; b.textContent = 'Work in progress · early pre-release, far from finished'; document.body.append(b); }
 const { WORDS, ORDER, CULTURE, text: TEXT, finale: FIN, ambience: AMB = {} } = M;      // the map being played (src/maps/)
+const GROUND = M.ground ?? BANK;
+audio.loadMapSfx(M.id);
 // the town's name where the page mentions it, the way back to the Bosnia map, and (after the finale) the way on to the next town
 document.title = 'Slavuj · ' + M.name; for (const e of document.querySelectorAll('.town')) e.textContent = M.name;
 document.getElementById('backMap').href = mapUrl(null);
@@ -50,6 +52,7 @@ const bird = createBird(); scene.add(bird.root);
 const diver = world.diverPos ? createDiver(world.diverPos) : null; if (diver) scene.add(diver.root);      // (Mostar's diver)
 const people = createPeople(scene, world, rng(41));
 const flight = new Flight(world.colliders, bird);
+if (M.swimClamp) flight.swimClamp = M.swimClamp;
 people.onScatter = () => audio.flutter();
 // the postman's knocks are heard only nearby
 people.onKnock = (p) => { if (live) audio.knock(clamp(1 - flight.pos.distanceTo(p) / 22, 0, 1)); };
@@ -76,9 +79,9 @@ addEventListener('resize', resize); visualViewport?.addEventListener('resize', r
 if (window.ResizeObserver) new ResizeObserver(resize).observe(renderer.domElement);
 resize(); onStyle.push(() => resize());
 
-// is the bird standing in the way of a person or animal walking towards it? (they would walk through it)
+// is the bird standing in the way of a person, animal or moving vehicle heading towards it?
 function inWay(b) {
-  for (const m of people.movers || []) {
+  for (const list of [people.movers, world.movers]) for (const m of list || []) {
     const dx = b.x - m.x, dz = b.z - m.z, d = Math.hypot(dx, dz);
     if (b.y < m.y - 0.3 || b.y > m.y + m.h) continue;
     if (d < m.r + 0.35 + m.v * 0.3 && dx * m.fx + dz * m.fz > -0.1) return true;      // close (sooner for something fast), and ahead of it or beside it
@@ -92,10 +95,11 @@ const KEY = saveKey(M.id);   // ?slot=name keeps a separate save
 let save = { done: [], finale: false };
 try { if (!fresh) save = { ...save, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { /* no storage */ }
 const RENAMED = { asikovanje: 'ljubav' };      // words renamed since a save was made: the save keeps them
-save.done = (save.done || []).map((id) => RENAMED[id] || id);
+const validOrbIds = new Set(world.orbs.map((o) => o.id));
+save.done = [...new Set((save.done || []).map((id) => RENAMED[id] || id).filter((id) => validOrbIds.has(id)))];
 // the words learned by answering (a save from before this list: all of its words, unless it was skipped to the finale);
 // only these earn XP on the platform (src/platform.js)
-save.learned = (save.learned ?? (save.skipped ? [] : save.done)).map((id) => RENAMED[id] || id);
+save.learned = [...new Set((save.learned ?? (save.skipped ? [] : save.done)).map((id) => RENAMED[id] || id).filter((id) => validOrbIds.has(id)))];
 const store = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* no storage */ } platform.push(); };
 if (save.finale) markFinished(M.id);      // (a map finished before this mark existed)
 const painting = new Set();
@@ -103,14 +107,20 @@ const painting = new Set();
 const PICS = KEY + '-pics';
 // photos from a full play-through that ship with the game: shown for any word whose scene the player
 // skipped or never saw (skip to the finale). The player's own photo always wins.
-const BUNDLED = Object.fromEntries(Object.entries(import.meta.glob('../assets/photos/*.jpg', { eager: true, query: '?url', import: 'default' })).map(([p, u]) => [p.split('/').pop().slice(0, -4), u]));
+const BUNDLED = (() => {
+  const root = import.meta.glob('../assets/photos/*.jpg', { eager: true, query: '?url', import: 'default' });
+  const sub = import.meta.glob('../assets/photos/*/*.jpg', { eager: true, query: '?url', import: 'default' });
+  const src = M.id === 'mostar' ? Object.entries(root) : Object.entries(sub).filter(([p]) => p.includes(`/photos/${M.id}/`));
+  return Object.fromEntries(src.map(([p, u]) => [p.split('/').pop().slice(0, -4), u]));
+})();
 let pics = {}, snapId = null;
 try { if (!fresh) pics = JSON.parse(localStorage.getItem(PICS) || '{}'); } catch (e) { /* no storage */ }
 for (const [a, b] of Object.entries(RENAMED)) if (pics[a] && !pics[b]) { pics[b] = pics[a]; delete pics[a]; }
+const photoQuery = (id) => (M.id === 'mostar' ? `/__photo?id=${id}` : `/__photo?map=${M.id}&id=${id}`);
 function keepPic(id, data) {
   if (!data) return; pics[id] = data; try { localStorage.setItem(PICS, JSON.stringify(pics)); } catch (e) { /* storage full: the photo still shows this session */ }
   // dev only, the main save: each photo also goes straight into assets/photos as the game's default for that word
-  if (import.meta.env.DEV && !params.get('slot')) fetch('/__photo?id=' + id, { method: 'POST', body: data }).catch(() => {});
+  if (import.meta.env.DEV && !params.get('slot')) fetch(photoQuery(id), { method: 'POST', body: data }).catch(() => {});
 }
 function grabFrame() {
   const c = document.createElement('canvas'), W = canvas.width, H = canvas.height; if (!(W > 0 && H > 0)) return '';
@@ -394,7 +404,7 @@ function ownSphere(o) {
   const s = box.isEmpty() ? null : box.getBoundingSphere(new THREE.Sphere());
   return s && s.radius < d.size * 2.2 && s.radius > d.size * 0.35 ? s : new THREE.Sphere(d.focus.clone(), d.size);
 }
-const sideOf = (f) => (Math.abs(f.x) < 14 ? 0 : f.x < 0 ? Math.PI / 2 : -Math.PI / 2);     // look from the river side
+const sideOf = (f) => (M.sideOf ? M.sideOf(f) : Math.abs(f.x) < 14 ? 0 : f.x < 0 ? Math.PI / 2 : -Math.PI / 2);     // look from the river side
 // is any part of the thing (its middle, its sides, its top) hidden from this camera position?
 const _r = V(0, 0, 0), _u = V(0, 1, 0), _t = V(0, 0, 0);
 // rays only see the outside of things, so a camera standing inside a house sees "nothing in the way"
@@ -455,8 +465,8 @@ function wideShot(o, dur) {
   for (const t of o.def.tags) for (const s of tag(t).subs) { const p = s.box.getCenter(V(0, 0, 0)); if (p.distanceTo(f) < 105) pts.push(p); }
   let c, r;
   if (pts.length > 1) { c = V(0, 0, 0); for (const p of pts) c.add(p); c.multiplyScalar(1 / pts.length); r = Math.min(75, Math.max(...pts.map((p) => p.distanceTo(c))) + 4); }
-  else { c = f.clone().lerp(V(0, BANK, 0), 0.45); r = 34; }
-  const dist = clamp(fitDist(r), 55, 150), dx = f.x - c.x, dz = f.z - c.z, sky = f.y > 40;
+  else { c = f.clone().lerp(V(0, GROUND, 0), 0.45); r = 34; }
+  const dist = clamp(fitDist(r), 55, 150), dx = f.x - c.x, dz = f.z - c.z, sky = o.def.sky ?? (f.y > 40);
   const az = Math.hypot(dx, dz) > 6 ? Math.atan2(dx, dz) : sideOf(f) + 0.2, lookFrom = f.clone().lerp(c, 0.5);
   const make = (off, el) => ({ from: c.clone().addScaledVector(dirOf(az + off, el), dist), to: c.clone().addScaledVector(dirOf(az + off + 0.22, el + 0.07), dist * 1.08), lookFrom, lookTo: c, dur, pts, wide: true });
   if (sky) return make(0, 0.06);
@@ -518,15 +528,15 @@ function shotsFor(o, bird) {
   if (d.visibleFirst) return visibleSplit(o, bird);
   // view: a set first shot (where the automatic camera's view would be blocked)
   const first = (dur) => (d.view ? { from: V(...d.view.from), to: V(...d.view.to), lookFrom: V(...d.view.look), lookTo: V(...d.view.look), dur, c: V(...d.view.look), r: 0.5, set: true } : closeShot(o, bird, dur));
-  if (d.groups) { if (d.groupPaint) groupPaint(o); return [first(4), ...d.groups.map((gr) => closeShot({ id: '', def: { ...d, focus: V(...gr.focus), size: gr.size, front: gr.front } }, null, 2.8))]; }      // a close look at each group
-  if (d.id === 'rijeka') return [{ from: V(7, 20, 70), to: V(-4, 32, 86), lookFrom: V(1, 1, 26), lookTo: V(0, 4, 0), dur: C.wideDuration, wide: true }];
+  if (d.groups) { if (d.groupPaint) groupPaint(o); return [first(4), ...d.groups.map((gr) => gr.view ? { from: V(...gr.view.from), to: V(...gr.view.to), lookFrom: V(...gr.view.look), lookTo: V(...gr.view.look), dur: 2.8, c: V(...gr.view.look), r: 0.5, set: true } : closeShot({ id: '', def: { ...d, focus: V(...gr.focus), size: gr.size, front: gr.front } }, null, 2.8))]; }      // a close look at each group
+  if (M.id === 'mostar' && d.id === 'rijeka') return [{ from: V(7, 20, 70), to: V(-4, 32, 86), lookFrom: V(1, 1, 26), lookTo: V(0, 4, 0), dur: C.wideDuration, wide: true }];
   if (d.shot === 'bridge') return [{ from: V(8.5, 6.5, 52), to: V(-8, 12, 46), lookFrom: V(0, 13, 0), lookTo: V(0, 13.5, 0), dur: 9.5, wide: true }];
   if (d.shot === 'close') return [first(C.closeDuration)];
-  if (d.shot === 'wide') return [wideShot(o, C.wideDuration)];
+  if (d.shot === 'wide') return [d.wideView ? { from: V(...d.wideView.from), to: V(...d.wideView.to), lookFrom: V(...d.wideView.look), lookTo: V(...d.wideView.lookTo), dur: C.wideDuration, wide: true } : wideShot(o, C.wideDuration)];
   // the rest is in one other small spot: a second close look there instead of a wide view from above
-  if (d.second) { const s2 = d.second; return [closeShot(o, bird, 4), closeShot({ id: '', def: { ...d, focus: V(...s2.focus), size: s2.size, front: s2.front } }, null, C.wideDuration - 4)]; }
+  if (d.second) { const s2 = d.second; return [first(4), s2.view ? { from: V(...s2.view.from), to: V(...s2.view.to), lookFrom: V(...s2.view.look), lookTo: V(...(s2.view.lookTo || s2.view.look)), dur: C.wideDuration - 4, c: V(...s2.view.look), r: 0.5, set: true } : closeShot({ id: '', def: { ...d, focus: V(...s2.focus), size: s2.size, front: s2.front } }, null, C.wideDuration - 4)]; }
   const wv = d.wideView;      // a set wide view (a pan across the whole town, for something that is everywhere)
-  return [closeShot(o, bird, 4), wv ? { from: V(...wv.from), to: V(...wv.to), lookFrom: V(...wv.look), lookTo: V(...wv.lookTo), dur: C.wideDuration - 4, wide: true } : wideShot(o, C.wideDuration - 4)];
+  return [first(4), wv ? { from: V(...wv.from), to: V(...wv.to), lookFrom: V(...wv.look), lookTo: V(...wv.lookTo), dur: C.wideDuration - 4, wide: true } : wideShot(o, C.wideDuration - 4)];
 }
 // groupPaint: each piece colours while its own close shot is on screen (the one by the orb in the first shot)
 function groupPaint(o) {
@@ -537,7 +547,8 @@ function groupPaint(o) {
     const c = sub.box.getCenter(V(0, 0, 0)), k = d.groups.findIndex((gr) => Math.hypot(gr.focus[0] - c.x, gr.focus[2] - c.z) < gr.size + 2);
     for (const [v0, cnt] of sub.ranges) for (let i = v0; i < v0 + cnt; i++) {
       const dur = Math.min(an.getZ(i), 2), dl = k < 0 ? Math.min(an.getY(i), 0.4) : 4 - P + 2.8 * k + 0.3;
-      an.setY(i, dl); an.setZ(i, k < 0 ? Math.min(an.getZ(i), 4 - P - 0.3) : dur);      // (each finishes before its shot ends) end = Math.max(end, dl + an.getZ(i)); if (k < 0) nearEnd = Math.max(nearEnd, dl + an.getZ(i));
+      an.setY(i, dl); an.setZ(i, k < 0 ? Math.min(an.getZ(i), 4 - P - 0.3) : dur);      // (each finishes before its shot ends)
+      end = Math.max(end, dl + an.getZ(i)); if (k < 0) nearEnd = Math.max(nearEnd, dl + an.getZ(i));
     }
   }
   an.needsUpdate = true; t.nearEnd = nearEnd; t.end = end;
@@ -562,6 +573,17 @@ function checkShots() {
     }
     if (probs.length) out[o.id] = [...new Set(probs)];
   }
+  const fprobs = [];
+  for (const [si, s] of (FIN.shots || []).entries()) for (const e of [0, 0.25, 0.5, 0.75, 1]) {
+    cam.position.lerpVectors(s.from, s.to, e);
+    if (inside(cam.position, 0.1)) fprobs.push(`finale shot ${si} at ${e} inside something`);
+    if (cam.position.y < 0.6) fprobs.push(`finale shot ${si} at ${e} under water`);
+  }
+  if (FIN.photo) {
+    if (inside(FIN.photo.from, 0.1)) fprobs.push('finale photo inside something');
+    if (FIN.photo.from.y < 0.6) fprobs.push('finale photo under water');
+  }
+  if (fprobs.length) out[FIN.word] = [...new Set(fprobs)];
   return out;
 }
 
@@ -674,7 +696,8 @@ function snapshot(id) {
 }
 function showCard(id) {
   const w = WORDS[id], el = $('card');
-  $('cardImg').src = (id === FIN.word && BUNDLED[id]) || pics[id] || BUNDLED[id] || snapshot(id);      // (the finale's picture is the same for everyone: the prepared one) el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
+  $('cardImg').src = (id === FIN.word && BUNDLED[id]) || pics[id] || BUNDLED[id] || snapshot(id);      // (the finale's picture is the same for everyone: the prepared one)
+  el.querySelector('b').textContent = w.word; el.querySelector('span').textContent = w.en;
   el.classList.remove('off'); audio.page();
 }
 $('card').addEventListener('click', () => $('card').classList.add('off'));
@@ -684,12 +707,12 @@ function closeJournal() { if (awakeNote) { awakeNote = false; say(TEXT.awake, 8)
 $('hud').addEventListener('click', () => { if (state === 'play') openJournal(); });
 $('jclose').addEventListener('click', closeJournal);
 $('journal').addEventListener('click', (e) => { if (e.target === $('journal')) closeJournal(); });
-$('cart').src = M.art;
+$('cart').src = M.art; if (M.artAlt) $('cart').alt = M.artAlt;
 renderJournal();
 
 // ---------- the finale ----------
 const dropBlock = (test) => { const i = world.colliders.findIndex(test); if (i >= 0) world.colliders.splice(i, 1); };
-function wake() { dropBlock((c) => c.userData.diver); M.onWake?.(ctx()); }
+function wake() { dropBlock((c) => c.userData.diver); M.onWake?.(ctx()); flight.invalidateColliders(); _inv.clear(); bigs.clear(); }
 let swimBlock = null;
 function diverInWater() {   // the bird cannot swim or fly through him
   const p = diver.splashPos;
@@ -698,7 +721,7 @@ function diverInWater() {   // the bird cannot swim or fly through him
 }
 function applyAlive() { paint('sky', true); paint('sun', true); for (const t of FIN.paints || []) paint(t, true); shared.uSun.value = 1; shared.uLife.value = 1; audio.setMusic(0.9, true); if (diver) { diver.swimAt(V(0, 0, 10.2)); diverInWater(); } wake(); people.applaud(); M.onAlive?.(ctx()); }
 // what a map's own finale and awakening code gets to work with
-const ctx = () => ({ scene, world, people, audio, fx, splashFx, time, paint, flight, camera, V });
+const ctx = () => ({ scene, world, people, audio, fx, splashFx, time, paint, flight, camera, V, running: live, nearGain });
 if (save.finale) applyAlive();
 const FIN_SHOTS = FIN.shots;
 function startFinale() {
@@ -839,7 +862,8 @@ function tick(dt) {
     if (flight.diving && !wasDiving) audio.cancelTakeoff();      // diving straight after taking off: the take-off wingbeats stop
     wasDiving = flight.diving;
     for (const ev of flight.events) { if (ev === 'splash') { splashFx(V(flight.pos.x, flight.waterY + 0.05, flight.pos.z), flight.splashPower); audio.birdSplash(flight.splashPower); } else audio[ev]?.(); }
-    flight.drift = flight.waterY < 1 ? 0.5 * shared.uLife.value : 0;
+    if (M.waterDrift) { const [dx, dz] = M.waterDrift(flight.pos, flight.waterY, shared.uLife.value); flight.driftX = dx; flight.drift = dz; }
+    else { flight.driftX = 0; flight.drift = flight.waterY < 1 ? 0.5 * shared.uLife.value : 0; }
     if (fleur.visible && flight.mode === 'flying' && flight.pos.distanceTo(fleur.position) < 3.6) startFinale();
     toastT -= dt;
   }
@@ -847,17 +871,19 @@ function tick(dt) {
   if (fin) updateFinale(dt);
   M.update?.(dt, time, shared.uLife.value, ctx());      // the map's own moving parts
   diver?.update(dt, time); people.update(dt, time, shared.uLife.value, flight);
+  audio.setTownPaused(!running && !fin);
+  audio.updateTracked(flight.pos);
   if (shared.uLife.value > 0 && !fin) { // the living town is heard from where the bird is
-    const p = flight.pos, low = clamp(1 - (p.y - BANK) / 50, 0.15, 1), near = (x, z, r) => clamp(1 - Math.hypot(p.x - x, p.z - z) / r, 0, 1) * low;
+    const p = flight.pos, low = clamp(1 - (p.y - GROUND) / 50, 0.15, 1), near = (x, z, r) => clamp(1 - Math.hypot(p.x - x, p.z - z) / r, 0, 1) * low;
     const water = AMB.water ? AMB.water(p) : clamp(1 - (Math.abs(p.x) - 8) / 42, 0.08, 1) * clamp(1 - p.y / 70, 0.2, 1);      // (Mostar: the Neretva runs along x = 0)
-    audio.setLife({ wind: 0.45 + 0.55 * clamp((p.y - BANK) / 40, 0, 1), water, birds: true,
+    audio.setLife({ wind: 0.45 + 0.55 * clamp((p.y - GROUND) / 40, 0, 1), water, birds: true,
       city: AMB.city ? near(...AMB.city) : 0, murmur: Math.max(0, ...(AMB.murmur || []).map((m) => near(...m))) });
   }
 
   // the sheep bleat now and then, heard only when the bird is close to the meadow
   audio.setApplause(crowdN && running && shared.uLife.value > 0.5 && !fin ? nearGain(crowd, 32) : 0);      // the bridge crowd claps on and on, heard close by
   audio.setFountain(fountainAt && running && shared.uLife.value > 0.5 ? nearGain(fountainAt, 16) : 0);      // the šadrvan, heard close by
-  if (AMB.sheep && running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - AMB.sheep[0], flight.pos.z - AMB.sheep[1]) + Math.max(0, flight.pos.y - BANK - 6); if (sd < 18 && Math.random() < dt * 0.25) audio.baa((1 - sd / 18) ** 1.6); }
+  if (AMB.sheep && running && shared.uLife.value > 0.5) { const sd = Math.hypot(flight.pos.x - AMB.sheep[0], flight.pos.z - AMB.sheep[1]) + Math.max(0, flight.pos.y - GROUND - 6); if (sd < 18 && Math.random() < dt * 0.25) audio.baa((1 - sd / 18) ** 1.6); }
   freeSingT -= dt;
   bird.root.position.copy(flight.pos);
   bird.root.rotation.set(-flight.pitch, flight.yaw, flight.roll);
@@ -895,7 +921,7 @@ window.__game = { renderer, scene, flight, inp, keys, mouse, bird, orbs, byId, w
   view(...a) { dbg = a.length ? a : null; },
   step(seconds, dt = 1 / 60) { for (let t = 0; t < seconds; t += dt) tick(dt); },
   // writes this save's own journal photos into assets/photos/ (dev server only); returns the ids saved
-  async exportPhotos() { const ids = []; for (const [id, d] of Object.entries(pics)) if ((await fetch('/__photo?id=' + id, { method: 'POST', body: d })).ok) ids.push(id); return ids; },
+  async exportPhotos() { const ids = []; for (const [id, d] of Object.entries(pics)) if ((await fetch(photoQuery(id), { method: 'POST', body: d })).ok) ids.push(id); return ids; },
   checkShots, shotsFor, people, skipScene, snapshot, showCard, skipToFinale, restartLevel, closeWords, openWords, pick, startCutscene, orbHere, openJournal, closeJournal, startFinale,
   finish(id) { const o = byId[id]; for (const t of o.def.tags) paint(t, true); finishOrb(o); },
   unpainted() { const used = new Set(orbs.flatMap((o) => o.def.tags)); return Object.keys(tags).filter((t) => !used.has(t) && !['bird', 'sky', 'sun'].includes(t)); },

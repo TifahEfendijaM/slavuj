@@ -8,6 +8,7 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | Patrick Hand (font) | Interface text | npm `@fontsource/patrick-hand` (Google Fonts, Patrick Wagesreiter) | SIL Open Font License 1.1 |
 | three.js | 3D engine | npm `three` | MIT |
 | `journal-mostar.webp` | Painting of Stari Most on the journal's Mostar page | Original, made by the project owner (with an AI image tool) | Owned by the project; cleared for publishing |
+| `journal-sarajevo.webp` | Painting of Old Sarajevo in autumn on the journal's Sarajevo page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
 | `audio/words/*.wav` | Pronunciation of every word | Recorded by the project owner (native speaker) | Owned by the project |
 | `audio/sfx/sheep-2348.mp3`, `sheep-2349.mp3` | Sheep bleating (played pitched up) | BigSoundBank, Joseph Sardin: "Sheep #6" (2348), "Sheep #7" (2349) | CC0 |
 | `audio/sfx/applause.mp3` | The crowd's applause | BigSoundBank, Joseph Sardin: "Applause about 25-50 people #1" (0812) | CC0 |

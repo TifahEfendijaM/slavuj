@@ -96,6 +96,6 @@ export const CULTURE = {
     ['Lost and rebuilt', 'The bridge was destroyed in November 1993, during the war. It was rebuilt stone by stone with the same local tenelija limestone and reopened in 2004. A year later the old town joined the UNESCO World Heritage list.'],
     ['The bridge keepers', 'Mostar takes its name from the mostari, the keepers who once guarded the bridge from its two towers, Tara and Halebija.'],
     ['The divers', 'Young men of Mostar have dived from the bridge for centuries, more than twenty metres down into the cold Neretva. A diving competition is held every summer.'],
-    ['Kujundžiluk', 'The cobbled bazaar street beside the bridge is named after its coppersmiths. You can still hear their hammers tapping on copper coffee pots.'],
+    ['Kujundžiluk', 'The cobbled bazaar street beside the bridge is named after its gold- and silversmiths (kujundžije). Today its small workshops also hammer copper coffee pots and trays.'],
   ],
 };

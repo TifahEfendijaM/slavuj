@@ -13,7 +13,8 @@ for (const m of MAPS) if (m.wip && import.meta.env.PROD) m.soon = true;
 
 const params = new URLSearchParams(location.search);
 const slot = params.get('slot') ? '-' + params.get('slot') : '';
-export const saveKey = (id) => `slavuj-${id}-1` + slot;      // (Mostar's key is the one it always had)
+const SAVE_VER = { sarajevo: 2 };
+export const saveKey = (id) => `slavuj-${id}-${SAVE_VER[id] || 1}` + slot;      // (Mostar's key is the one it always had; Sarajevo uses -2 for a fresh save)
 export const MAP_ID = MAPS.some((m) => m.id === params.get('map') && !m.soon) ? params.get('map') : null;
 
 export function progress(id) { try { return JSON.parse(localStorage.getItem(saveKey(id)) || '{}'); } catch (e) { return {}; } }

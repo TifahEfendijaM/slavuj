@@ -12,14 +12,15 @@ const savePhotos = {
   name: 'save-photos',
   configureServer(server) {
     server.middlewares.use('/__photo', (req, res) => {
-      const id = new URL(req.url, 'http://x').searchParams.get('id') || '';
-      if (req.method !== 'POST' || !/^[a-z0-9]+$/.test(id)) { res.statusCode = 400; return res.end('bad request'); }
+      const sp = new URL(req.url, 'http://x').searchParams;
+      const id = sp.get('id') || '', map = sp.get('map') || '';
+      if (req.method !== 'POST' || !/^[a-z0-9]+$/.test(id) || (map && !/^[a-z0-9]+$/.test(map))) { res.statusCode = 400; return res.end('bad request'); }
       let body = '';
       req.on('data', (c) => { body += c; });
       req.on('end', () => {
         const m = /^data:image\/jpeg;base64,(.+)$/.exec(body);
         if (!m) { res.statusCode = 400; return res.end('not a jpeg'); }
-        const dir = path.resolve(__dirname, 'assets/photos');
+        const dir = path.resolve(__dirname, map && map !== 'mostar' ? `assets/photos/${map}` : 'assets/photos');
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(path.join(dir, id + '.jpg'), Buffer.from(m[1], 'base64')); stale(server, 'src/main.js');
         res.end('ok');
