@@ -22,6 +22,7 @@
   li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 12px; border: 2px solid transparent; border-radius: 12px; background: #fbf6ea; }
   li.cur { border-color: var(--ink); background: #fff8df; }
   li.done .w::after { content: '  ✓'; color: var(--green); }
+  li.tts .w::after { content: '  TTS'; font-family: 'Patrick Hand', cursive; font-size: 14px; color: #9a5b14; background: #fae5be; border: 1.5px solid #c9913b; border-radius: 6px; padding: 0 5px; margin-left: 8px; vertical-align: middle; }
   .w { font-family: 'Caveat', cursive; font-size: 34px; line-height: 1; }
   .en { font-size: 16px; color: var(--soft); margin-left: 8px; }
   .btns { display: flex; gap: 6px; }
@@ -64,17 +65,19 @@ const WORDS = { ...Object.fromEntries(Object.entries(MOSTAR).map(([k, v]) => ['m
 
 // every word the game can say: the words themselves and the answer choices (which have speaker buttons too)
 const en = {}; for (const w of Object.values(WORDS)) en[w.word] = w.en;
-// newest map first, so its words come before the older ones; each word remembers the map it first appears in
-const MAPS = [['Neum', NEUM], ['Jajce', JAJCE], ['Jahorina', JAHORINA], ['Sarajevo', SARAJEVO], ['Mostar', MOSTAR]], from = {};
+// Sarajevo first (active TTS placeholders to replace with native recordings), then Mostar, then upcoming maps
+const MAPS = [['Sarajevo', SARAJEVO], ['Mostar', MOSTAR], ['Jahorina', JAHORINA], ['Jajce', JAJCE], ['Neum', NEUM]], from = {};
 let all = []; const seen = new Set();
 for (const [name, ws] of MAPS) for (const w of Object.values(ws)) for (const x of [w.word, ...(w.choices || [])]) if (!seen.has(x)) { seen.add(x); all.push(x); from[x] = name; }
 // same file name rule as the game (src/audio.js): lower case, no diacritics
 const slug = (w) => w.toLowerCase().replace(/đ/g, 'dj').replace(/[ćč]/g, 'c').replace(/š/g, 's').replace(/ž/g, 'z');
-// which words already have a recording (asked once; not watched, so saving does not reload this page)
+// which words already have a file, and which of those are temporary TTS placeholders still waiting for a native recording
 const has = async (id) => { const r = await fetch(`/assets/audio/words/${encodeURIComponent(id)}.wav`, { method: 'HEAD' }); return r.ok && (r.headers.get('content-type') || '').includes('audio'); };      // (a missing file comes back as a web page)
-const existing = new Set((await Promise.all(all.map(async (w) => ((await has(slug(w))) ? slug(w) : null)))).filter(Boolean));
-// the words still to record go to the top (newest map first), the ones already recorded below them
-const todo = all.filter((w) => !existing.has(slug(w)));      // (the words to learn before the answer choices)
+const tts = new Set(await fetch('/assets/audio/words/_tts.json').then((r) => (r.ok ? r.json() : [])).catch(() => []));
+const hasFile = new Set((await Promise.all(all.map(async (w) => ((await has(slug(w))) ? slug(w) : null)))).filter(Boolean));
+const existing = new Set([...hasFile].filter((id) => !tts.has(id)));
+// the words still to record go to the top (TTS placeholders and missing words, main words before answer choices), native recordings below
+const todo = all.filter((w) => !existing.has(slug(w)));
 all = [...todo.filter((w) => en[w]), ...todo.filter((w) => !en[w]), ...all.filter((w) => existing.has(slug(w)))];
 
 const $ = (id) => document.getElementById(id), list = $('list');
@@ -84,6 +87,7 @@ const rows = all.map((word, i) => {
   li.innerHTML = `<div><span class="w"></span><span class="en"></span></div><div class="btns"><button class="rec">● Record</button><button class="play" disabled>▶ Play</button><button class="save" disabled>Save</button></div>`;
   li.querySelector('.w').textContent = word; li.querySelector('.en').textContent = (en[word] ? en[word] : '(answer choice)') + ' · ' + from[word];
   if (existing.has(id)) li.classList.add('done');
+  else if (hasFile.has(id) && tts.has(id)) li.classList.add('tts');
   li.querySelector('.rec').onclick = () => { select(i); toggleRec(); };
   li.querySelector('.play').onclick = () => { select(i); play(); };
   li.querySelector('.save').onclick = () => { select(i); save(); };
@@ -95,10 +99,12 @@ function refresh() {
     r.li.classList.toggle('cur', i === cur);
     r.li.querySelector('.rec').classList.toggle('on', recording && i === cur);
     r.li.querySelector('.rec').textContent = recording && i === cur ? '■ Stop' : '● Record';
-    r.li.querySelector('.play').disabled = !takes[r.id] && !r.li.classList.contains('done');
+    r.li.querySelector('.play').disabled = !takes[r.id] && !r.li.classList.contains('done') && !r.li.classList.contains('tts');
     r.li.querySelector('.save').disabled = !takes[r.id];
   });
-  $('count').textContent = `${rows.filter((r) => r.li.classList.contains('done')).length} of ${rows.length} saved`;
+  const doneN = rows.filter((r) => r.li.classList.contains('done')).length;
+  const ttsN = rows.filter((r) => r.li.classList.contains('tts')).length;
+  $('count').textContent = `${doneN} of ${rows.length} recorded` + (ttsN ? ` · ${ttsN} TTS` : '');
 }
 function select(i) { if (recording) return; cur = Math.max(0, Math.min(rows.length - 1, i)); refresh(); rows[cur].li.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
 const say = (t) => { $('status').textContent = t; };
@@ -171,14 +177,14 @@ function wav(samples, rate) {
 }
 function play() {
   const r = rows[cur], take = takes[r.id]; player?.pause();
-  const url = take ? URL.createObjectURL(wav(take, take.rate)) : r.li.classList.contains('done') ? `/assets/audio/words/${encodeURIComponent(r.id)}.wav?t=${Date.now()}` : null;
+  const url = take ? URL.createObjectURL(wav(take, take.rate)) : (r.li.classList.contains('done') || r.li.classList.contains('tts')) ? `/assets/audio/words/${encodeURIComponent(r.id)}.wav?t=${Date.now()}` : null;
   if (url) { player = new Audio(url); player.play().catch(() => {}); }
 }
 async function save() {
   const r = rows[cur], take = takes[r.id]; if (!take) return false;
   const res = await fetch('/__word?id=' + encodeURIComponent(r.id), { method: 'POST', body: wav(take, take.rate) });
   if (!res.ok) { say('Saving failed: is the game\'s dev server running (npm run dev)?'); return false; }
-  delete takes[r.id]; r.li.classList.add('done'); say(`Saved “${r.word}”.`); refresh(); return true;
+  delete takes[r.id]; r.li.classList.remove('tts'); r.li.classList.add('done'); say(`Saved “${r.word}”.`); refresh(); return true;
 }
 addEventListener('keydown', async (e) => {
   if (e.target.tagName === 'INPUT') return;

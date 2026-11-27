@@ -37,14 +37,22 @@ const saveWords = {
     server.middlewares.use('/__word', (req, res) => {
       const id = new URL(req.url, 'http://x').searchParams.get('id') || '';
       if (!/^[a-z0-9 -]{1,40}$/.test(id) || !['POST', 'DELETE'].includes(req.method)) { res.statusCode = 400; return res.end('bad request'); }
-      const dir = path.resolve(__dirname, 'assets/audio/words'), file = path.join(dir, id + '.wav');
-      if (req.method === 'DELETE') { fs.rmSync(file, { force: true }); stale(server, 'src/audio.js'); return res.end('ok'); }
+      const dir = path.resolve(__dirname, 'assets/audio/words'), file = path.join(dir, id + '.wav'), ttsFile = path.join(dir, '_tts.json');
+      const dropFromTts = () => {
+        if (!fs.existsSync(ttsFile)) return;
+        try {
+          const list = JSON.parse(fs.readFileSync(ttsFile, 'utf8')).filter((x) => x !== id);
+          if (list.length) fs.writeFileSync(ttsFile, JSON.stringify(list, null, 2) + '\n');
+          else fs.rmSync(ttsFile, { force: true });
+        } catch (e) { /* ignore malformed _tts.json */ }
+      };
+      if (req.method === 'DELETE') { fs.rmSync(file, { force: true }); dropFromTts(); stale(server, 'src/audio.js'); return res.end('ok'); }
       const chunks = [];
       req.on('data', (c) => chunks.push(c));
       req.on('end', () => {
         const buf = Buffer.concat(chunks);
         if (buf.length < 44 || buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WAVE' || buf.length > 3e6) { res.statusCode = 400; return res.end('not a wav'); }
-        fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(file, buf); stale(server, 'src/audio.js'); res.end('ok');
+        fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(file, buf); dropFromTts(); stale(server, 'src/audio.js'); res.end('ok');
       });
     });
   },
