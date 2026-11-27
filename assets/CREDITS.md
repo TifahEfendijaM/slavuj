@@ -9,8 +9,9 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | three.js | 3D engine | npm `three` | MIT |
 | `journal-mostar.webp` | Painting of Stari Most on the journal's Mostar page | Original, made by the project owner (with an AI image tool) | Owned by the project; cleared for publishing |
 | `journal-sarajevo.webp` | Painting of Old Sarajevo in autumn on the journal's Sarajevo page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
+| `journal-jahorina.webp` | Painting of Mount Jahorina in winter on the journal's Jahorina page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
 | `journal-jajce.webp` | Painting of Jajce in spring on the journal's Jajce page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
-| `audio/words/*.wav` | Pronunciation of every word | Recorded by the project owner (native speaker); temporary Sarajevo and Jajce placeholders listed in `_tts.json` generated with Azure Neural Speech (`bs-BA-GoranNeural`) until replaced via `record.html` | Owned by the project |
+| `audio/words/*.wav` | Pronunciation of every word | Recorded by the project owner (native speaker); temporary Sarajevo, Jahorina and Jajce placeholders listed in `_tts.json` generated with Azure Neural Speech (`bs-BA-GoranNeural`) until replaced via `record.html` | Owned by the project |
 | `audio/sfx/sheep-2348.mp3`, `sheep-2349.mp3` | Sheep bleating (played pitched up) | BigSoundBank, Joseph Sardin: "Sheep #6" (2348), "Sheep #7" (2349) | CC0 |
 | `audio/sfx/applause.mp3` | The crowd's applause | BigSoundBank, Joseph Sardin: "Applause about 25-50 people #1" (0812) | CC0 |
 | `audio/sfx/horse-neigh.mp3` | The horse neighing | BigSoundBank, Joseph Sardin: "Horse Neighing #3" (0863) | CC0 |
@@ -23,6 +24,10 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | `audio/sfx/sarajevo/tram-bell.mp3` | Sarajevo tram bell (1.6 s clip, mono) | BigSoundBank, Joseph Sardin: "Bicycle bell #3" (0974) | CC0 |
 | `audio/sfx/sarajevo/tram-rumble.mp3` | Sarajevo tram rolling on steel rails (10 s loop, mono) | BigSoundBank, Joseph Sardin: "Metro Paris #2" (0092) | CC0 |
 | `audio/sfx/sarajevo/chestnut-crackle.mp3` | Roasting chestnuts crackle on the quay (12 s loop, mono) | BigSoundBank, Joseph Sardin: "Fireplace #4" (2856) | CC0 |
+| `audio/sfx/jahorina/hearth-fire.mp3` | Crackling outdoor mountain hearth fire (12 s loop, mono) | BigSoundBank, Joseph Sardin: "Fireplace #4" (2856) | CC0 |
+| `audio/sfx/jahorina/owl-hoot.mp3` | Soft tawny owl double-hoot in the pine forest (2.8 s clip, mono) | Original, synthesised in code for the project | Owned by the project |
+| `audio/sfx/jahorina/winter-wind.mp3` | Soft mountain forest wind ambience (12 s loop, mono) | Wikimedia Commons, nille: "20090610 0 ambience.ogg" | Public Domain |
+| `audio/sfx/jahorina/wolf-howl.mp3` | Distant mountain wolf howl on the ridge (4.5 s clip, mono) | Wikimedia Commons: "Wolf howls.ogg" | Public Domain |
 | `audio/sfx/jajce/tower-bell.mp3` | Distant bell of St. Luke's tower (4.5 s clip, mono) | Wikimedia Commons: "SevenumBells.ogg" | Public Domain |
 | `audio/sfx/jajce/spring-guitar.mp3` | Acoustic guitar at the spring picnic (10 s loop, mono) | Wikimedia Commons: "Audio files of spanish guitar chords 01.wav" | CC0 |
 | `audio/sfx/jajce/waterfall-roar.mp3`, `watermill-stream.mp3`, `spring-bird.mp3`, `frog-croak.mp3` | Jajce waterfall, Mlinčići stream, spring songbird and lake frog | Procedurally generated for the project | Owned by the project |
