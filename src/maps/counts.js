@@ -3,6 +3,7 @@ import { ORDER as mostar } from '../vocab.js';
 import { ORDER as sarajevo } from './sarajevo-words.js';
 import { ORDER as jahorina } from './jahorina-words.js';
 import { ORDER as jajce } from './jajce-words.js';
+import { ORDER as travnik } from './travnik-words.js';
 import { ORDER as neum } from './neum-words.js';
 
-export const WORD_COUNTS = { mostar: mostar.length, sarajevo: sarajevo.length, jahorina: jahorina.length, jajce: jajce.length, neum: neum.length };
+export const WORD_COUNTS = { mostar: mostar.length, sarajevo: sarajevo.length, jahorina: jahorina.length, jajce: jajce.length, travnik: travnik.length, neum: neum.length };

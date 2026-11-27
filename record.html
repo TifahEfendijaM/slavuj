@@ -60,13 +60,14 @@ import { WORDS as MOSTAR } from './src/vocab.js';
 import { WORDS as SARAJEVO } from './src/maps/sarajevo-words.js';
 import { WORDS as JAHORINA } from './src/maps/jahorina-words.js';
 import { WORDS as JAJCE } from './src/maps/jajce-words.js';
+import { WORDS as TRAVNIK } from './src/maps/travnik-words.js';
 import { WORDS as NEUM } from './src/maps/neum-words.js';
-const WORDS = { ...Object.fromEntries(Object.entries(MOSTAR).map(([k, v]) => ['m-' + k, v])), ...Object.fromEntries(Object.entries(SARAJEVO).map(([k, v]) => ['s-' + k, v])), ...Object.fromEntries(Object.entries(JAHORINA).map(([k, v]) => ['j-' + k, v])), ...Object.fromEntries(Object.entries(JAJCE).map(([k, v]) => ['p-' + k, v])), ...Object.fromEntries(Object.entries(NEUM).map(([k, v]) => ['n-' + k, v])) };      // every map's words
+const WORDS = { ...Object.fromEntries(Object.entries(MOSTAR).map(([k, v]) => ['m-' + k, v])), ...Object.fromEntries(Object.entries(SARAJEVO).map(([k, v]) => ['s-' + k, v])), ...Object.fromEntries(Object.entries(JAHORINA).map(([k, v]) => ['j-' + k, v])), ...Object.fromEntries(Object.entries(JAJCE).map(([k, v]) => ['p-' + k, v])), ...Object.fromEntries(Object.entries(TRAVNIK).map(([k, v]) => ['t-' + k, v])), ...Object.fromEntries(Object.entries(NEUM).map(([k, v]) => ['n-' + k, v])) };      // every map's words
 
 // every word the game can say: the words themselves and the answer choices (which have speaker buttons too)
 const en = {}; for (const w of Object.values(WORDS)) en[w.word] = w.en;
-// Active maps with TTS placeholders first (Jahorina, Sarajevo), then Mostar, then upcoming maps
-const MAPS = [['Jahorina', JAHORINA], ['Sarajevo', SARAJEVO], ['Mostar', MOSTAR], ['Jajce', JAJCE], ['Neum', NEUM]], from = {};
+// Active maps with TTS placeholders first (Travnik, Jajce, Jahorina, Sarajevo), then Mostar, then upcoming maps
+const MAPS = [['Travnik', TRAVNIK], ['Jajce', JAJCE], ['Jahorina', JAHORINA], ['Sarajevo', SARAJEVO], ['Mostar', MOSTAR], ['Neum', NEUM]], from = {};
 let all = []; const seen = new Set();
 for (const [name, ws] of MAPS) for (const w of Object.values(ws)) for (const x of [w.word, ...(w.choices || [])]) if (!seen.has(x)) { seen.add(x); all.push(x); from[x] = name; }
 // same file name rule as the game (src/audio.js): lower case, no diacritics

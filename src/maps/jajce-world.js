@@ -42,7 +42,8 @@ function hipRoofGeo(w, d, h) {
 
 // Helper for dynamic animated meshes sharing the watercolour/sketch shader
 function dynMesh(geo, tagName, col, bleed, parent, x = 0, y = 0, z = 0, s = 1, hull = 1.4) {
-  const g = paintGeo(geo, col, bleed || col, 0.7);
+  const seed = parent ? [parent.position.x, parent.position.y, parent.position.z] : [0, 0, 0];
+  const g = paintGeo(geo, { col, bleed: bleed || col, seed, radius: 12, dur: 2.8, hatch: 0.45 });
   const m = new THREE.Mesh(g, washMat(tagName));
   m.position.set(x, y, z);
   if (Array.isArray(s)) m.scale.set(...s);
@@ -594,7 +595,7 @@ export function buildJajceWorld(scene) {
   const NEST_Y = PLATEAU_Y + 1.4 + 3.0 + 3.2;
   b.object(() => {
     A(CYL12, -7.1, NEST_Y + 0.15, -22, { tag: 'gnijezdo', col: '#7d5a38', bleed: '#5c3f24', hull: true, orb: 'gnijezdo' }, 0, 0, 0, [0.95, 0.36, 0.95]);
-    A(new THREE.TorusGeometry(0.88, 0.18, 6, 12), -7.1, NEST_Y + 0.28, -22, { tag: 'gnijezdo', col: '#694a2c', bleed: '#4c341d' }, Math.PI / 2, 0, 0);
+    A(new THREE.TorusGeometry(0.88, 0.18, 6, 12), -7.1, NEST_Y + 0.28, -22, { tag: 'gnijezdo', col: '#694a2c', bleed: '#4c341d' }, 0, Math.PI / 2, 0);
   });
   b.object(() => {
     const RD = { tag: 'roda', orb: 'roda' };

@@ -154,7 +154,7 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : (o.bottom || bottom0), gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
     if ((!gown || seated || winterTrousers || (skirtC && sc < 1) || o.coatTag || o.topTag) && o.kind !== 'girl' && o.kind !== 'raft' && o.kind !== 'sarNana') for (const s of [-1, 1]) {
@@ -528,6 +528,34 @@ export function createPeople(scene, world, R) {
         }
         for (const a of arms) { a.sh.rotation.set(-0.9, 0, a.s * 0.65); a.el.rotation.x = -0.4; }
       }
+    }
+    // ---- Travnik summer activities ----
+    if (o.kind === 'trvWaitress') {
+      const tr = grp(arms[0].el, 0.06, -0.32, 0.06); tr.rotation.x = Math.PI / 2;
+      const tray = P(G.disc, '#c99358', tr, 0, 0, 0, '#996a38'); tray.scale.set(0.11, 0.11, 0.014);
+      const gl = P(G.rod, '#f5db4c', tr, 0, 0.02, -0.05, '#c9ae26'); gl.scale.set(0.032, 0.08, 0.032); gl.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'trvChef') {
+      const hat = P(G.rod, '#faf8f2', head, 0, 0.24, 0, '#dcd8ce'); hat.scale.set(0.13, 0.22, 0.13);
+      const puff = P(G.ball, '#ffffff', head, 0, 0.35, 0, '#e3e0d8'); puff.scale.set(0.17, 0.12, 0.17);
+      const sp = grp(arms[0].el, 0, -0.30, 0);
+      rod(P, sp, [0, 0, -0.02], [0, 0, 0.34], 0.012, '#7d5634');
+    }
+    if (o.kind === 'trvWriter') {
+      const PP = painter('pero', pos);
+      const q = grp(arms[0].el, 0, -0.30, 0.02);
+      rod(PP, q, [0, 0, 0], [0.06, 0.24, 0.10], 0.009, '#f7f4ec');
+      const fl = PP(G.box, '#ffffff', q, 0.05, 0.18, 0.08, '#dde2e8'); fl.scale.set(0.05, 0.16, 0.015);
+    }
+    if (o.kind === 'trvShepherd') {
+      const SP = painter('stap', pos);
+      const st = grp(arms[0].el, 0, -0.28, 0.03);
+      rod(SP, st, [0, 0.65, 0], [0, -0.92, 0], 0.020, '#7a5430');
+      const hk = SP(G.box, '#7a5430', st, 0, 0.68, 0.05, '#593b1f'); hk.scale.set(0.04, 0.05, 0.12);
+    }
+    if (o.kind === 'trvVizier') {
+      const turb = P(G.ball, '#f5efe2', head, 0, 0.18, 0, '#d9d0be'); turb.scale.set(0.21, 0.14, 0.21);
+      const crest = P(G.ball, '#d94c38', head, 0, 0.22, 0.16, '#a63322'); crest.scale.set(0.045, 0.07, 0.045);
     }
     list.push(p); return p;
   }
@@ -1330,6 +1358,34 @@ export function createPeople(scene, world, R) {
           const w = alive ? Math.sin(t * 3.2) : 0;
           a0.sh.rotation.set(-0.9 + w * 0.25, 0, -0.65); a1.sh.rotation.set(-0.9 - w * 0.25, 0, 0.65);
           p.head.rotation.y = w * 0.28;
+        } else if (o.kind === 'trvWaitress') {
+          const sw = alive ? Math.sin(t * 1.8) * 0.10 : 0;
+          a0.sh.rotation.set(-1.45 + sw, 0, -0.18); a0.el.rotation.x = -1.25;
+          a1.sh.rotation.set(-0.35 - sw, 0, 0.14); a1.el.rotation.x = -0.45;
+          p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.3 : 0.1;
+        } else if (o.kind === 'trvTailor') {
+          const sew = alive ? Math.sin(t * 3.4) : 0;
+          a0.sh.rotation.set(-0.85 + sew * 0.22, 0, -0.15); a0.el.rotation.x = -0.95 + sew * 0.15;
+          a1.sh.rotation.set(-0.82, 0, 0.18); a1.el.rotation.x = -0.9;
+          p.head.rotation.x = 0.28;
+        } else if (o.kind === 'trvWriter') {
+          const scrib = alive ? Math.sin(t * 5.0) : 0;
+          a0.sh.rotation.set(-0.88 + scrib * 0.06, 0, -0.14 + Math.cos(t * 3.1) * 0.05); a0.el.rotation.x = -0.92;
+          a1.sh.rotation.set(-0.80, 0, 0.16); a1.el.rotation.x = -0.85;
+          p.head.rotation.x = 0.32;
+        } else if (o.kind === 'trvChef') {
+          const stir = alive ? Math.sin(t * 3.2) : 0;
+          a0.sh.rotation.set(-0.92 + stir * 0.16, 0, -0.16 + Math.cos(t * 3.2) * 0.12); a0.el.rotation.x = -0.78;
+          a1.sh.rotation.set(-0.52, 0, 0.16); a1.el.rotation.x = -0.55;
+          p.torso.rotation.x = 0.12; p.head.rotation.x = 0.22;
+        } else if (o.kind === 'trvShepherd') {
+          a0.sh.rotation.set(-0.58, 0, -0.16); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-0.25 + (alive ? Math.sin(t * 0.8) * 0.12 : 0), 0, 0.14); a1.el.rotation.x = -0.4;
+          p.head.rotation.y = alive ? Math.sin(t * 0.45) * 0.38 : 0.1;
+        } else if (o.kind === 'trvVizier') {
+          a0.sh.rotation.set(-0.42, 0, -0.14); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-0.42, 0, 0.14); a1.el.rotation.x = -0.75;
+          p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.28 : 0;
         }
         if (o.lookUpOnClimax && alive && pigeonsForced > 0) p.head.rotation.x = -0.45;
       }
