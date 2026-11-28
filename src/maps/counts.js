@@ -9,5 +9,6 @@ import { ORDER as banjaluka } from './banjaluka-words.js';
 import { ORDER as tuzla } from './tuzla-words.js';
 import { ORDER as bihac } from './bihac-words.js';
 import { ORDER as visegrad } from './visegrad-words.js';
+import { ORDER as blagaj } from './blagaj-words.js';
 
-export const WORD_COUNTS = { mostar: mostar.length, sarajevo: sarajevo.length, jahorina: jahorina.length, jajce: jajce.length, travnik: travnik.length, neum: neum.length, banjaluka: banjaluka.length, tuzla: tuzla.length, bihac: bihac.length, visegrad: visegrad.length };
+export const WORD_COUNTS = { mostar: mostar.length, sarajevo: sarajevo.length, jahorina: jahorina.length, jajce: jajce.length, travnik: travnik.length, neum: neum.length, banjaluka: banjaluka.length, tuzla: tuzla.length, bihac: bihac.length, visegrad: visegrad.length, blagaj: blagaj.length };

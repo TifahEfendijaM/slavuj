@@ -12,7 +12,7 @@ const { W0, N1, kx, sc } = GEO.proj;
 const at = (lon, lat) => [(lon - W0) * kx * sc, (N1 - lat) * sc];
 // a pin that would overlap its neighbour (Jahorina is right next to Sarajevo, Travnik right next to Jajce) or the coast (Neum)
 // is drawn a little way off, with a line to its real place; the route joins the real places
-const NUDGE = { jahorina: [42, 74], neum: [-96, 40], travnik: [52, -32], visegrad: [28, -58] };
+const NUDGE = { jahorina: [42, 74], neum: [-96, 40], travnik: [52, -32], visegrad: [28, -58], blagaj: [112, 76] };
 const SEASON_COL = { summer: '#f2b02a', autumn: '#d9612e', winter: '#5f9fd6', spring: '#6cb46a' };
 
 // little drawings for each town's pin, in a 40 x 40 box
@@ -26,6 +26,8 @@ const ICON = {
   tuzla: '<ellipse cx="18" cy="28" rx="16" ry="7" fill="#bfe0ea" stroke="#3b352f" stroke-width="2"/><path d="M8 28 q3 -2 6 0 t6 0 t6 0" fill="none" stroke="#3a8bc0" stroke-width="1.8"/><path d="M26 9 L32 6 L38 9 V16 L32 19 L26 16 Z" fill="#fbfbf6" stroke="#3b352f" stroke-width="1.6"/><path d="M26 9 L32 12 L38 9 M32 12 V19" fill="none" stroke="#3b352f" stroke-width="1.3"/><circle cx="10" cy="10" r="4.5" fill="#f2c230" stroke="#3b352f" stroke-width="1.3"/>',
   travnik: '<path d="M2 36 Q20 14 38 36 Z" fill="#cfe0b8" stroke="#3b352f" stroke-width="2"/><path d="M14 26 V10 H26 V26 Z" fill="#e8dcc4" stroke="#3b352f" stroke-width="2"/><path d="M13 10 V6 H16 V8 H19 V6 H21 V8 H24 V6 H27 V10 Z" fill="#e8dcc4" stroke="#3b352f" stroke-width="1.6"/><path d="M20 26 V20 a2 2 0 0 1 4 0 V26" fill="#3b352f"/><path d="M20 6 V0 L26 2 L20 4" fill="#d9612e" stroke="#3b352f" stroke-width="1.2"/>',
   neum: '<circle cx="28" cy="10" r="5" fill="#f2c230" stroke="#3b352f" stroke-width="1.4"/><path d="M2 26 q5 -5 10 0 t10 0 t10 0 t10 0 M2 33 q5 -5 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#3a8bc0" stroke-width="2.2"/><path d="M8 20 L14 8 L14 20 Z" fill="#fff" stroke="#3b352f" stroke-width="1.4"/>',
+  // the Tekija's white wall and dark bay window against the cliff, the cave and the spring
+  blagaj: '<path d="M2 30 V6 Q10 2 20 4 Q30 2 38 7 V30 Z" fill="#e2dccd" stroke="#3b352f" stroke-width="1.8"/><path d="M6 30 V22 a6 6 0 0 1 12 0 V30 Z" fill="#3b352f"/><rect x="22" y="16" width="13" height="12" fill="#f6f1e4" stroke="#3b352f" stroke-width="1.6"/><path d="M20 16 L28.5 10 L37 16 Z" fill="#8f897d" stroke="#3b352f" stroke-width="1.4"/><rect x="19" y="19" width="4" height="5" fill="#7a5233" stroke="#3b352f" stroke-width="1.2"/><path d="M2 34 q5 -4 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#1a8f8a" stroke-width="2.4"/>',
   visegrad: '<path d="M2 28 V18 H38 V28 H32 a4 6 0 0 0 -8 0 H16 a4 6 0 0 0 -8 0 Z" fill="#e8dcc0" stroke="#3b352f" stroke-width="1.8"/><rect x="17" y="8" width="6" height="10" fill="#f2e8d0" stroke="#3b352f" stroke-width="1.6"/><path d="M2 33 q5 -4 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#1f9982" stroke-width="2.2"/>',
 };
 
@@ -83,6 +85,7 @@ export function showBosnia() {
     if (q.m.id === 'sarajevo' || q.m.id === 'travnik') { g.querySelector('.pname').setAttribute('y', -66); g.querySelector('.pseason').setAttribute('y', -48); }      // (above its pin, clear of the neighbour/route below)
     if (q.m.id === 'banjaluka') { for (const [sel, y] of [['.pname', 0], ['.pseason', 24]]) { const t = g.querySelector(sel); t.setAttribute('x', -52); t.setAttribute('y', y); t.style.textAnchor = 'end'; } }      // (to the left of its pin, clear of Jajce below and the country title above)
     if (q.m.id === 'bihac') { for (const sel of ['.pname', '.pseason']) { const t = g.querySelector(sel); t.setAttribute('x', -36); t.style.textAnchor = 'start'; } }      // (aligned rightwards from the pin's left edge so it never clips the frame)
+    if (q.m.id === 'blagaj') { for (const [sel, y] of [['.pname', 4], ['.pseason', 28]]) { const t = g.querySelector(sel); t.setAttribute('x', 50); t.setAttribute('y', y); t.style.textAnchor = 'start'; } }      // (to the right of its pin, clear of Mostar's label just above)
     if (q.m.id === 'visegrad') { for (const sel of ['.pname', '.pseason']) { const t = g.querySelector(sel); t.setAttribute('x', 36); t.style.textAnchor = 'end'; } }      // (aligned leftwards from the pin's right edge so it stays cleanly inside the eastern border)
     g.addEventListener('click', () => {
       if (q.state === 'open' || q.state === 'done') { location.href = mapUrl(q.m.id); return; }
