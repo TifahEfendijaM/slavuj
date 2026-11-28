@@ -20,11 +20,11 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
   | Banja Luka | spring | 76 | the green city on the Vrbas: dajak boats, Kastel, parks and a concert |
   | Bihać | spring | 67 | the emerald Una: cascades, river islands, the lađa boat, Kapetanova kula |
 
-- **Art style trials (on `dev` only):** coloured pencil, crayon, gouache, spray paint and pixel art, beside the original watercolour, switchable from the pause menu. See "Art style" below. Tried and dropped: oil paint and risograph print. The user hasn't chosen yet.
+- **Art style trials (on `dev` and the public `main`, since 2026-11-28):** coloured pencil, crayon, gouache, spray paint and pixel art, beside the original watercolour (the default), switchable from the pause menu. See "Art style" below. Tried and dropped: oil paint and risograph print. The user hasn't chosen one yet.
 - **Word audio:** words without the user's own recording have Azure Bosnian TTS placeholders (`.wav` in `assets/audio/words/`, listed in `assets/audio/words/_tts.json`; `record.html` marks them "TTS"). The user's own 11 recordings (casa, dvorac, hrid, jezero, kisobran, mahala, peskir, rak, suncobran, trg, vijecnica) are in the local folder only, over the committed placeholders (they show as modified). A backup is in `../slavuj-my-recordings/`. Never commit them until the user says they are done; then also take those words out of `_tts.json`.
 
 ## What's next
-1. The art style decision: keep the watercolour or switch to one of the trials (and tune it).
+1. The art style decision: keep the watercolour or switch to one of the trials (and tune it). The Style button is on the public game for now.
 2. Polish the new towns from the user's feedback, to Mostar's standard (see the rules below).
 3. Native recordings to replace the TTS placeholders (`record.html`).
 
@@ -39,11 +39,11 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 
 ## Art style
 - Everything is drawn by one shader in `src/paper.js` (`FRAG`). Colours live in the geometry; all pieces with the same "paint tag" (house, tree, river...) are merged into one mesh, coloured in as a spreading wet front by moving one number (`uT`). Ink outlines are `LineSegments2` lines plus "hull" shells (inflated back faces) for round shapes. Pencil hatching and the drawn patterns (cobbles, roof slabs, planks, kilim, water streaks) are in the shader too.
-- **Style switch (dev only):** the pause menu's "Style" button cycles watercolour → coloured pencil → crayon → gouache → spray paint → pixel art while playing (remembered in the browser). The default is `style` in `src/settings.js` (`'watercolor'`). `?style=watercolor|pencil|crayon|gouache|spray|pixel` overrides both.
+- **Style switch:** the pause menu's "Style" button cycles watercolour → coloured pencil → crayon → gouache → spray paint → pixel art while playing (remembered in the browser). The default is `style` in `src/settings.js` (`'watercolor'`). `?style=watercolor|pencil|crayon|gouache|spray|pixel` overrides both.
   - Each trial is a `#ifdef STYLE_…` part of `FRAG` (helper `lineCov`). Switching rebuilds the materials with that define (`setStyle()`; `onStyle` callbacks run after). The watercolour code runs when no style define is set.
   - Pencil, crayon, gouache and spray draw in each object's own coordinates (`vLocal`, `vLN`), so the pattern stays on moving things. Things drawn with `vivid` (the bird) are fully coloured in every style.
   - Pixel art is drawn at two thirds of the screen size into a buffer and scaled up with sharp pixels (`src/look.js`), outlines about 1.5 of its pixels wide.
-  - When the user chooses: drop the unused styles (and the button, if only one is left), then bring it to `main` only after they approve.
+  - When the user chooses: drop the unused styles (and the button, if only one is left), on both branches.
 
 ## Where things are
 - `index.html`: the page, menus and HUD (CSS inline). It decides at the very start whether the device is touch-only (phone controls) and whether this is the platform build.
@@ -75,14 +75,14 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 - **This repo:**
   - `main` = the public game. Every push publishes it to GitHub Pages (the "Publish" workflow, about 40 seconds).
   - `dev` = work in progress and experiments, plus the platform code. Pushing `dev` publishes nothing.
-  - `main` is `dev`'s game without the platform code (`src/platform.js`, `public/early.js`, `build:platform`, their hooks in `index.html`, `boot.js`, `bosnia.js`, `main.js`) and without the art style trials (`src/look.js`, the `STYLE_` code in `paper.js`, the Style button). Never merge `dev` into `main` wholesale.
+  - `main` is `dev`'s game without the platform code (`src/platform.js`, `public/early.js`, `build:platform`, their hooks in `index.html`, `boot.js`, `bosnia.js`, `main.js`). Everything else is the same (the art styles too). Never merge `dev` into `main` wholesale.
   - The local folder is normally on `dev`.
 - **How a fix goes out:**
   1. Commit on `dev` and push.
   2. `git checkout main`, `git pull --ff-only`, cherry-pick the commit, push.
   3. `git checkout dev`, `git merge --no-edit main`, push.
   4. Check the run with `gh run list --branch main`.
-- **Big changes from `dev`** (like Fahrudin's towns): apply `git diff <old dev> <new dev>` onto `main` with `git apply --3way`, resolve the conflicts by leaving out the dev-only parts, check every town, push; then merge `main` into `dev` with `-s ours` (dev already has it all).
+- **Big changes from `dev`** (like Fahrudin's towns): apply `git diff <old dev> <new dev>` onto `main` with `git apply --3way`, resolve the conflicts by leaving out the platform code, check every town, push; then merge `main` into `dev`, keeping `dev`'s side where they clash (dev already has it all).
 - **Fahrudin's work** comes in as pull requests into `dev`. Check every town before merging.
 
 ## easybosnian (`fahro/bosanski-jezik`, owner Fahrudin; the user has write access)
