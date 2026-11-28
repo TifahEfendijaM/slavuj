@@ -5,7 +5,8 @@ import { pull } from './platform.js';
 // After a new version is published, a phone may still hold the old page for a few minutes, and that page asks for code
 // files that no longer exist. Then the page is loaded again (once), which fetches the new version.
 const RETRY = 'slavuj-reloaded';
-function failed() {
+function failed(e) {
+  console.error('boot failed:', e);
   let again = false; try { again = sessionStorage.getItem(RETRY) === '1'; sessionStorage.setItem(RETRY, '1'); } catch (e) { /* */ }
   if (!again) { location.reload(); return; }
   const go = document.querySelector('#start .go');
