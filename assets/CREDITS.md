@@ -14,7 +14,8 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | `journal-neum.webp` | Painting of Neum on the Adriatic Sea in summer on the journal's Neum page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
 | `journal-travnik.webp` | Painting of Travnik in summer on the journal's Travnik page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
 | `journal-banjaluka.webp` | Painting of Banja Luka on the Vrbas river in spring on the journal's Banja Luka page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
-| `audio/words/*.wav` | Pronunciation of every word | Recorded by the project owner (native speaker); temporary Sarajevo, Jahorina, Jajce, Neum, Travnik and Banja Luka placeholders listed in `_tts.json` generated with Azure Neural Speech (`bs-BA-GoranNeural`) until replaced via `record.html` | Owned by the project |
+| `journal-bihac.webp` | Painting of Bihać on the emerald Una river in spring on the journal's Bihać page | Original, made for the project (with an AI image tool) | Owned by the project; cleared for publishing |
+| `audio/words/*.wav` | Pronunciation of every word | Recorded by the project owner (native speaker); temporary Sarajevo, Jahorina, Jajce, Neum, Travnik, Banja Luka and Bihać placeholders listed in `_tts.json` generated with Azure Neural Speech (`bs-BA-GoranNeural`) until replaced via `record.html` | Owned by the project |
 | `audio/sfx/sheep-2348.mp3`, `sheep-2349.mp3` | Sheep bleating (played pitched up) | BigSoundBank, Joseph Sardin: "Sheep #6" (2348), "Sheep #7" (2349) | CC0 |
 | `audio/sfx/applause.mp3` | The crowd's applause | BigSoundBank, Joseph Sardin: "Applause about 25-50 people #1" (0812) | CC0 |
 | `audio/sfx/horse-neigh.mp3` | The horse neighing | BigSoundBank, Joseph Sardin: "Horse Neighing #3" (0863) | CC0 |
@@ -37,6 +38,7 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | `audio/sfx/neum/sea-waves.mp3`, `seagulls.mp3`, `cicadas.mp3`, `harbour-creak.mp3` | Neum Adriatic waves, seagulls, Mediterranean cicadas and harbour ambience | Original, synthesised in code for the project | Owned by the project |
 | `audio/sfx/travnik/plava-voda.mp3`, `grill-sizzle.mp3`, `summer-cicadas.mp3`, `rooster-crow.mp3`, `sheep-bell.mp3`, `clock-chime.mp3` | Travnik Plava voda stream, grill sizzle, summer cicadas, farm rooster, Vlašić sheep bell and Sahat-kula chime | Procedurally generated for the project | Owned by the project |
 | `audio/sfx/banjaluka/vrbas-river.mp3`, `kastel-concert.mp3`, `park-fountain.mp3`, `avenue-birds.mp3` | Banja Luka Vrbas river rapids, Kastel open-air acoustic concert, Trg Krajine fountain and green-avenue songbirds | Original, synthesised in code for the project | Owned by the project |
+| `audio/sfx/bihac/una-rapids.mp3`, `village-hearth.mp3`, `krajina-accordion.mp3`, `kingfisher-call.mp3`, `falcon-cry.mp3` | Bihać Una river rapids, prehistoric village hearth, Krajina riverside accordion, kingfisher whistle and Sokolac falcon cry | Original, synthesised in code for the project | Owned by the project |
 
 Everything else is generated in code and belongs to the project: the bird, the town, all textures, the journal drawing, the music and the other sound effects.
 

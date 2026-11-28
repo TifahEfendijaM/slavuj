@@ -154,7 +154,7 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : (o.bottom || bottom0), gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine', 'blDrum', 'blListen', 'blDraw'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu') || o.kind?.startsWith('bl'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine', 'blDrum', 'blListen', 'blDraw', 'bihPotter', 'bihAccordion'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu') || o.kind?.startsWith('bl'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
     if ((!gown || seated || winterTrousers || (skirtC && sc < 1) || o.coatTag || o.topTag) && o.kind !== 'girl' && o.kind !== 'raft' && o.kind !== 'sarNana') for (const s of [-1, 1]) {
@@ -697,6 +697,24 @@ export function createPeople(scene, world, R) {
     if (o.kind === 'blDraw') {
       const pad = P(G.box, '#faf6ea', torso, 0, 0.44, 0.38, '#d8d2c2'); pad.scale.set(0.38, 0.28, 0.025); pad.rotation.x = -0.55;
       rod(P, arms[1].el, [0, -0.30, 0], [0, -0.30, 0.22], 0.01, '#e8a828');
+    }
+    if (o.kind === 'bihPotter') {
+      const clay = P(G.ball, '#b86c48', torso, 0, 0.42, 0.36, '#8c4c2e'); clay.scale.set(0.16, 0.14, 0.16);
+    }
+    if (o.kind === 'bihGuard') {
+      const sp = grp(arms[1].el, 0, -0.32, 0);
+      sp.rotation.x = 1.38;
+      rod(P, sp, [0, -0.82, 0], [0, 1.38, 0], 0.022, '#6d4c32');
+      const tip = P(G.cone, '#c8d0d8', sp, 0, 1.50, 0, '#8d96a0'); tip.scale.set(0.8, 1.8, 0.4);
+      const helm = P(G.cap, '#9aa4b0', head, 0, 0.08, 0, '#6d7782'); helm.scale.set(1.06, 1.04, 1.06);
+    }
+    if (o.kind === 'bihAccordion') {
+      const HP = painter(o.accordionTag || 'harmonika', pos);
+      const acc = p.accordion = grp(torso, 0, 0.40, 0.30);
+      HP(G.box, '#24272c', acc, -0.18, 0, 0, '#14161a').scale.set(0.10, 0.32, 0.18);
+      HP(G.box, '#c9382e', acc, 0, 0, 0, '#8c221b').scale.set(0.24, 0.28, 0.15);
+      HP(G.box, '#24272c', acc, 0.18, 0, 0, '#14161a').scale.set(0.10, 0.32, 0.18);
+      HP(G.box, '#f4efe2', acc, 0.18, 0, 0.095, '#d6cfbc').scale.set(0.05, 0.24, 0.02);
     }
     list.push(p); return p;
   }
@@ -1778,6 +1796,21 @@ export function createPeople(scene, world, R) {
           a0.sh.rotation.set(-0.85, 0, -0.18); a0.el.rotation.x = -0.95;
           a1.sh.rotation.set(-0.92 + sk, 0, 0.15 + sk); a1.el.rotation.x = -0.95;
           p.head.rotation.x = 0.30;
+        } else if (o.kind === 'bihPotter') {
+          const wr = alive ? Math.sin(t * 3.8) * 0.12 : 0.08;
+          a0.sh.rotation.set(-0.92 + wr, 0, -0.18); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-0.92 - wr, 0, 0.18); a1.el.rotation.x = -0.75;
+          p.head.rotation.x = 0.28;
+        } else if (o.kind === 'bihGuard') {
+          a0.sh.rotation.set(-0.18, 0, -0.12); a0.el.rotation.x = -0.25;
+          a1.sh.rotation.set(-0.78, 0, 0.14); a1.el.rotation.x = -0.62;
+          p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.35 : 0.08;
+        } else if (o.kind === 'bihAccordion') {
+          const sq = alive ? Math.sin(t * 2.6) : 0.35;
+          a0.sh.rotation.set(-0.88, 0, -0.22 - sq * 0.16); a0.el.rotation.x = -0.92;
+          a1.sh.rotation.set(-0.88, 0, 0.22 + sq * 0.16); a1.el.rotation.x = -0.92;
+          if (p.accordion) p.accordion.scale.x = 1 + sq * 0.18;
+          p.head.rotation.z = alive ? Math.sin(t * 1.3) * 0.14 : 0.05;
         }
         if (o.lookUpOnClimax && alive && pigeonsForced > 0) p.head.rotation.x = -0.45;
       }
