@@ -10,6 +10,7 @@ export const MAPS = [
   { id: 'jahorina', name: 'Jahorina', season: 'Zima', en: 'winter', lat: 43.738, lon: 18.567 },
   { id: 'visegrad', name: 'Višegrad', season: 'Jesen', en: 'autumn', lat: 43.782, lon: 19.292 },
   { id: 'tuzla', name: 'Tuzla', season: 'Ljeto', en: 'summer', lat: 44.538, lon: 18.676 },
+  { id: 'brcko', name: 'Brčko', season: 'Jesen', en: 'autumn', lat: 44.872, lon: 18.810 },
   { id: 'travnik', name: 'Travnik', season: 'Ljeto', en: 'summer', lat: 44.226, lon: 17.666 },
   { id: 'jajce', name: 'Jajce', season: 'Proljeće', en: 'spring', lat: 44.342, lon: 17.270 },
   { id: 'banjaluka', name: 'Banja Luka', season: 'Proljeće', en: 'spring', lat: 44.772, lon: 17.191 },
