@@ -13,12 +13,12 @@ export const WORDS = {
   regata:      { word: 'regata',       en: 'river regatta, raft race',     q: 'Colourful inflatable rafts lined up for Bihać\'s famous summer Una ___. Which word is it?', choices: ['regata', 'pijaca', 'škola'] },
   prsluk:      { word: 'prsluk',       en: 'life vest',                    q: 'The bright orange safety jacket worn by rafters on the Una rapids. Which word is it?', choices: ['kaput', 'prsluk', 'šal'] },
 
-  // Zone 2: Japodes Prehistoric Stilt Village (Sojenice) and Riverbank Pottery (10)
-  sojenica:    { word: 'sojenica',     en: 'stilt house (over water)',     q: 'An ancient wooden dwelling built on pilings over the Una by the Japodes tribe. Which word is it?', choices: ['sojenica', 'vijećnica', 'bolnica'] },
-  trstika:     { word: 'trstika',      en: 'thatch, marsh cane roof',      q: 'Bundled river canes tied thickly to roof the prehistoric stilt houses. Which word is it?', choices: ['trstika', 'cigla', 'staklo'] },
-  stup:        { word: 'stup',         en: 'wooden piling, tall post',     q: 'The thick oak legs driven into the riverbed holding up each stilt house. Which word is it?', choices: ['stup', 'stepenice', 'zid'] },
+  // Zone 2: Japodes Prehistoric Stilt Village and Riverbank Pottery (10)
+  brvnara:     { word: 'brvnara',      en: 'wooden cabin, timber house',   q: 'An ancient wooden timber house built on pilings over the Una by the Japodes tribe. Which word is it?', choices: ['brvnara', 'vijećnica', 'bolnica'] },
+  trstika:     { word: 'trstika',      en: 'thatch, marsh cane roof',      q: 'Bundled river canes tied thickly to roof the prehistoric timber houses. Which word is it?', choices: ['trstika', 'cigla', 'staklo'] },
+  stup:        { word: 'stup',         en: 'wooden piling, tall post',     q: 'The thick oak legs driven into the riverbed holding up each lakeside cabin. Which word is it?', choices: ['stup', 'stepenice', 'zid'] },
   glina:       { word: 'glina',        en: 'clay',                         q: 'Soft reddish-brown riverside earth shaped by hand into pots and jugs. Which word is it?', choices: ['glina', 'brašno', 'snijeg'] },
-  cup:         { word: 'ćup',          en: 'clay pitcher, amphora',        q: 'A round earthen jug with two handles dried beside the potter\'s wheel. Which word is it?', choices: ['ćup', 'čaša', 'tanjir'] },
+  krcag:       { word: 'krčag',        en: 'clay pitcher, earthenware jug',q: 'A round earthen jug with a narrow neck dried beside the potter\'s table. Which word is it?', choices: ['krčag', 'čaša', 'tanjir'] },
   zdjela:      { word: 'zdjela',       en: 'bowl',                         q: 'A deep round clay dish used for serving fruit, soup or cream. Which word is it?', choices: ['zdjela', 'daska', 'knjiga'] },
   lonac:       { word: 'lonac',        en: 'cooking pot',                  q: 'The big round lidded pot set beside the hearth for slow stews. Which word is it?', choices: ['lonac', 'šolja', 'kašika'] },
   ognjiste:    { word: 'ognjište',     en: 'hearth, open stone fireplace', q: 'The low stone circle where glowing logs warm the stilt-village yard. Which word is it?', choices: ['ognjište', 'bunar', 'stolica'] },
@@ -41,10 +41,10 @@ export const WORDS = {
   // Zone 4: Una Riverside Park, Art and Krajina Music (10)
   drvored:     { word: 'drvored',      en: 'tree-lined avenue',            q: 'A neat double row of shady spring trees bordering the Bihać riverside walk. Which word is it?', choices: ['drvored', 'kanjon', 'trg'] },
   skulptura:   { word: 'skulptura',    en: 'sculpture, statue',            q: 'A carved stone artwork standing on a pedestal in the riverside park. Which word is it?', choices: ['skulptura', 'kuća', 'klupa'] },
-  harmonika:   { word: 'harmonika',    en: 'accordion',                    q: 'The pleated squeeze-box instrument filling the Una park with Krajina melodies. Which word is it?', choices: ['gitara', 'harmonika', 'violina'] },
+  tambura:     { word: 'tambura',      en: 'Bosnian folk lute, tamburitza',q: 'The warm wooden stringed instrument strumming lively Krajina tunes in the Una park. Which word is it?', choices: ['gitara', 'tambura', 'violina'] },
   saz:         { word: 'saz',          en: 'traditional Bosnian lute',     q: 'A slender long-necked stringed instrument used for traditional Bosnian sevdalinka songs. Which word is it?', choices: ['saz', 'veslo', 'štap'] },
   frula:       { word: 'frula',        en: 'wooden shepherd flute',        q: 'A simple carved wooden pipe resting on the musician\'s bench. Which word is it?', choices: ['frula', 'kašika', 'ključ'] },
-  muzicar:     { word: 'muzičar',      en: 'musician',                     q: 'Who sits on the park bench playing lively Krajina tunes on the accordion?', choices: ['muzičar', 'kuhar', 'krojač'] },
+  muzicar:     { word: 'muzičar',      en: 'musician',                     q: 'Who sits on the park bench strumming lively Krajina tunes on the tambura?', choices: ['muzičar', 'kuhar', 'krojač'] },
   tezga:       { word: 'tezga',        en: 'craft stall, market stand',    q: 'A small wooden roofed stand along the riverside selling handmade wares. Which word is it?', choices: ['tezga', 'bolnica', 'pošta'] },
   suvenir:     { word: 'suvenir',      en: 'souvenir, keepsake',           q: 'Little painted wooden keepsakes of Bihać and the Una lined up on the stall. Which word is it?', choices: ['suvenir', 'hljeb', 'sir'] },
   platno:      { word: 'platno',       en: 'painting canvas',              q: 'The stretched white cloth on the easel showing a painting of the Una River. Which word is it?', choices: ['platno', 'novine', 'pismo'] },
@@ -53,21 +53,21 @@ export const WORDS = {
   // Zone 5: Krajina Orchard and Una River Camp (9)
   kamp:        { word: 'kamp',         en: 'campsite',                     q: 'The shady riverside clearing pitched with tents and benches for Una travellers. Which word is it?', choices: ['kamp', 'han', 'muzej'] },
   jorgan:      { word: 'jorgan',       en: 'quilt, padded blanket',        q: 'A warm quilted roll laid out beside the camp tent for cool Krajina nights. Which word is it?', choices: ['jorgan', 'haljina', 'torba'] },
-  svjetiljka:  { word: 'svjetiljka',   en: 'camping lantern, lamp',        q: 'A portable glowing lantern hanging beside the camp table at dusk. Which word is it?', choices: ['svjetiljka', 'čajnik', 'kanta'] },
-  kompas:      { word: 'kompas',       en: 'compass',                      q: 'The little round brass instrument whose needle always points north. Which word is it?', choices: ['kompas', 'sat', 'novčić'] },
-  karta:       { word: 'karta',        en: 'map',                          q: 'The unfolded paper guide spread on the camp table showing the Una trails. Which word is it?', choices: ['karta', 'knjiga', 'tanjir'] },
+  baklja:      { word: 'baklja',       en: 'torch, camp torch',            q: 'A tall wooden stake with a glowing flame lighting the Una campsite at dusk. Which word is it?', choices: ['baklja', 'čajnik', 'kanta'] },
+  dnevnik:     { word: 'dnevnik',      en: 'travel journal, diary',        q: 'The leather-bound notebook on the camp table recording adventures along the Una. Which word is it?', choices: ['dnevnik', 'sat', 'novčić'] },
+  mapa:        { word: 'mapa',         en: 'map',                          q: 'The unfolded paper guide spread on the camp table showing the Una trails. Which word is it?', choices: ['mapa', 'knjiga', 'tanjir'] },
   cuturica:    { word: 'čuturica',     en: 'water flask, canteen',         q: 'A flat round travel flask filled with cold Una spring water. Which word is it?', choices: ['čuturica', 'džezva', 'šolja'] },
-  kruska:      { word: 'kruška',       en: 'pear',                         q: 'Sweet yellow-green bell-shaped fruit heaped in a Krajina orchard basket. Which word is it?', choices: ['jabuka', 'kruška', 'dunja'] },
-  breskva:     { word: 'breskva',      en: 'peach',                        q: 'Soft rosy-orange summer-ripening orchard fruit set beside the pears. Which word is it?', choices: ['breskva', 'jagoda', 'bundeva'] },
+  visnja:      { word: 'višnja',       en: 'sour cherry',                  q: 'Glossy dark-red tart cherries heaped in a Krajina orchard basket. Which word is it?', choices: ['jabuka', 'višnja', 'dunja'] },
+  kajsija:     { word: 'kajsija',      en: 'apricot',                      q: 'Velvety golden-orange summer-ripening orchard fruit set beside the cherries. Which word is it?', choices: ['kajsija', 'jagoda', 'bundeva'] },
   ljesnjak:    { word: 'lješnjak',     en: 'hazelnut',                     q: 'Small round brown nuts gathered from wild bushes along the Krajina hills. Which word is it?', choices: ['kukuruz', 'lješnjak', 'krompir'] },
 
   // Zone 6: National Park Una Wildlife and Emerald Forest (11)
   dabar:       { word: 'dabar',        en: 'beaver',                       q: 'The busy flat-tailed riverside mammal building wooden dams along quiet Una coves. Which word is it?', choices: ['dabar', 'mačka', 'zec'] },
   orao:        { word: 'orao',         en: 'eagle',                        q: 'A broad-winged golden bird of prey perched majestically on the high rock. Which word is it?', choices: ['golub', 'orao', 'patka'] },
   vodomar:     { word: 'vodomar',      en: 'kingfisher',                   q: 'A tiny jewel-blue and orange river bird diving into the clear Una for minnows. Which word is it?', choices: ['vodomar', 'vrana', 'sova'] },
-  vilin:       { word: 'vilin konjic', en: 'dragonfly',                    q: 'A shimmering four-winged insect darting low over the emerald river reeds. Which word is it?', choices: ['pčela', 'vilin konjic', 'leptir'] },
+  bumbar:      { word: 'bumbar',       en: 'bumblebee',                    q: 'A fuzzy black-and-gold striped spring insect buzzing low over the emerald river reeds. Which word is it?', choices: ['pčela', 'bumbar', 'leptir'] },
   kornjaca:    { word: 'kornjača',     en: 'turtle',                       q: 'The slow shelled reptile sunning itself on a flat riverside stone. Which word is it?', choices: ['kornjača', 'žaba', 'riba'] },
-  puz:         { word: 'puž',          en: 'snail',                        q: 'A tiny garden creature carrying a spiral brown shell on its back. Which word is it?', choices: ['puž', 'pas', 'ovca'] },
+  ris:         { word: 'ris',          en: 'lynx',                         q: 'The elusive tufted-eared wildcat prowling the quiet mountain woods of National Park Una. Which word is it?', choices: ['ris', 'pas', 'ovca'] },
   jazavac:     { word: 'jazavac',      en: 'badger',                       q: 'A stocky black-and-white striped woodland animal foraging beneath the forest trees. Which word is it?', choices: ['lisica', 'jazavac', 'koza'] },
   medvjed:     { word: 'medvjed',      en: 'bear',                         q: 'The mighty brown king of the dense Bosnian mountain forests around Una. Which word is it?', choices: ['medvjed', 'vuk', 'konj'] },
   paprat:      { word: 'paprat',       en: 'fern',                         q: 'Feathery arching green woodland fronds growing in the cool damp shade. Which word is it?', choices: ['paprat', 'lala', 'trava'] },
@@ -76,7 +76,7 @@ export const WORDS = {
 
   // Zone 7: Stari Grad Sokolac Watchtower and Finale (5 + 1)
   stepeniste:  { word: 'stepenište',   en: 'stone staircase',              q: 'The winding flight of stone steps climbing up to the hilltop tower of Sokolac. Which word is it?', choices: ['stepenište', 'cesta', 'brvno'] },
-  osam:        { word: 'osam',         en: 'eight',                        q: 'How many stone battlements crown the upper rampart of Sokolac watchtower?', choices: ['šest', 'osam', 'pet'] },
+  devet:       { word: 'devet',        en: 'nine',                         q: 'How many stone battlements crown the upper rampart of Sokolac watchtower?', choices: ['šest', 'devet', 'pet'] },
   horizont:    { word: 'horizont',     en: 'horizon',                      q: 'The far bright line where the green Krajina hills meet the spring sky. Which word is it?', choices: ['horizont', 'obala', 'trg'] },
   sokol:       { word: 'sokol',        en: 'falcon',                       q: 'The swift keen-eyed bird that gave Stari Grad Sokolac its name. Which word is it?', choices: ['sokol', 'labud', 'pijetao'] },
   osmatracnica:{ word: 'osmatračnica', en: 'watchtower, lookout tower',    q: 'The tall medieval stone keep of Stari Grad Sokolac watching over the entire Una valley. Which word is it?', choices: ['osmatračnica', 'pekara', 'sjenica'] },

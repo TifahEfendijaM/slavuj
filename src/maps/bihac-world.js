@@ -129,7 +129,7 @@ export function buildBihacWorld(scene) {
   for (const t of ['smaragd', 'ada', 'buk', 'tok', 'osmatracnica', 'drvored', 'kamp', 'horizont']) {
     tag(t).mode = 'one'; tag(t).radius = 120; tag(t).holdRest = 2.4;
   }
-  for (const t of ['sojenica', 'trstika', 'stup', 'jasen', 'paprat', 'mahovina', 'osam']) {
+  for (const t of ['brvnara', 'trstika', 'stup', 'jasen', 'paprat', 'mahovina', 'devet']) {
     tag(t).waveDelay = 2.2;
   }
 
@@ -283,12 +283,12 @@ export function buildBihacWorld(scene) {
       for (const px of [-1.7, 1.7]) for (const pz of [-1.4, 1.4]) {
         box(0.30, 4.8, 0.30, -13.0 + px, 2.0, sz + pz, ST);
       }
-      // Timber stilt-house deck, walls & shore gangplank ('sojenica')
-      const SJ = { tag: 'sojenica', col: '#8a623c', bleed: '#664526', pat: PAT.planks, ps: 3, orb: 'sojenica' };
+      // Timber stilt-house deck, walls & shore gangplank ('brvnara')
+      const SJ = { tag: 'brvnara', col: '#8a623c', bleed: '#664526', pat: PAT.planks, ps: 3, orb: 'brvnara' };
       box(4.8, 0.28, 4.0, -13.0, TOWN_Y + 0.55, sz, SJ);
       box(2.2, 0.22, 1.4, -15.8, TOWN_Y + 0.32, sz, SJ);
       box(3.9, 2.4, 3.2, -13.0, TOWN_Y + 1.88, sz, SJ);
-      box(0.95, 1.65, 0.14, -11.0, TOWN_Y + 1.45, sz, { tag: 'sojenica', col: '#3b2819' });
+      box(0.95, 1.65, 0.14, -11.0, TOWN_Y + 1.45, sz, { tag: 'brvnara', col: '#3b2819' });
       // Thick golden-tan woven reed thatch roof ('trstika')
       A(hipRoofGeo(5.3, 4.5, 2.45), -13.0, TOWN_Y + 3.08, sz, {
         tag: 'trstika', col: '#cfb36e', bleed: '#a38746', pat: PAT.roof, orb: 'trstika',
@@ -303,11 +303,11 @@ export function buildBihacWorld(scene) {
     A(CYL12, -28, TOWN_Y + 0.14, 6, { tag: 'pepeo', col: '#b8b6b0', bleed: '#8d8b85', orb: 'pepeo' }, 0, 0, 0, [0.85, 0.16, 0.85]);
     A(SPHERE, -28, TOWN_Y + 0.52, 6, { tag: 'lonac', col: '#3d3f44', bleed: '#252629', hull: true, orb: 'lonac' }, 0, 0, 0, [0.44, 0.36, 0.44]);
     smoke.push(V(-28, TOWN_Y + 0.95, 6));
-    // Potter's clay mound ('glina'), amphora pitcher ('cup') & bowl ('zdjela') at (-27, TOWN_Y, -3)
+    // Potter's clay mound ('glina'), earthenware pitcher ('krcag') & bowl ('zdjela') at (-27, TOWN_Y, -3)
     box(3.4, 0.82, 1.2, -27.5, TOWN_Y + 0.41, -3.2, { tag: 'props', col: WOOD_W[0], bleed: WOOD_W[1] });
     A(ICO, -28.6, TOWN_Y + 0.98, -3.2, { tag: 'glina', col: '#b86c48', bleed: '#8c4c2e', hull: true, orb: 'glina' }, 0, 0, 0, [0.36, 0.26, 0.34]);
-    A(SPHERE, -27.5, TOWN_Y + 1.08, -3.2, { tag: 'cup', col: '#c96f44', bleed: '#964b28', hull: true, orb: 'cup' }, 0, 0, 0, [0.24, 0.34, 0.24]);
-    A(CYL12, -27.5, TOWN_Y + 1.42, -3.2, { tag: 'cup', col: '#c96f44', bleed: '#964b28' }, 0, 0, 0, [0.11, 0.22, 0.11]);
+    A(SPHERE, -27.5, TOWN_Y + 1.08, -3.2, { tag: 'krcag', col: '#c96f44', bleed: '#964b28', hull: true, orb: 'krcag' }, 0, 0, 0, [0.24, 0.34, 0.24]);
+    A(CYL12, -27.5, TOWN_Y + 1.42, -3.2, { tag: 'krcag', col: '#c96f44', bleed: '#964b28' }, 0, 0, 0, [0.11, 0.22, 0.11]);
     A(HEMI, -26.4, TOWN_Y + 1.06, -3.2, { tag: 'zdjela', col: '#d47c4e', bleed: '#9e5430', hull: true, orb: 'zdjela' }, 0, Math.PI, 0, [0.28, 0.24, 0.28]);
   });
   people.push({ kind: 'bihPotter', x: -27.5, y: TOWN_Y + 0.04, z: -1.8, ry: Math.PI, tag: 'grncar' });
@@ -409,9 +409,9 @@ export function buildBihacWorld(scene) {
     box(1.18, 0.88, 0.12, 29, TOWN_Y + 1.48, 26.18, { tag: 'platno', col: '#3ec29e', bleed: '#268c70', orb: 'platno' }, 0, -0.15, 0);
   });
 
-  // Krajina musician ('muzicar') playing accordion ('harmonika'), plus Bosnian saz ('saz') & flute ('frula') at (35, TOWN_Y, 26)
+  // Krajina musician ('muzicar') strumming Bosnian tambura ('tambura'), plus saz ('saz') & flute ('frula') at (35, TOWN_Y, 26)
   box(2.8, 0.48, 0.72, 35, TOWN_Y + 0.24, 26, { tag: 'props', col: WOOD_W[0], bleed: WOOD_W[1] });
-  people.push({ kind: 'bihAccordion', x: 34.4, y: TOWN_Y + 0.04, z: 26.0, ry: -Math.PI / 2, tag: 'muzicar' });
+  people.push({ kind: 'bihTambura', x: 34.4, y: TOWN_Y + 0.04, z: 26.0, ry: -Math.PI / 2, tag: 'muzicar' });
   b.object(() => {
     // Traditional long-necked Bosnian saz ('saz') leaning on the bench at (35.4, TOWN_Y, 26.0)
     A(ICO, 35.4, TOWN_Y + 0.75, 26.0, { tag: 'saz', col: '#b87638', bleed: '#854f1f', hull: true, orb: 'saz' }, 0, 0, 0, [0.22, 0.28, 0.18]);
@@ -433,27 +433,29 @@ export function buildBihacWorld(scene) {
   });
 
   // ==================== 7. ZONE 5: KRAJINA ORCHARD & UNA RIVER CAMP (9 words) ====================
-  // Riverside campsite ('kamp') at (-30, TOWN_Y, 44) with quilt ('jorgan'), lantern ('svjetiljka'), compass ('kompas'), map ('karta') & canteen ('cuturica')
+  // Riverside campsite ('kamp') at (-30, TOWN_Y, 44) with quilt ('jorgan'), torch ('baklja'), journal ('dnevnik'), map ('mapa') & canteen ('cuturica')
   b.object(() => {
     const KM = { tag: 'kamp', col: '#4a8f63', bleed: '#326946', orb: 'kamp' };
     A(new THREE.CylinderGeometry(0.1, 2.4, 2.3, 4), -32, TOWN_Y + 1.15, 44, KM, Math.PI / 4);
     box(2.2, 0.82, 1.3, -27.5, TOWN_Y + 0.41, 44, { tag: 'kamp', col: WOOD_W[0], bleed: WOOD_W[1] });
     // Rolled quilted blanket ('jorgan') beside the tent at (-30.2, TOWN_Y, 46.2)
     A(CYL12, -30.2, TOWN_Y + 0.28, 46.2, { tag: 'jorgan', col: '#d45a6a', bleed: '#a33b4a', hull: true, orb: 'jorgan' }, 0, 0, Math.PI / 2, [0.28, 1.3, 0.28]);
-    // Camping lantern ('svjetiljka') glowing on the camp table (-28.2, TOWN_Y + 1.05, 43.8)
-    A(CYL12, -28.2, TOWN_Y + 1.04, 43.8, { tag: 'svjetiljka', col: '#ffe066', bleed: '#e3b224', hull: true, orb: 'svjetiljka' }, 0, 0, 0, [0.16, 0.36, 0.16]);
-    A(CONE8, -28.2, TOWN_Y + 1.30, 43.8, { tag: 'svjetiljka', col: '#3a424a', bleed: '#24292e' }, 0, 0, 0, [0.22, 0.14, 0.22]);
-    // Spread trail map ('karta') & round brass compass ('kompas') & water canteen ('cuturica') on table
-    box(0.85, 0.03, 0.62, -27.4, TOWN_Y + 0.84, 44.0, { tag: 'karta', col: '#f5ebd4', bleed: '#d6c9ab', orb: 'karta' }, 0.08);
-    A(CYL12, -27.1, TOWN_Y + 0.88, 44.1, { tag: 'kompas', col: '#e3b83b', bleed: '#b3891a', orb: 'kompas' }, 0, 0, 0, [0.15, 0.06, 0.15]);
-    A(SPHERE, -26.6, TOWN_Y + 0.98, 43.8, { tag: 'cuturica', col: '#5a7d4a', bleed: '#3d5930', hull: true, orb: 'cuturica' }, 0, 0, 0, [0.16, 0.22, 0.10]);
+    // Standing camp torch ('baklja') blazing beside the camp table (-28.8, TOWN_Y, 43.2)
+    A(CYL, -28.8, TOWN_Y + 0.85, 43.2, { tag: 'baklja', col: WOOD_D[0], bleed: WOOD_D[1], orb: 'baklja' }, 0, 0, 0, [0.06, 1.7, 0.06]);
+    A(CYL12, -28.8, TOWN_Y + 1.68, 43.2, { tag: 'baklja', col: '#4a3d33', bleed: '#2e251e' }, 0, 0, 0, [0.14, 0.24, 0.14]);
+    A(CONE8, -28.8, TOWN_Y + 1.98, 43.2, { tag: 'baklja', col: '#ff9a26', bleed: '#e04f16', hull: true }, 0, 0, 0, [0.16, 0.42, 0.16]);
+    // Spread trail map ('mapa'), leather travel journal ('dnevnik') & water canteen ('cuturica') on table
+    box(0.85, 0.03, 0.62, -27.6, TOWN_Y + 0.84, 44.0, { tag: 'mapa', col: '#f5ebd4', bleed: '#d6c9ab', orb: 'mapa' }, 0.08);
+    box(0.38, 0.09, 0.48, -27.0, TOWN_Y + 0.87, 44.1, { tag: 'dnevnik', col: '#8c3c2b', bleed: '#5e2418', orb: 'dnevnik' }, -0.18);
+    box(0.32, 0.03, 0.42, -27.0, TOWN_Y + 0.92, 44.1, { tag: 'dnevnik', col: '#faf3e0', bleed: '#dfd4b8', solid: false }, -0.18);
+    A(SPHERE, -26.5, TOWN_Y + 0.98, 43.8, { tag: 'cuturica', col: '#5a7d4a', bleed: '#3d5930', hull: true, orb: 'cuturica' }, 0, 0, 0, [0.16, 0.22, 0.10]);
   });
 
-  // Krajina orchard fruit baskets at (-26, TOWN_Y, 56): pears ('kruska'), peaches ('breskva') & hazelnuts ('ljesnjak')
+  // Krajina orchard fruit baskets at (-26, TOWN_Y, 56): sour cherries ('visnja'), apricots ('kajsija') & hazelnuts ('ljesnjak')
   b.object(() => {
     for (const [bx, tagId, col1, col2] of [
-      [-28.5, 'kruska', '#a8c942', '#7d9c28'],
-      [-26.0, 'breskva', '#f29863', '#c96d3c'],
+      [-28.5, 'visnja', '#b82538', '#7d1422'],
+      [-26.0, 'kajsija', '#f5a142', '#cc741d'],
       [-23.5, 'ljesnjak', '#8c5c32', '#613c1d'],
     ]) {
       A(new THREE.CylinderGeometry(0.55, 0.42, 0.45, 10), bx, TOWN_Y + 0.24, 56, { tag: 'props', col: WOOD_W[0], bleed: WOOD_W[1] });
@@ -461,7 +463,7 @@ export function buildBihacWorld(scene) {
         const a = (i / 6) * Math.PI * 2;
         A(SPHERE, bx + Math.cos(a) * 0.22, TOWN_Y + 0.54, 56 + Math.sin(a) * 0.22, {
           tag: tagId, col: col1, bleed: col2, hull: true, orb: tagId,
-        }, 0, 0, 0, tagId === 'kruska' ? [0.14, 0.20, 0.14] : 0.15);
+        }, 0, 0, 0, tagId === 'visnja' ? 0.13 : 0.15);
       }
     }
   });
@@ -498,9 +500,12 @@ export function buildBihacWorld(scene) {
     const JZ = { tag: 'jazavac', col: '#4a4c52', bleed: '#2e3034', hull: true, orb: 'jazavac' };
     A(ICO, -32, FOREST_Y + 0.36, -50, JZ, 0, 0, 0, [0.34, 0.28, 0.56]);
     A(SPHERE, -32, FOREST_Y + 0.42, -49.4, { tag: 'jazavac', col: '#f2f2f2', bleed: '#d0d0d0', hull: true }, 0, 0, 0, [0.20, 0.16, 0.24]);
-    // Snail ('puz') on mossy rock at (-26, FOREST_Y, -38)
-    A(ICO, -26, FOREST_Y + 0.22, -38, { tag: 'puz', col: '#a87240', bleed: '#7a4f26', hull: true, orb: 'puz' }, 0, 0, 0, [0.22, 0.22, 0.22]);
-    box(0.14, 0.10, 0.48, -26, FOREST_Y + 0.08, -37.9, { tag: 'puz', col: '#d4be96', bleed: '#ab946c' });
+    // Eurasian lynx ('ris') with tufted ears standing on forest clearing at (-26, FOREST_Y, -38)
+    const RS = { tag: 'ris', col: '#c99252', bleed: '#96652c', hull: true, orb: 'ris' };
+    A(ICO, -26, FOREST_Y + 0.56, -38, RS, 0, 0, 0, [0.24, 0.24, 0.48]);
+    A(SPHERE, -26, FOREST_Y + 0.78, -37.48, RS, 0, 0, 0, [0.18, 0.17, 0.20]);
+    for (const ex of [-0.10, 0.10]) A(CONE4, -26 + ex, FOREST_Y + 0.99, -37.50, { tag: 'ris', col: '#3a3028', bleed: '#201a16' }, 0, 0, 0, [0.05, 0.16, 0.05]);
+    for (const lx of [-0.14, 0.14]) for (const lz of [-0.28, 0.28]) A(CYL, -26 + lx, FOREST_Y + 0.24, -38 + lz, RS, 0, 0, 0, [0.075, 0.48, 0.075]);
     // Beaver ('dabar') on river bank edge at (-16.2, TOWN_Y, -24)
     const DB = { tag: 'dabar', col: '#784c2c', bleed: '#52321b', hull: true, orb: 'dabar' };
     A(ICO, -16.2, TOWN_Y + 0.36, -24, DB, 0, 0, 0, [0.32, 0.28, 0.48]);
@@ -524,15 +529,16 @@ export function buildBihacWorld(scene) {
   dynMesh(ICO, 'vodomar', '#e87a24', '#b85712', kfG, 0, 0.08, 0.04, [0.14, 0.12, 0.20], 1.1);
   dynMesh(CONE4, 'vodomar', '#2e2c2a', '#1a1816', kfG, 0, 0.20, 0.34, [0.045, 0.28, 0.045], 1.0).rotation.x = Math.PI / 2;
 
-  // Animated shimmering dragonflies ('vilin') over the river edge at (-10, 1.4, -22)
+  // Animated fuzzy spring bumblebees ('bumbar') buzzing over the emerald Una bank at (-10, 1.4, -22)
   for (let i = 0; i < 4; i++) {
     const dfg = new THREE.Group();
     const dx = -10.5 + i * 1.4, dy = 1.4 + (i % 2) * 0.4, dz = -22 + (i % 2) * 2.2;
     dfg.position.set(dx, dy, dz);
     scene.add(dfg);
-    dynMesh(CYL, 'vilin', '#24b8b8', '#148282', dfg, 0, 0, 0, [0.04, 0.56, 0.04], 1.0).rotation.x = Math.PI / 2;
-    dynMesh(BOX, 'vilin', '#ccf7f7', '#94dede', dfg, 0, 0.04, 0.05, [0.68, 0.02, 0.12], 1.0);
-    dynMesh(BOX, 'vilin', '#ccf7f7', '#94dede', dfg, 0, 0.04, -0.08, [0.56, 0.02, 0.10], 1.0);
+    dynMesh(SPHERE, 'bumbar', '#f2c42c', '#c99814', dfg, 0, 0, 0, [0.16, 0.15, 0.24], 1.1);
+    dynMesh(CYL12, 'bumbar', '#242220', '#121110', dfg, 0, 0, 0.02, [0.165, 0.09, 0.165], 1.0).rotation.x = Math.PI / 2;
+    dynMesh(CYL12, 'bumbar', '#242220', '#121110', dfg, 0, 0, -0.11, [0.14, 0.08, 0.14], 1.0).rotation.x = Math.PI / 2;
+    dynMesh(BOX, 'bumbar', '#eef8fa', '#cce6ec', dfg, 0, 0.13, 0.02, [0.46, 0.02, 0.14], 1.0);
     dragonflies.push({ g: dfg, home: V(dx, dy, dz), r: 1.8 + i * 0.4, speed: 1.5 + i * 0.2, phase: i * 1.5 });
   }
 
@@ -561,10 +567,10 @@ export function buildBihacWorld(scene) {
     for (const wy of [HILL_Y + 8.5, HILL_Y + 11.8]) {
       box(0.55, 1.4, 0.22, 0, wy, -74.86, { tag: 'osmatracnica', col: '#3a342e', solid: false });
     }
-    // Exactly EIGHT ('osam') stone battlements crowning the south rampart!
-    const O8 = { tag: 'osam', col: '#ede4cf', bleed: '#c4b89c', pat: PAT.blocks, ps: 0.7, orb: 'osam' };
-    for (let i = 0; i < 8; i++) {
-      box(1.4, 1.25, 2.1, -9.8 + i * 2.8, HILL_Y + 5.8, -68, O8);
+    // Exactly NINE ('devet') stone battlements crowning the south rampart of Stop #9 Bihać!
+    const O9 = { tag: 'devet', col: '#ede4cf', bleed: '#c4b89c', pat: PAT.blocks, ps: 0.7, orb: 'devet' };
+    for (let i = 0; i < 9; i++) {
+      box(1.3, 1.25, 2.1, -10.0 + i * 2.5, HILL_Y + 5.8, -68, O9);
     }
   });
 
@@ -674,17 +680,17 @@ export function buildBihacWorld(scene) {
   });
 
   // Zone 2: Japodes Prehistoric Stilt Village & Pottery (10)
-  orb('sojenica', [-13.0, TOWN_Y + 2.2, 1], 6.5, ['sojenica'], 'combo', TOWN_Y + 5.8, {
+  orb('brvnara', [-13.0, TOWN_Y + 2.2, 1], 6.5, ['brvnara'], 'combo', TOWN_Y + 5.8, {
     at: V(-18.2, TOWN_Y + 2.4, 1), near: { p: [-18.2, TOWN_Y + 0.2, 1], r: 5.0 },
     view: { from: [-5, TOWN_Y + 4.8, 9], to: [-5, TOWN_Y + 4.8, -7], look: [-13.0, TOWN_Y + 2.2, 1] },
     wideView: { from: [-2, TOWN_Y + 10, 16], to: [-2, TOWN_Y + 10, -14], look: [-13.0, TOWN_Y + 2.4, 1], lookTo: [-13.0, TOWN_Y + 2.4, -4] },
   });
   orb('trstika', [-13.0, TOWN_Y + 4.2, -8], 5.0, ['trstika'], 'close', TOWN_Y + 5.8, {
-    requires: ['sojenica'], at: V(-18.2, TOWN_Y + 2.4, -8), near: { p: [-18.2, TOWN_Y + 0.2, -8], r: 5.0 },
+    requires: ['brvnara'], at: V(-18.2, TOWN_Y + 2.4, -8), near: { p: [-18.2, TOWN_Y + 0.2, -8], r: 5.0 },
     view: { from: [-4, TOWN_Y + 6.5, -3], to: [-4, TOWN_Y + 6.5, -13], look: [-13.0, TOWN_Y + 4.2, -8] },
   });
   orb('stup', [-11.3, 2.0, 10], 4.0, ['stup'], 'close', TOWN_Y + 1.0, {
-    requires: ['sojenica'], at: V(-8.8, 2.4, 10), swim: { p: [-8.8, 0, 10], r: 6.5 },
+    requires: ['brvnara'], at: V(-8.8, 2.4, 10), swim: { p: [-8.8, 0, 10], r: 6.5 },
     view: { from: [-5.5, 2.8, 14.5], to: [-5.5, 2.8, 6.0], look: [-11.5, 2.0, 10] },
   });
   orb('ognjiste', [-28, TOWN_Y + 0.4, 6], 2.4, ['ognjiste'], 'close', TOWN_Y + 1.2, {
@@ -707,7 +713,7 @@ export function buildBihacWorld(scene) {
     near: { p: [-28.6, TOWN_Y + 0.2, -5.2], r: 3.8 },
     view: { from: [-27.0, TOWN_Y + 2.0, -5.8], to: [-30.2, TOWN_Y + 2.0, -5.8], look: [-28.6, TOWN_Y + 1.0, -3.2] },
   });
-  orb('cup', [-27.5, TOWN_Y + 1.15, -3.2], 1.3, ['cup'], 'close', TOWN_Y + 1.7, {
+  orb('krcag', [-27.5, TOWN_Y + 1.15, -3.2], 1.3, ['krcag'], 'close', TOWN_Y + 1.7, {
     requires: ['grncar'], near: { p: [-27.5, TOWN_Y + 0.2, -5.2], r: 3.8 },
     view: { from: [-26.0, TOWN_Y + 2.0, -5.8], to: [-29.0, TOWN_Y + 2.0, -5.8], look: [-27.5, TOWN_Y + 1.15, -3.2] },
   });
@@ -784,7 +790,7 @@ export function buildBihacWorld(scene) {
     near: { p: [32.2, TOWN_Y + 0.2, 26.0], r: 3.8 },
     view: { from: [31.2, TOWN_Y + 2.2, 29.0], to: [31.2, TOWN_Y + 2.2, 23.0], look: [34.4, TOWN_Y + 1.0, 26.0] },
   });
-  orb('harmonika', [34.1, TOWN_Y + 1.05, 26.0], 1.3, ['harmonika'], 'close', TOWN_Y + 1.9, {
+  orb('tambura', [34.1, TOWN_Y + 1.05, 26.0], 1.3, ['tambura'], 'close', TOWN_Y + 1.9, {
     requires: ['muzicar'], near: { p: [32.2, TOWN_Y + 0.2, 26.0], r: 3.8 },
     view: { from: [31.6, TOWN_Y + 1.8, 28.0], to: [31.6, TOWN_Y + 1.8, 24.0], look: [34.1, TOWN_Y + 1.05, 26.0] },
   });
@@ -814,27 +820,27 @@ export function buildBihacWorld(scene) {
     near: { p: [-30.2, TOWN_Y + 0.2, 48.2], r: 3.6 },
     view: { from: [-28.0, TOWN_Y + 1.9, 49.0], to: [-32.4, TOWN_Y + 1.9, 49.0], look: [-30.2, TOWN_Y + 0.35, 46.2] },
   });
-  orb('svjetiljka', [-28.2, TOWN_Y + 1.1, 43.8], 1.2, ['svjetiljka'], 'close', TOWN_Y + 1.7, {
-    near: { p: [-28.2, TOWN_Y + 0.2, 41.8], r: 3.6 },
-    view: { from: [-26.6, TOWN_Y + 1.9, 41.4], to: [-29.8, TOWN_Y + 1.9, 41.4], look: [-28.2, TOWN_Y + 1.1, 43.8] },
+  orb('baklja', [-28.8, TOWN_Y + 1.4, 43.2], 1.6, ['baklja'], 'close', TOWN_Y + 2.4, {
+    near: { p: [-28.8, TOWN_Y + 0.2, 41.2], r: 3.8 },
+    view: { from: [-26.8, TOWN_Y + 2.2, 40.6], to: [-30.8, TOWN_Y + 2.2, 40.6], look: [-28.8, TOWN_Y + 1.3, 43.2] },
   });
-  orb('karta', [-27.4, TOWN_Y + 0.88, 44.0], 1.3, ['karta'], 'close', TOWN_Y + 1.5, {
-    near: { p: [-27.4, TOWN_Y + 0.2, 46.0], r: 3.6 },
-    view: { from: [-25.8, TOWN_Y + 2.0, 46.2], to: [-29.0, TOWN_Y + 2.0, 46.2], look: [-27.4, TOWN_Y + 0.88, 44.0] },
+  orb('mapa', [-27.6, TOWN_Y + 0.88, 44.0], 1.3, ['mapa'], 'close', TOWN_Y + 1.5, {
+    near: { p: [-27.6, TOWN_Y + 0.2, 46.0], r: 3.6 },
+    view: { from: [-26.0, TOWN_Y + 2.0, 46.2], to: [-29.2, TOWN_Y + 2.0, 46.2], look: [-27.6, TOWN_Y + 0.88, 44.0] },
   });
-  orb('kompas', [-27.1, TOWN_Y + 0.90, 44.1], 1.1, ['kompas'], 'close', TOWN_Y + 1.5, {
-    requires: ['karta'], near: { p: [-27.1, TOWN_Y + 0.2, 46.0], r: 3.6 },
-    view: { from: [-25.8, TOWN_Y + 1.9, 46.0], to: [-28.4, TOWN_Y + 1.9, 46.0], look: [-27.1, TOWN_Y + 0.90, 44.1] },
+  orb('dnevnik', [-27.0, TOWN_Y + 0.90, 44.1], 1.2, ['dnevnik'], 'close', TOWN_Y + 1.5, {
+    requires: ['mapa'], near: { p: [-27.0, TOWN_Y + 0.2, 46.0], r: 3.6 },
+    view: { from: [-25.6, TOWN_Y + 1.9, 46.0], to: [-28.4, TOWN_Y + 1.9, 46.0], look: [-27.0, TOWN_Y + 0.90, 44.1] },
   });
-  orb('cuturica', [-26.6, TOWN_Y + 1.0, 43.8], 1.2, ['cuturica'], 'close', TOWN_Y + 1.6, {
+  orb('cuturica', [-26.5, TOWN_Y + 1.0, 43.8], 1.2, ['cuturica'], 'close', TOWN_Y + 1.6, {
     near: { p: [-25.2, TOWN_Y + 0.2, 43.8], r: 3.6 },
-    view: { from: [-24.6, TOWN_Y + 1.9, 45.6], to: [-24.6, TOWN_Y + 1.9, 42.0], look: [-26.6, TOWN_Y + 1.0, 43.8] },
+    view: { from: [-24.6, TOWN_Y + 1.9, 45.6], to: [-24.6, TOWN_Y + 1.9, 42.0], look: [-26.5, TOWN_Y + 1.0, 43.8] },
   });
-  orb('kruska', [-28.5, TOWN_Y + 0.55, 56], 1.4, ['kruska'], 'close', TOWN_Y + 1.2, {
+  orb('visnja', [-28.5, TOWN_Y + 0.55, 56], 1.4, ['visnja'], 'close', TOWN_Y + 1.2, {
     near: { p: [-28.5, TOWN_Y + 0.2, 58.0], r: 3.6 },
     view: { from: [-26.8, TOWN_Y + 1.9, 58.6], to: [-30.2, TOWN_Y + 1.9, 58.6], look: [-28.5, TOWN_Y + 0.55, 56] },
   });
-  orb('breskva', [-26.0, TOWN_Y + 0.55, 56], 1.4, ['breskva'], 'close', TOWN_Y + 1.2, {
+  orb('kajsija', [-26.0, TOWN_Y + 0.55, 56], 1.4, ['kajsija'], 'close', TOWN_Y + 1.2, {
     near: { p: [-26.0, TOWN_Y + 0.2, 58.0], r: 3.6 },
     view: { from: [-24.3, TOWN_Y + 1.9, 58.6], to: [-27.7, TOWN_Y + 1.9, 58.6], look: [-26.0, TOWN_Y + 0.55, 56] },
   });
@@ -865,9 +871,9 @@ export function buildBihacWorld(scene) {
     near: { p: [-32, FOREST_Y + 0.2, -47.8], r: 3.6 },
     view: { from: [-29.6, FOREST_Y + 1.8, -47.0], to: [-34.4, FOREST_Y + 1.8, -47.0], look: [-32, FOREST_Y + 0.45, -50] },
   });
-  orb('puz', [-26, FOREST_Y + 0.25, -38], 1.2, ['puz'], 'close', FOREST_Y + 0.8, {
-    near: { p: [-26, FOREST_Y + 0.2, -36.2], r: 3.4 },
-    view: { from: [-24.4, FOREST_Y + 1.5, -36.0], to: [-27.6, FOREST_Y + 1.5, -36.0], look: [-26, FOREST_Y + 0.25, -38] },
+  orb('ris', [-26, FOREST_Y + 0.65, -38], 1.5, ['ris'], 'close', FOREST_Y + 1.3, {
+    near: { p: [-26, FOREST_Y + 0.2, -35.8], r: 3.6 },
+    view: { from: [-24.0, FOREST_Y + 1.7, -35.2], to: [-28.0, FOREST_Y + 1.7, -35.2], look: [-26, FOREST_Y + 0.60, -38] },
   });
   orb('dabar', [-16.2, TOWN_Y + 0.4, -24], 1.6, ['dabar'], 'close', TOWN_Y + 1.1, {
     near: { p: [-18.2, TOWN_Y + 0.2, -24], r: 3.6 },
@@ -885,7 +891,7 @@ export function buildBihacWorld(scene) {
     at: V(-10.5, 3.2, -30.0), swim: { p: [-10.5, 0, -30.0], r: 6.0 },
     view: { from: [-9.5, 4.2, -27.5], to: [-9.5, 4.2, -32.5], look: [-13.5, 3.3, -30.0] },
   });
-  orb('vilin', [-9.0, 1.5, -21.0], 2.6, ['vilin'], 'close', 2.4, {
+  orb('bumbar', [-9.0, 1.5, -21.0], 2.6, ['bumbar'], 'close', 2.4, {
     at: V(-9.0, 2.4, -21.0), swim: { p: [-9.0, 0, -21.0], r: 6.5 },
     view: { from: [-4.5, 3.2, -17.5], to: [-12.5, 3.2, -17.5], look: [-9.0, 1.5, -21.0] },
   });
@@ -895,7 +901,7 @@ export function buildBihacWorld(scene) {
     at: V(14.5, 17.5, -58.0), near: { p: [14.5, 14.5, -58.0], r: 5.5 },
     view: { from: [22, 23, -46], to: [12, 26, -48], look: [11.5, 19.0, -61.5] },
   });
-  orb('osam', [0, HILL_Y + 5.8, -68], 12.0, ['osam'], 'close', HILL_Y + 7.2, {
+  orb('devet', [0, HILL_Y + 5.8, -68], 12.0, ['devet'], 'close', HILL_Y + 7.2, {
     at: V(0, HILL_Y + 8.0, -68), near: { p: [0, HILL_Y + 5.2, -68], r: 6.5 },
     view: { from: [14, HILL_Y + 9.5, -54], to: [-14, HILL_Y + 9.5, -54], look: [0, HILL_Y + 5.8, -68] },
   });
