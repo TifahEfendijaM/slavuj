@@ -265,7 +265,7 @@ $('reset').addEventListener('click', restartLevel);
 { const b = $('mute'), show = () => { b.querySelector('.lb').textContent = audio.isMuted() ? 'Sound: off' : 'Sound: on'; b.classList.toggle('muted', audio.isMuted()); }; show();
   b.addEventListener('click', (e) => { e.stopPropagation(); audio.setMuted(!audio.isMuted()); show(); }); }
 // the art style trials: each click moves to the next look (remembered in this browser)
-{ const NAMES = { watercolor: 'watercolour', pencil: 'coloured pencil', crayon: 'crayon', gouache: 'gouache', spray: 'spray paint', pixel: 'pixel art' };
+{ const NAMES = { watercolor: 'watercolour', pencil: 'coloured pencil', crayon: 'crayon', gouache: 'gouache', spray: 'spray paint', pixel: 'pixel art', cel: 'cel shading', comic: 'comic book' };
   const b = $('style'), show = () => { b.querySelector('.lb').textContent = 'Style: ' + NAMES[artLook.style]; }; show();
   b.addEventListener('click', (e) => { e.stopPropagation(); setStyle(STYLES[(STYLES.indexOf(artLook.style) + 1) % STYLES.length]); show(); }); }
 for (const [id, fn] of [['restart', restartLevel], ['toFinale', skipToFinale]]) {

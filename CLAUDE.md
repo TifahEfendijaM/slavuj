@@ -11,7 +11,7 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
   |---|---|---|---|
   | Neum | summer | 76 | the Adriatic coast: beach, harbour, sailboats, lighthouse, sunset finale |
   | Mostar | summer | 81 | the Neretva gorge, Stari Most and its diver, the bazaar |
-  | Blagaj | autumn | 69 | the Buna spring pouring out of the cave under the cliff, the Tekija with its bay window, the stalls, the terrace, the mills, the Velagić house, the Karađoz-beg bridge, Stjepan grad above (added 2026-11-28) |
+  | Blagaj | summer | 69 | the Buna spring pouring out of the cave under the cliff, the Tekija with its bay window, the stalls, the terrace, the mills, the Velagić house, the Karađoz-beg bridge, Stjepan grad above (added 2026-11-28) |
   | Sarajevo | autumn | 79 | Baščaršija, the Sebilj, Vijećnica, trams, cable car, falling leaves |
   | Jahorina | winter | 76 | the Olympic ski mountain: slopes, chairlift, snow groomer, chalets, snowfall |
   | Višegrad | autumn | 68 | the Mehmed Paša Sokolović Bridge on the Drina, the old railway, autumn leaves |
@@ -21,7 +21,7 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
   | Banja Luka | spring | 76 | the green city on the Vrbas: dajak boats, Kastel, parks and a concert |
   | Bihać | spring | 67 | the emerald Una: cascades, river islands, the lađa boat, Kapetanova kula |
 
-- **Art style trials (on `dev` and the public `main`, since 2026-11-28):** coloured pencil, crayon, gouache, spray paint and pixel art, beside the original watercolour (the default), switchable from the pause menu. See "Art style" below. Tried and dropped: oil paint and risograph print. The user hasn't chosen one yet.
+- **Art style trials (on `dev` and the public `main`, since 2026-11-28):** coloured pencil, crayon, gouache, spray paint, pixel art, cel shading and comic book (the last two added 2026-11-28), beside the original watercolour (the default), switchable from the pause menu. See "Art style" below. Tried and dropped: oil paint and risograph print. The user hasn't chosen one yet.
 - **Word audio:** words without the user's own recording have Azure Bosnian TTS placeholders (`.wav` in `assets/audio/words/`, listed in `assets/audio/words/_tts.json`; `record.html` marks them "TTS"). The user's own 11 recordings (casa, dvorac, hrid, jezero, kisobran, mahala, peskir, rak, suncobran, trg, vijecnica) are in the local folder only, over the committed placeholders (they show as modified). A backup is in `../slavuj-my-recordings/`. Never commit them until the user says they are done; then also take those words out of `_tts.json`.
 
 ## What's next
@@ -40,9 +40,10 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 
 ## Art style
 - Everything is drawn by one shader in `src/paper.js` (`FRAG`). Colours live in the geometry; all pieces with the same "paint tag" (house, tree, river...) are merged into one mesh, coloured in as a spreading wet front by moving one number (`uT`). Ink outlines are `LineSegments2` lines plus "hull" shells (inflated back faces) for round shapes. Pencil hatching and the drawn patterns (cobbles, roof slabs, planks, kilim, water streaks) are in the shader too.
-- **Style switch:** the pause menu's "Style" button cycles watercolour → coloured pencil → crayon → gouache → spray paint → pixel art while playing (remembered in the browser). The default is `style` in `src/settings.js` (`'watercolor'`). `?style=watercolor|pencil|crayon|gouache|spray|pixel` overrides both.
+- **Style switch:** the pause menu's "Style" button cycles watercolour → coloured pencil → crayon → gouache → spray paint → pixel art → cel shading → comic book while playing (remembered in the browser). The default is `style` in `src/settings.js` (`'watercolor'`). `?style=watercolor|pencil|crayon|gouache|spray|pixel|cel|comic` overrides both.
   - Each trial is a `#ifdef STYLE_…` part of `FRAG` (helper `lineCov`). Switching rebuilds the materials with that define (`setStyle()`; `onStyle` callbacks run after). The watercolour code runs when no style define is set.
   - Pencil, crayon, gouache and spray draw in each object's own coordinates (`vLocal`, `vLN`), so the pattern stays on moving things. Things drawn with `vivid` (the bird) are fully coloured in every style.
+  - Cel shading (two hard light bands, a crisp highlight and rim) and comic book (halftone dots in the shadows and sky, ink hatching in the darkest shadows) also draw bolder, darker outlines (`INK` and `applyInk()` in `paper.js`).
   - Pixel art is drawn at two thirds of the screen size into a buffer and scaled up with sharp pixels (`src/look.js`), outlines about 1.5 of its pixels wide.
   - When the user chooses: drop the unused styles (and the button, if only one is left), on both branches.
 

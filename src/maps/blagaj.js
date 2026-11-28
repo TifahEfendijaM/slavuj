@@ -1,21 +1,21 @@
-// Blagaj (autumn): map module. The Buna spring under the cliff, the Tekija, the boat on the pool, trout, swallows
-// along the rock, the falcon, the stamping mill's hammers, a tortoise on the karst, leaves, and local sounds.
+// Blagaj (summer): map module. The Buna spring under the cliff, the Tekija, the boat on the pool, trout, swallows
+// along the rock, the falcon, the stamping mill's hammers, a tortoise on the karst, sun sparkles on the water, and local sounds.
 import { Vector3 } from 'three';
 import { buildBlagajWorld, TOWN_Y, CLIFF_Y } from './blagaj-world.js';
 import { WORDS, ORDER, CULTURE } from './blagaj-words.js';
-import { createDrinaLeaves } from '../drina-leaves.js';
+import { createSummerSparkles } from '../summer-sparkles.js';
 import art from '../../assets/journal-blagaj.webp';
 
 const V = (x, y, z) => new Vector3(x, y, z);
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 
-let leaves = null;
+let sparkles = null;
 let nextFalcon = 10;
 let nextCoo = 6;
 
 function build(scene) {
   const world = buildBlagajWorld(scene);
-  leaves = createDrinaLeaves(scene, { count: 160, bounds: 80 });
+  sparkles = createSummerSparkles(scene, { count: 180, xSpan: 22, zMin: -60, zMax: 120, waterY: 0.12 });
   nextFalcon = 10;
   nextCoo = 6;
   return world;
@@ -85,18 +85,18 @@ function updateBlagaj(dt, time, life, ctx) {
     }
   }
 
-  leaves?.update(dt);
+  sparkles?.update(dt);
 }
 
 function wakeBlagaj() {
-  leaves?.show();
+  sparkles?.show();
 }
 
 export default {
   id: 'blagaj',
   name: 'Blagaj',
   art,
-  artAlt: 'Blagaj in autumn: the white Tekija with its wooden bay window against the tall pale cliff, beside the dark cave the Buna pours out of, painted in watercolour',
+  artAlt: 'Blagaj in summer: the white Tekija with its wooden bay window against the tall pale cliff, beside the dark cave the Buna pours out of, painted in watercolour',
   WORDS,
   ORDER,
   CULTURE,
@@ -131,7 +131,7 @@ export default {
     first: 'New orbs have appeared all over Blagaj, from the spring to the cliff top. Find them in any order.',
     last: { id: 'tvrdjava', msg: 'Only one orb is left. It is waiting on the hill above the cliff, by the walls of Stjepan grad.' },
     fleur: 'Something golden is shining above the fortress of Stjepan grad. Fly through it.',
-    awake: 'Blagaj has woken up in the autumn sun. You can now explore it freely.',
+    awake: 'Blagaj has woken up in the summer sun. You can now explore it freely.',
   },
 
   update: updateBlagaj,
@@ -163,13 +163,12 @@ export default {
       { t0: 0, t1: 7, from: V(-74, 96, -150), to: V(-56, 90, -132), lookFrom: V(-22, 66, -90), lookTo: V(6, 40, -30) },
       // 7 to 13.4 s: down the face of the cliff to the cave and the Tekija
       { t0: 7, t1: 13.4, from: V(-26, 46, 12), to: V(-30, 22, 6), lookFrom: V(4, 40, -46), lookTo: V(4, 8, -40) },
-      // 13.4 to 22 s: gliding across the pool, past the Tekija's bay window and the terrace; the leaves swirl
+      // 13.4 to 22 s: gliding across the pool, past the Tekija's bay window and the terrace
       { t0: 13.4, t1: 22, from: V(-12, 6, -12), to: V(8, 7, -8), lookFrom: V(2, 4, -42), lookTo: V(24, 6, -32) },
       // 22 to 26 s: down the Buna to the mills and the Karađoz-beg bridge
       { t0: 22, t1: 26, from: V(-30, 18, 20), to: V(-22, 22, 30), lookFrom: V(8, 4, 44), lookTo: V(0, 4, 84) },
     ],
     climax(ctx) {
-      leaves?.gust();
       ctx.audio.playClip('falcon-cry', 0.22);
     },
   },
