@@ -5,12 +5,13 @@ A free mini game that promotes easybosnian.com (a site for learning Bosnian). Yo
 Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.github.io/slavuj/ (repo `TifahEfendijaM/slavuj`).
 
 ## Where it stands (2026-11-28)
-- **Ten finished towns**, all open from the Bosnia map (no unlocking order for finished maps). Mostar was built here; the other nine were built by Fahrudin (GitHub `fahro`, owner of easybosnian, now a collaborator on this repo) and merged from his PR #1 on 2026-11-28. Built from zero, replacing the earlier rejected drafts.
+- **Eleven finished towns**, all open from the Bosnia map (no unlocking order for finished maps). Mostar and Blagaj were built here; the other nine were built by Fahrudin (GitHub `fahro`, owner of easybosnian, now a collaborator on this repo) and merged from his PR #1 on 2026-11-28. Built from zero, replacing the earlier rejected drafts.
 
   | Town | Season | Words | What it is |
   |---|---|---|---|
   | Neum | summer | 76 | the Adriatic coast: beach, harbour, sailboats, lighthouse, sunset finale |
   | Mostar | summer | 81 | the Neretva gorge, Stari Most and its diver, the bazaar |
+  | Blagaj | autumn | 69 | the Buna spring pouring out of the cave under the cliff, the Tekija with its bay window, the stalls, the terrace, the mills, the Velagić house, the Karađoz-beg bridge, Stjepan grad above (added 2026-11-28) |
   | Sarajevo | autumn | 79 | Baščaršija, the Sebilj, Vijećnica, trams, cable car, falling leaves |
   | Jahorina | winter | 76 | the Olympic ski mountain: slopes, chairlift, snow groomer, chalets, snowfall |
   | Višegrad | autumn | 68 | the Mehmed Paša Sokolović Bridge on the Drina, the old railway, autumn leaves |

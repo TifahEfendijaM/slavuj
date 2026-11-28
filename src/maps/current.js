@@ -10,6 +10,7 @@ import banjaluka from './banjaluka.js';
 import tuzla from './tuzla.js';
 import bihac from './bihac.js';
 import visegrad from './visegrad.js';
+import blagaj from './blagaj.js';
 
-const ALL = { mostar, sarajevo, jahorina, jajce, travnik, neum, banjaluka, tuzla, bihac, visegrad };
+const ALL = { mostar, sarajevo, jahorina, jajce, travnik, neum, banjaluka, tuzla, bihac, visegrad, blagaj };
 export default ALL[MAP_ID] || mostar;
