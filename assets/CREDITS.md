@@ -44,6 +44,7 @@ Only CC0 or commercially usable assets are allowed in this game. Every downloade
 | `audio/sfx/bihac/una-rapids.mp3`, `village-hearth.mp3`, `krajina-accordion.mp3`, `kingfisher-call.mp3`, `falcon-cry.mp3` | Bihać Una river rapids, prehistoric village hearth, Krajina riverside accordion, kingfisher whistle and Sokolac falcon cry | Original, synthesised in code for the project | Owned by the project |
 | `audio/sfx/visegrad/drina-flow.mp3`, `smithy-anvil.mp3`, `ciro-steam.mp3`, `ciro-whistle.mp3`, `canyon-hawk.mp3` | Višegrad emerald Drina river flow, east-bank blacksmith anvil, Ćiro steam locomotive chug, narrow-gauge train whistle and Drina canyon hawk cry | Original, synthesised in code for the project | Owned by the project |
 | `audio/sfx/blagaj/buna-spring.mp3`, `mill-stream.mp3`, `grill-sizzle.mp3`, `falcon-cry.mp3`, `pigeon-coo.mp3`, `fountain-trickle.mp3` | Blagaj: the Buna spring, the mill race, the terrace grill, the cliff falcon, pigeons on the path and the Tekija fountain (copies of the Bihać, Jajce, Travnik, Sarajevo and Banja Luka clips above) | As for those clips | As for those clips |
+| `audio/sfx/konjic/neretva-rapids.mp3`, `train-whistle.mp3`, `cicadas.mp3`, `carving-tap.mp3` | Konjic: the rapid, the train, summer cicadas, the woodcarvers' tapping (copies of the Bihać, Višegrad, Travnik and Sarajevo clips above) | As for those clips | As for those clips |
 
 Everything else is generated in code and belongs to the project: the bird, the town, all textures, the journal drawing, the music and the other sound effects.
 
