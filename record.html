@@ -66,12 +66,14 @@ import { WORDS as BANJALUKA } from './src/maps/banjaluka-words.js';
 import { WORDS as TUZLA } from './src/maps/tuzla-words.js';
 import { WORDS as BIHAC } from './src/maps/bihac-words.js';
 import { WORDS as VISEGRAD } from './src/maps/visegrad-words.js';
-const WORDS = { ...Object.fromEntries(Object.entries(MOSTAR).map(([k, v]) => ['m-' + k, v])), ...Object.fromEntries(Object.entries(SARAJEVO).map(([k, v]) => ['s-' + k, v])), ...Object.fromEntries(Object.entries(JAHORINA).map(([k, v]) => ['j-' + k, v])), ...Object.fromEntries(Object.entries(JAJCE).map(([k, v]) => ['p-' + k, v])), ...Object.fromEntries(Object.entries(TRAVNIK).map(([k, v]) => ['t-' + k, v])), ...Object.fromEntries(Object.entries(NEUM).map(([k, v]) => ['n-' + k, v])), ...Object.fromEntries(Object.entries(BANJALUKA).map(([k, v]) => ['b-' + k, v])), ...Object.fromEntries(Object.entries(TUZLA).map(([k, v]) => ['z-' + k, v])), ...Object.fromEntries(Object.entries(BIHAC).map(([k, v]) => ['u-' + k, v])), ...Object.fromEntries(Object.entries(VISEGRAD).map(([k, v]) => ['v-' + k, v])) };      // every map's words
+import { WORDS as TREBINJE } from './src/maps/trebinje-words.js';
+import { WORDS as LIVNO } from './src/maps/livno-words.js';
+const WORDS = { ...Object.fromEntries(Object.entries(MOSTAR).map(([k, v]) => ['m-' + k, v])), ...Object.fromEntries(Object.entries(SARAJEVO).map(([k, v]) => ['s-' + k, v])), ...Object.fromEntries(Object.entries(JAHORINA).map(([k, v]) => ['j-' + k, v])), ...Object.fromEntries(Object.entries(JAJCE).map(([k, v]) => ['p-' + k, v])), ...Object.fromEntries(Object.entries(TRAVNIK).map(([k, v]) => ['t-' + k, v])), ...Object.fromEntries(Object.entries(NEUM).map(([k, v]) => ['n-' + k, v])), ...Object.fromEntries(Object.entries(BANJALUKA).map(([k, v]) => ['b-' + k, v])), ...Object.fromEntries(Object.entries(TUZLA).map(([k, v]) => ['z-' + k, v])), ...Object.fromEntries(Object.entries(BIHAC).map(([k, v]) => ['u-' + k, v])), ...Object.fromEntries(Object.entries(VISEGRAD).map(([k, v]) => ['v-' + k, v])), ...Object.fromEntries(Object.entries(TREBINJE).map(([k, v]) => ['r-' + k, v])), ...Object.fromEntries(Object.entries(LIVNO).map(([k, v]) => ['l-' + k, v])) };      // every map's words
 
 // every word the game can say: the words themselves and the answer choices (which have speaker buttons too)
 const en = {}; for (const w of Object.values(WORDS)) en[w.word] = w.en;
-// Active maps with TTS placeholders first (Višegrad, Bihać, Tuzla, Banja Luka, Travnik, Neum, Jajce, Jahorina, Sarajevo), then Mostar
-const MAPS = [['Višegrad', VISEGRAD], ['Bihać', BIHAC], ['Tuzla', TUZLA], ['Banja Luka', BANJALUKA], ['Travnik', TRAVNIK], ['Neum', NEUM], ['Jajce', JAJCE], ['Jahorina', JAHORINA], ['Sarajevo', SARAJEVO], ['Mostar', MOSTAR]], from = {};
+// Active maps with TTS placeholders first (Livno, Trebinje, Višegrad, Bihać, Tuzla, Banja Luka, Travnik, Neum, Jajce, Jahorina, Sarajevo), then Mostar
+const MAPS = [['Livno', LIVNO], ['Trebinje', TREBINJE], ['Višegrad', VISEGRAD], ['Bihać', BIHAC], ['Tuzla', TUZLA], ['Banja Luka', BANJALUKA], ['Travnik', TRAVNIK], ['Neum', NEUM], ['Jajce', JAJCE], ['Jahorina', JAHORINA], ['Sarajevo', SARAJEVO], ['Mostar', MOSTAR]], from = {};
 let all = []; const seen = new Set();
 for (const [name, ws] of MAPS) for (const w of Object.values(ws)) for (const x of [w.word, ...(w.choices || [])]) if (!seen.has(x)) { seen.add(x); all.push(x); from[x] = name; }
 // same file name rule as the game (src/audio.js): lower case, no diacritics

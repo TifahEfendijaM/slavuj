@@ -12,5 +12,7 @@ import { ORDER as visegrad } from './visegrad-words.js';
 import { ORDER as blagaj } from './blagaj-words.js';
 import { ORDER as brcko } from './brcko-words.js';
 import { ORDER as konjic } from './konjic-words.js';
+import { ORDER as trebinje } from './trebinje-words.js';
+import { ORDER as livno } from './livno-words.js';
 
-export const WORD_COUNTS = { mostar: mostar.length, sarajevo: sarajevo.length, jahorina: jahorina.length, jajce: jajce.length, travnik: travnik.length, neum: neum.length, banjaluka: banjaluka.length, tuzla: tuzla.length, bihac: bihac.length, visegrad: visegrad.length, blagaj: blagaj.length, konjic: konjic.length, brcko: brcko.length };
+export const WORD_COUNTS = { mostar: mostar.length, sarajevo: sarajevo.length, jahorina: jahorina.length, jajce: jajce.length, travnik: travnik.length, neum: neum.length, banjaluka: banjaluka.length, tuzla: tuzla.length, bihac: bihac.length, visegrad: visegrad.length, blagaj: blagaj.length, konjic: konjic.length, brcko: brcko.length, trebinje: trebinje.length, livno: livno.length };

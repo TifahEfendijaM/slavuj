@@ -3,6 +3,7 @@
 // (soon: shown on the map but not playable yet; wip: see below)
 export const MAPS = [
   { id: 'neum', name: 'Neum', season: 'Ljeto', en: 'summer', lat: 42.923, lon: 17.615 },
+  { id: 'trebinje', name: 'Trebinje', season: 'Jesen', en: 'autumn', lat: 42.712, lon: 18.344 },
   { id: 'mostar', name: 'Mostar', season: 'Ljeto', en: 'summer', lat: 43.343, lon: 17.808 },
   { id: 'blagaj', name: 'Blagaj', season: 'Ljeto', en: 'summer', lat: 43.257, lon: 17.886 },
   { id: 'konjic', name: 'Konjic', season: 'Ljeto', en: 'summer', lat: 43.653, lon: 17.962 },
@@ -15,13 +16,14 @@ export const MAPS = [
   { id: 'jajce', name: 'Jajce', season: 'Proljeće', en: 'spring', lat: 44.342, lon: 17.270 },
   { id: 'banjaluka', name: 'Banja Luka', season: 'Proljeće', en: 'spring', lat: 44.772, lon: 17.191 },
   { id: 'bihac', name: 'Bihać', season: 'Proljeće', en: 'spring', lat: 44.817, lon: 15.871 },
+  { id: 'livno', name: 'Livno', season: 'Zima', en: 'winter', lat: 43.827, lon: 17.008 },
 ];
 // wip: still in development. Locally it can be played (with a pre-release notice); on the public site it is shown but locked.
 for (const m of MAPS) if (m.wip && import.meta.env.PROD) m.soon = true;
 
 const params = new URLSearchParams(location.search);
 const slot = params.get('slot') ? '-' + params.get('slot') : '';
-const SAVE_VER = { sarajevo: 2, jahorina: 2, jajce: 2, neum: 2, travnik: 2, banjaluka: 2, tuzla: 2, bihac: 2, visegrad: 2 };
+const SAVE_VER = { sarajevo: 2, jahorina: 2, jajce: 2, neum: 2, travnik: 2, banjaluka: 2, tuzla: 2, bihac: 2, visegrad: 2, trebinje: 2, livno: 2 };
 export const saveKey = (id) => `slavuj-${id}-${SAVE_VER[id] || 1}` + slot;      // (Mostar's key is the one it always had; Sarajevo uses -2 for a fresh save)
 export const MAP_ID = MAPS.some((m) => m.id === params.get('map') && !m.soon) ? params.get('map') : null;
 
