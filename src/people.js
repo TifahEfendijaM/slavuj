@@ -154,7 +154,7 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : (o.bottom || bottom0), gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine', 'blDrum', 'blListen', 'blDraw', 'tuzPiano', 'tuzAccordion', 'bihPotter', 'bihTambura', 'visAuthor', 'visRower'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu') || o.kind?.startsWith('bl') || o.kind?.startsWith('tuz') || o.kind?.startsWith('vis'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine', 'blDrum', 'blListen', 'blDraw', 'tuzPiano', 'tuzAccordion', 'bihPotter', 'bihTambura', 'visAuthor', 'visRower'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu') || o.kind?.startsWith('bl') || o.kind?.startsWith('tuz') || o.kind?.startsWith('vis') || o.kind?.startsWith('tre') || o.kind?.startsWith('liv'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
     if ((!gown || seated || winterTrousers || (skirtC && sc < 1) || o.coatTag || o.topTag) && o.kind !== 'girl' && o.kind !== 'raft' && o.kind !== 'sarNana') for (const s of [-1, 1]) {
@@ -820,6 +820,46 @@ export function createPeople(scene, world, R) {
       st.rotation.x = 1.32;
       rod(P, st, [0, -0.82, 0], [0, 1.05, 0], 0.022, '#6d4c32');
       P(G.box, '#785030', torso, 0, 0.28, -0.19, '#52341c').scale.set(0.32, 0.42, 0.15);
+    }
+    // ---- Trebinje figures ----
+    if (o.kind === 'treBeekeeper') {
+      // Wide-brimmed veiled beekeeper hat (coloured with 'pcelar')
+      const brim = P(G.disc, '#f4efe0', head, 0, 0.12, 0, '#cfc8b6'); brim.scale.set(0.30, 0.30, 0.024); brim.rotation.x = Math.PI / 2;
+      const crown = P(G.fes, '#f4efe0', head, 0, 0.19, 0, '#cfc8b6'); crown.scale.set(1.25, 0.72, 1.25);
+      const veil = P(G.rod, '#e6e2d4', head, 0, -0.02, 0.04, '#c4bfb0'); veil.scale.set(0.18, 0.24, 0.18);
+      // Tin-and-leather bee smoker held in right hand (coloured ONLY by 'dimilica'!)
+      const SP = painter(o.smokerTag || 'dimilica', pos);
+      const smk = grp(arms[1].el, 0, -0.32, 0.08);
+      const can = SP(G.rod, '#c4ccd4', smk, 0, 0, 0.10, '#8d96a0'); can.scale.set(0.085, 0.22, 0.085);
+      const spout = SP(G.cone, '#c4ccd4', smk, 0, 0.16, 0.13, '#8d96a0'); spout.scale.set(1.5, 1.0, 1.5); spout.rotation.x = 0.25;
+      const bel = SP(G.box, '#8f4c24', smk, 0, -0.02, -0.02, '#623014'); bel.scale.set(0.11, 0.18, 0.08);
+    }
+    // ---- Livno winter figures ----
+    if (o.kind === 'livShepherd') {
+      P(G.cap, '#463830', head, 0, 0.08, 0, '#2a201a').scale.set(1.12, 1.15, 1.12);
+      const st = grp(arms[1].el, 0, -0.30, 0.04);
+      st.rotation.x = 1.28;
+      rod(P, st, [0, -0.88, 0], [0, 1.08, 0], 0.022, '#7d5630');
+      const crook = P(G.box, '#7d5630', st, 0, 1.12, 0.06, '#58381c'); crook.scale.set(0.045, 0.055, 0.15);
+    }
+    if (o.kind === 'livHiker') {
+      P(G.cap, '#c84232', head, 0, 0.07, 0, '#8f281c').scale.set(1.08, 1.1, 1.08);
+      P(G.box, '#2b66a8', torso, 0, 0.30, -0.22, '#1b4678').scale.set(0.36, 0.50, 0.22);
+      P(G.box, '#e8962e', torso, 0, 0.52, -0.22, '#b86c16').scale.set(0.38, 0.12, 0.24);
+      for (const a of arms) {
+        const pl = grp(a.el, 0, -0.30, 0.02); pl.rotation.x = 1.25;
+        rod(P, pl, [0, -0.88, 0], [0, 0.45, 0], 0.014, '#3a424a');
+      }
+    }
+    if (o.kind === 'livHunter') {
+      P(G.cap, '#2d5a3e', head, 0, 0.08, 0, '#1b3a26').scale.set(1.10, 0.92, 1.10);
+      const bg = grp(arms[0].el, -0.04, -0.30, 0.04);
+      for (const sx of [-0.042, 0.042]) {
+        const tube = P(G.rod, '#32363c', bg, sx, 0, 0.08, '#1a1e22');
+        tube.scale.set(0.032, 0.14, 0.032); tube.rotation.x = Math.PI / 2;
+      }
+      const st = grp(arms[1].el, 0, -0.30, 0.04); st.rotation.x = 1.30;
+      rod(P, st, [0, -0.85, 0], [0, 0.95, 0], 0.020, '#6d4c30');
     }
     list.push(p); return p;
   }
@@ -2058,6 +2098,24 @@ export function createPeople(scene, world, R) {
           a0.sh.rotation.set(-0.22, 0, -0.12); a0.el.rotation.x = -0.25;
           a1.sh.rotation.set(-0.76, 0, 0.14); a1.el.rotation.x = -0.58;
           p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.38 : 0.10;
+        } else if (o.kind === 'treBeekeeper') {
+          const pf = alive ? Math.sin(t * 2.2) * 0.16 : 0.06;
+          a0.sh.rotation.set(-0.55, 0, -0.14); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-0.85 + pf, 0, 0.16); a1.el.rotation.x = -0.72;
+          p.head.rotation.y = alive ? Math.sin(t * 0.75) * 0.28 : 0.05;
+        } else if (o.kind === 'livShepherd') {
+          a0.sh.rotation.set(-0.26, 0, -0.12); a0.el.rotation.x = -0.28;
+          a1.sh.rotation.set(-0.78, 0, 0.14); a1.el.rotation.x = -0.56;
+          p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.36 : 0.08;
+        } else if (o.kind === 'livHiker') {
+          const sw = alive ? Math.sin(t * 1.6) * 0.14 : 0;
+          a0.sh.rotation.set(-0.72 + sw, 0, -0.16); a0.el.rotation.x = -0.52;
+          a1.sh.rotation.set(-0.72 - sw, 0, 0.16); a1.el.rotation.x = -0.52;
+          p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.34 : 0.06;
+        } else if (o.kind === 'livHunter') {
+          a0.sh.rotation.set(-1.35, 0, 0.22); a0.el.rotation.x = -1.25;
+          a1.sh.rotation.set(-0.76, 0, 0.14); a1.el.rotation.x = -0.58;
+          p.head.rotation.y = alive ? Math.sin(t * 0.55) * 0.42 : 0.10;
         }
         if (o.lookUpOnClimax && alive && pigeonsForced > 0) p.head.rotation.x = -0.45;
       }
