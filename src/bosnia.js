@@ -12,7 +12,7 @@ const { W0, N1, kx, sc } = GEO.proj;
 const at = (lon, lat) => [(lon - W0) * kx * sc, (N1 - lat) * sc];
 // a pin that would overlap its neighbour (Jahorina is right next to Sarajevo, Travnik right next to Jajce) or the coast (Neum)
 // is drawn a little way off, with a line to its real place; the route joins the real places
-const NUDGE = { jahorina: [42, 74], neum: [-96, 40], travnik: [52, -32], visegrad: [28, -58], blagaj: [112, 76], konjic: [40, 0] };
+const NUDGE = { jahorina: [42, 74], neum: [-96, 40], travnik: [52, -32], visegrad: [28, -58], blagaj: [112, 76], konjic: [40, 0], brcko: [30, -40] };
 const SEASON_COL = { summer: '#f2b02a', autumn: '#d9612e', winter: '#5f9fd6', spring: '#6cb46a' };
 
 // little drawings for each town's pin, in a 40 x 40 box
@@ -29,6 +29,7 @@ const ICON = {
   // the Tekija's white wall and dark bay window against the cliff, the cave and the spring
   blagaj: '<path d="M2 30 V6 Q10 2 20 4 Q30 2 38 7 V30 Z" fill="#e2dccd" stroke="#3b352f" stroke-width="1.8"/><path d="M6 30 V22 a6 6 0 0 1 12 0 V30 Z" fill="#3b352f"/><rect x="22" y="16" width="13" height="12" fill="#f6f1e4" stroke="#3b352f" stroke-width="1.6"/><path d="M20 16 L28.5 10 L37 16 Z" fill="#8f897d" stroke="#3b352f" stroke-width="1.4"/><rect x="19" y="19" width="4" height="5" fill="#7a5233" stroke="#3b352f" stroke-width="1.2"/><path d="M2 34 q5 -4 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#1a8f8a" stroke-width="2.4"/>',
   konjic: '<path d="M2 26 V18 H38 V26 H34 a3 5 0 0 0 -5 0 H27 a3 5 0 0 0 -5 0 H20 a3 5 0 0 0 -5 0 H13 a3 5 0 0 0 -5 0 H6 a3 5 0 0 0 -4 0 Z" fill="#e8dcc0" stroke="#3b352f" stroke-width="1.6"/><path d="M2 32 q5 -4 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#1f9c88" stroke-width="2.2"/><ellipse cx="24" cy="35" rx="7" ry="2.6" fill="#e0662a" stroke="#3b352f" stroke-width="1.4"/><path d="M28 6 L34 14 L22 14 Z M14 8 L19 14 L9 14 Z" fill="#f4f6fa" stroke="#3b352f" stroke-width="1.3"/>',
+  brcko: '<rect x="6" y="12" width="28" height="18" fill="#f0d9a8" stroke="#3b352f" stroke-width="1.6"/><path d="M6 16 H34 M6 20 H34 M6 24 H34" stroke="#c2563a" stroke-width="1.6"/><path d="M4 12 h6 v-4 a3 3 0 0 1 -6 0 Z M30 12 h6 v-4 a3 3 0 0 1 -6 0 Z" fill="#6f9a8a" stroke="#3b352f" stroke-width="1.3"/><path d="M14 12 a6 6 0 0 1 12 0 Z" fill="#6f9a8a" stroke="#3b352f" stroke-width="1.4"/><path d="M2 36 q5 -4 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#5f8f84" stroke-width="2.2"/>',
   visegrad: '<path d="M2 28 V18 H38 V28 H32 a4 6 0 0 0 -8 0 H16 a4 6 0 0 0 -8 0 Z" fill="#e8dcc0" stroke="#3b352f" stroke-width="1.8"/><rect x="17" y="8" width="6" height="10" fill="#f2e8d0" stroke="#3b352f" stroke-width="1.6"/><path d="M2 33 q5 -4 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#1f9982" stroke-width="2.2"/>',
 };
 

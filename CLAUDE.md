@@ -5,7 +5,7 @@ A free mini game that promotes easybosnian.com (a site for learning Bosnian). Yo
 Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.github.io/slavuj/ (repo `TifahEfendijaM/slavuj`).
 
 ## Where it stands (2026-11-28)
-- **Twelve finished towns**, all open from the Bosnia map (no unlocking order for finished maps). Mostar, Blagaj and Konjic were built here; the other nine were built by Fahrudin (GitHub `fahro`, owner of easybosnian, now a collaborator on this repo) and merged from his PR #1 on 2026-11-28. Built from zero, replacing the earlier rejected drafts.
+- **Thirteen finished towns**, all open from the Bosnia map (no unlocking order for finished maps). Mostar, Blagaj, Konjic and Brčko were built here; the other nine were built by Fahrudin (GitHub `fahro`, owner of easybosnian, now a collaborator on this repo) and merged from his PR #1 on 2026-11-28. Built from zero, replacing the earlier rejected drafts.
 
   | Town | Season | Words | What it is |
   |---|---|---|---|
@@ -13,6 +13,7 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
   | Mostar | summer | 81 | the Neretva gorge, Stari Most and its diver, the bazaar |
   | Blagaj | summer | 69 | the Buna spring pouring out of the cave under the cliff, the Tekija with its bay window, the stalls, the terrace, the mills, the Velagić house, the Karađoz-beg bridge, Stjepan grad above (added 2026-11-28) |
   | Konjic | summer | 59 | the Neretva under the six-arched Old Bridge, rafting, the woodcarvers, the railway station, the river beach, Prenj, Tito's bunker (added 2026-11-28) |
+  | Brčko | autumn | 53 | the Sava with its bridge and river port, the promenade and fishermen, the striped City Hall, the White Mosque, the market, a Posavina farm with a čardak and plum jam boiling (added 2026-11-28) |
   | Sarajevo | autumn | 79 | Baščaršija, the Sebilj, Vijećnica, trams, cable car, falling leaves |
   | Jahorina | winter | 76 | the Olympic ski mountain: slopes, chairlift, snow groomer, chalets, snowfall |
   | Višegrad | autumn | 68 | the Mehmed Paša Sokolović Bridge on the Drina, the old railway, autumn leaves |
