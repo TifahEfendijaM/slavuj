@@ -81,7 +81,8 @@ export function createDiver(pos) {
       }
     } else if (d.state === 'under' && d.t > 1.7) {
       d.state = 'rise'; d.t = 0; root.rotation.set(0, Math.PI, 0); pose(0, 0.25, 0);
-      root.position.set(d.splashPos.x, -2.7 * SC, d.splashPos.z + 1.2); root.visible = true;   // placed under the surface before he is shown again d.onSurface?.(d.splashPos);
+      root.position.set(d.splashPos.x, -2.7 * SC, d.splashPos.z + 1.2); root.visible = true;   // placed under the surface before he is shown again
+      d.onSurface?.(d.splashPos);
     } else if (d.state === 'rise' || d.state === 'swim') {
       // he comes up through the surface, shakes the water off, then lifts an arm and waves
       const up = d.state === 'swim' ? 1 : sm(0, 1.5, d.t), wave = d.state === 'swim' ? 1 : sm(1.6, 2.6, d.t);

@@ -10,9 +10,9 @@ import { WORD_COUNTS } from './maps/counts.js';
 
 const { W0, N1, kx, sc } = GEO.proj;
 const at = (lon, lat) => [(lon - W0) * kx * sc, (N1 - lat) * sc];
-// a pin that would overlap its neighbour (Jahorina is right next to Sarajevo) or the coast (Neum) is drawn a little way off,
-// with a line to its real place; the route joins the real places
-const NUDGE = { jahorina: [96, 40], neum: [-96, 40] };
+// a pin that would overlap its neighbour (Jahorina is right next to Sarajevo, Travnik right next to Jajce) or the coast (Neum)
+// is drawn a little way off, with a line to its real place; the route joins the real places
+const NUDGE = { jahorina: [42, 74], neum: [-96, 40], travnik: [52, -32], visegrad: [28, -58] };
 const SEASON_COL = { summer: '#f2b02a', autumn: '#d9612e', winter: '#5f9fd6', spring: '#6cb46a' };
 
 // little drawings for each town's pin, in a 40 x 40 box
@@ -21,7 +21,12 @@ const ICON = {
   sarajevo: '<path d="M8 32 V20 H32 V32 Z" fill="#e8dcc4" stroke="#3b352f" stroke-width="2"/><path d="M6 20 Q20 2 34 20 Z" fill="#7a9a7a" stroke="#3b352f" stroke-width="2"/><path d="M20 4 V0" stroke="#3b352f" stroke-width="2"/><path d="M14 32 V24 M20 32 V24 M26 32 V24" stroke="#3b352f" stroke-width="1.6"/><circle cx="31" cy="9" r="3.4" fill="#d9612e" stroke="#3b352f" stroke-width="1.2"/>',
   jahorina: '<path d="M2 34 L15 10 L22 20 L28 12 L38 34 Z" fill="#eef4fb" stroke="#3b352f" stroke-width="2"/><path d="M11 18 L15 10 L19 17 L16 15 L13 18 Z" fill="#fff" stroke="#3b352f" stroke-width="1.2"/><path d="M6 30 L9 24 L12 30 Z M28 31 L31 25 L34 31 Z" fill="#3f7a55" stroke="#3b352f" stroke-width="1.2"/>',
   jajce: '<path d="M6 8 H26 L26 30" fill="none" stroke="#3b352f" stroke-width="2"/><path d="M16 9 Q18 20 15 34 M21 9 Q23 20 21 34 M11 9 Q13 20 9 34" fill="none" stroke="#5fa8c8" stroke-width="2.4"/><path d="M26 6 l4 -4 l4 4 v8 h-8 z" fill="#e8dcc4" stroke="#3b352f" stroke-width="1.6"/><path d="M4 35 q6 -4 12 0 t12 0 t12 0" fill="none" stroke="#6cb46a" stroke-width="2"/>',
+  banjaluka: '<path d="M7 30 V24" stroke="#3b352f" stroke-width="2"/><circle cx="7" cy="18" r="6.5" fill="#6cb46a" stroke="#3b352f" stroke-width="1.6"/><rect x="14" y="20" width="14" height="10" fill="#e8dcc4" stroke="#3b352f" stroke-width="1.8"/><path d="M15 20 Q21 12 27 20 Z" fill="#9ab0a0" stroke="#3b352f" stroke-width="1.6"/><path d="M30 30 V9 H34 V30 Z" fill="#e8dcc4" stroke="#3b352f" stroke-width="1.8"/><path d="M29.5 9 L32 1 L34.5 9 Z" fill="#7a9a7a" stroke="#3b352f" stroke-width="1.4"/><path d="M2 35 q5 -4 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#3a8bc0" stroke-width="2.2"/>',
+  bihac: '<path d="M6 30 V12 H18 V30 Z" fill="#e8dcc4" stroke="#3b352f" stroke-width="2"/><path d="M4 12 L12 3 L20 12 Z" fill="#b5654a" stroke="#3b352f" stroke-width="1.8"/><rect x="10" y="17" width="4" height="5" fill="#3b352f"/><path d="M2 31 q5 -4 10 0 t10 0 t10 0 t10 0 M2 37 q5 -4 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#2fa89a" stroke-width="2.2"/><path d="M23 25 H37 L34 29 H26 Z" fill="#c89a5a" stroke="#3b352f" stroke-width="1.6"/>',
+  tuzla: '<ellipse cx="18" cy="28" rx="16" ry="7" fill="#bfe0ea" stroke="#3b352f" stroke-width="2"/><path d="M8 28 q3 -2 6 0 t6 0 t6 0" fill="none" stroke="#3a8bc0" stroke-width="1.8"/><path d="M26 9 L32 6 L38 9 V16 L32 19 L26 16 Z" fill="#fbfbf6" stroke="#3b352f" stroke-width="1.6"/><path d="M26 9 L32 12 L38 9 M32 12 V19" fill="none" stroke="#3b352f" stroke-width="1.3"/><circle cx="10" cy="10" r="4.5" fill="#f2c230" stroke="#3b352f" stroke-width="1.3"/>',
+  travnik: '<path d="M2 36 Q20 14 38 36 Z" fill="#cfe0b8" stroke="#3b352f" stroke-width="2"/><path d="M14 26 V10 H26 V26 Z" fill="#e8dcc4" stroke="#3b352f" stroke-width="2"/><path d="M13 10 V6 H16 V8 H19 V6 H21 V8 H24 V6 H27 V10 Z" fill="#e8dcc4" stroke="#3b352f" stroke-width="1.6"/><path d="M20 26 V20 a2 2 0 0 1 4 0 V26" fill="#3b352f"/><path d="M20 6 V0 L26 2 L20 4" fill="#d9612e" stroke="#3b352f" stroke-width="1.2"/>',
   neum: '<circle cx="28" cy="10" r="5" fill="#f2c230" stroke="#3b352f" stroke-width="1.4"/><path d="M2 26 q5 -5 10 0 t10 0 t10 0 t10 0 M2 33 q5 -5 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#3a8bc0" stroke-width="2.2"/><path d="M8 20 L14 8 L14 20 Z" fill="#fff" stroke="#3b352f" stroke-width="1.4"/>',
+  visegrad: '<path d="M2 28 V18 H38 V28 H32 a4 6 0 0 0 -8 0 H16 a4 6 0 0 0 -8 0 Z" fill="#e8dcc0" stroke="#3b352f" stroke-width="1.8"/><rect x="17" y="8" width="6" height="10" fill="#f2e8d0" stroke="#3b352f" stroke-width="1.6"/><path d="M2 33 q5 -4 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#1f9982" stroke-width="2.2"/>',
 };
 
 export function showBosnia() {
@@ -62,8 +67,9 @@ export function showBosnia() {
           <g transform="translate(-26,-28) scale(1.3)" class="ic">${ICON[q.m.id]}</g>
           ${q.state === 'locked' || q.state === 'soon' ? '<g class="lock" transform="translate(24,16) scale(1.3)"><rect x="-8" y="-2" width="16" height="12" rx="2"/><path d="M-5 -2 V-6 a5 5 0 0 1 10 0 V-2" fill="none"/></g>' : ''}
           ${q.state === 'done' ? '<g transform="translate(28,-30)"><circle r="13" fill="#fff8de" stroke="#3b352f" stroke-width="2"/><path d="M-5 0 L-1 4 L6 -4" fill="none" stroke="#c8891a" stroke-width="3" stroke-linecap="round"/></g>' : ''}
+          <g transform="translate(-28,-30)"><circle r="13" fill="#fffaf0" stroke="#3b352f" stroke-width="2"/><text y="5" text-anchor="middle" font-size="16" font-weight="700" fill="#3b352f">${i + 1}</text></g>
           <text y="68" class="pname">${q.m.name}</text>
-          <text y="92" class="pseason">${q.m.season} · ${q.m.en}${q.state === 'soon' ? ' · in development' : q.m.wip ? ' · beta' : ''}${q.state === 'soon' ? '' : q.n ? ` · ${q.words}/${q.n}` : ''}</text>
+          <text y="92" class="pseason">${q.m.season ? `${q.m.season} · ${q.m.en}` : ''}${q.state === 'soon' ? `${q.m.season ? ' · ' : ''}in development` : q.m.wip ? ' · beta' : ''}${q.state === 'soon' ? '' : q.n ? ` · ${q.words}/${q.n}` : ''}</text>
         </g>`).join('')}
     </svg>
     <div class="bfoot"><a href="https://easybosnian.com" target="_blank" rel="noopener">easybosnian.com</a></div>`;
@@ -74,7 +80,10 @@ export function showBosnia() {
   hug(); addEventListener('resize', hug); visualViewport?.addEventListener('resize', hug);
   for (const g of el.querySelectorAll('.pin')) {
     const q = pins[+g.dataset.i];
-    if (q.m.id === 'sarajevo') { g.querySelector('.pname').setAttribute('y', -66); g.querySelector('.pseason').setAttribute('y', -48); }      // (above its pin, clear of Jahorina's line)
+    if (q.m.id === 'sarajevo' || q.m.id === 'travnik') { g.querySelector('.pname').setAttribute('y', -66); g.querySelector('.pseason').setAttribute('y', -48); }      // (above its pin, clear of the neighbour/route below)
+    if (q.m.id === 'banjaluka') { for (const [sel, y] of [['.pname', 0], ['.pseason', 24]]) { const t = g.querySelector(sel); t.setAttribute('x', -52); t.setAttribute('y', y); t.style.textAnchor = 'end'; } }      // (to the left of its pin, clear of Jajce below and the country title above)
+    if (q.m.id === 'bihac') { for (const sel of ['.pname', '.pseason']) { const t = g.querySelector(sel); t.setAttribute('x', -36); t.style.textAnchor = 'start'; } }      // (aligned rightwards from the pin's left edge so it never clips the frame)
+    if (q.m.id === 'visegrad') { for (const sel of ['.pname', '.pseason']) { const t = g.querySelector(sel); t.setAttribute('x', 36); t.style.textAnchor = 'end'; } }      // (aligned leftwards from the pin's right edge so it stays cleanly inside the eastern border)
     g.addEventListener('click', () => {
       if (q.state === 'open' || q.state === 'done') { location.href = mapUrl(q.m.id); return; }
       const prev = MAPS[+g.dataset.i - 1];

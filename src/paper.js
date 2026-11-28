@@ -58,6 +58,11 @@ export const shared = {
   uRes: { value: new THREE.Vector2(1, 1) },
   uLight: { value: new THREE.Vector3(-0.5, 0.8, 0.35).normalize() },
   uSunDir: { value: SUN_DIR.clone() }, uSun: { value: 0 }, uLife: { value: 0 },
+  uWaterDir: { value: new THREE.Vector2(0, 1) },
+  uSunShadow: { value: new THREE.Vector3(0.7, 0.58, 0.76) },
+  uSunGlow: { value: new THREE.Vector3(1.0, 0.7, 0.32) },
+  uSunTint: { value: new THREE.Vector3(1.05, 0.95, 0.84) },
+  uSkyGlow: { value: new THREE.Vector3(1.0, 0.86, 0.5) },
   uNoise: { value: makeNoiseTexture() },
   uPaper: { value: new THREE.Color(S.colors.paper) },
   uInk: { value: new THREE.Color(S.ink.color) },
@@ -97,7 +102,8 @@ void main(){
 
 const FRAG = /* glsl */`
 uniform sampler2D uNoise;
-uniform vec3 uPaper, uInk, uLight, uSunDir;
+uniform vec3 uPaper, uInk, uLight, uSunDir, uSunShadow, uSunGlow, uSunTint, uSkyGlow;
+uniform vec2 uWaterDir;
 uniform float uTime, uFlow, uPx, uVivid, uSun;
 varying vec3 vWorld, vN, vCol, vBleed, vSeed; varying vec4 vPar; varying vec2 vUv, vAni;
 
@@ -163,10 +169,12 @@ void main(){
     float q = vUv.x * ps;
     pink = (1.0 - smoothstep(0.04, 0.04 + fwidth(q), 0.5 - abs(fract(q) - 0.5))) * 0.45;
   } else if (pat < 6.5 && pat > 5.5) {     // water: long wavy strokes and small ripples
-    float hw = wuv.y * 0.55 + sin(wuv.x * 0.45 + blotch * 4.0 + uFlow * 0.4) * 0.3 - uFlow * 0.22;
-    float brk = texture2D(uNoise, wuv * vec2(0.012, 0.09) + vec2(0.0, -uFlow * 0.012)).g;
-    float hr = wuv.y * 1.9 + sin(wuv.x * 2.1 + mid * 6.0) * 0.22 - uFlow * 0.5;
-    float brk2 = texture2D(uNoise, wuv * vec2(0.05, 0.3) + vec2(0.4, -uFlow * 0.03)).b;
+    vec2 wd = normalize(uWaterDir);
+    vec2 wp = vec2(wuv.x * wd.y - wuv.y * wd.x, dot(wuv, wd));
+    float hw = wp.y * 0.55 + sin(wp.x * 0.45 + blotch * 4.0 + uFlow * 0.4) * 0.3 - uFlow * 0.22;
+    float brk = texture2D(uNoise, wp * vec2(0.012, 0.09) + vec2(0.0, -uFlow * 0.012)).g;
+    float hr = wp.y * 1.9 + sin(wp.x * 2.1 + mid * 6.0) * 0.22 - uFlow * 0.5;
+    float brk2 = texture2D(uNoise, wp * vec2(0.05, 0.3) + vec2(0.4, -uFlow * 0.03)).b;
     streak = max(strokes(hw, 0.11) * smoothstep(0.38, 0.6, brk), strokes(hr, 0.14) * smoothstep(0.6, 0.78, brk2) * 0.8);
     hatch = 0.0;
   } else if (pat < 7.5 && pat > 6.5) {     // grass tufts
@@ -180,7 +188,7 @@ void main(){
   } else if (sky) {                        // evening sky: warm at the horizon, deep above
     vec3 dir = normalize(vWorld - vec3(0.0, 10.0, 0.0));
     col = mix(vCol, vBleed, smoothstep(0.02, 0.6, dir.y));
-    col = mix(col, vec3(1.0, 0.86, 0.5), pow(max(dot(dir, uSunDir), 0.0), 5.0) * 0.75);
+    col = mix(col, uSkyGlow, pow(max(dot(dir, uSunDir), 0.0), 5.0) * 0.75);
     hatch = 0.0; bleedK = 0.0;
   }
   float nearK = 1.0 - clamp(length(fwidth(wuv)) * 5.0 - 0.5, 0.0, 1.0);   // drawn detail fades out far away
@@ -203,15 +211,15 @@ void main(){
   vec3 wash = mix(vec3(1.0), col, strength);
   wash *= 1.0 - 0.22 * pool - 0.10 * gran * (1.0 - uVivid) - 0.22 * wet - 0.42 * rim;
   float sh = sky ? 0.0 : smoothstep(0.55, 0.68, shade + (mid - 0.5) * 0.06);
-  wash *= mix(vec3(1.0), mix(vec3(0.74, 0.7, 0.86), vec3(0.7, 0.58, 0.76), sun), sh * 0.6);
+  wash *= mix(vec3(1.0), mix(vec3(0.74, 0.7, 0.86), uSunShadow, sun), sh * 0.6);
   vec3 painted = mix(paper, vec3(0.97), uVivid * 0.6) * wash;
   painted = mix(painted, paper * 1.03, streak * 0.55);             // light glints on water
-  painted += sun * 0.13 * max(dot(N, uSunDir), 0.0) * vec3(1.0, 0.7, 0.32);
+  painted += sun * 0.13 * max(dot(N, uSunDir), 0.0) * uSunGlow;
   painted += sun * streak * vec3(0.3, 0.16, 0.02);
 
   vec3 c = mix(paper * (1.0 - 0.07 * damp), painted, m);
   c = mix(c, uInk, max(hatch * mix(0.5, 0.3, m), max(pink, streak * 0.75) * (1.0 - m * (streak > 0.0 ? 1.0 : 0.45))));
-  c *= mix(vec3(1.0), vec3(1.05, 0.95, 0.84), sun);
+  c *= mix(vec3(1.0), uSunTint, sun);
   gl_FragColor = vec4(c, 1.0);
   #include <colorspace_fragment>
 }`;
@@ -228,6 +236,7 @@ export function washMat(tagName, o = {}) {
     polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
     uniforms: {
       uNoise: shared.uNoise, uPaper: shared.uPaper, uInk: shared.uInk, uLight: shared.uLight, uSunDir: shared.uSunDir,
+      uWaterDir: shared.uWaterDir, uSunShadow: shared.uSunShadow, uSunGlow: shared.uSunGlow, uSunTint: shared.uSunTint, uSkyGlow: shared.uSkyGlow,
       uTime: shared.uTime, uFlow: shared.uFlow, uPx: shared.uPx, uSun: shared.uSun, uLife: shared.uLife,
       uT: tag(tagName).uT, uVivid: { value: o.vivid ?? 0 },
     },

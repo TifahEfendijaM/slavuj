@@ -24,7 +24,12 @@ export class Flight {
     this.mode = 'perched'; this.power = false; this.diving = false; this.flare = 0;
     this.clearL = 1; this.clearR = 1; this.grace = 0; this.landedOn = null; this.feet = null;
     this.events = []; this.bumpCool = 0; this.perchPitch = 0; this.perchRoll = 0;
-    this.walk = 0; this.hop = null; this.groundY = 0; this.waterY = 0; this.swimT = 0; this.drift = 0; this.splashPower = 0; this.paddle = 0;
+    this.walk = 0; this.hop = null; this.groundY = 0; this.waterY = 0; this.swimT = 0; this.drift = 0; this.driftX = 0; this.swimClamp = null; this.splashPower = 0; this.paddle = 0;
+  }
+
+  invalidateColliders() {
+    this._mc = -1;
+    for (const c of this.colliders) if (c.userData) delete c.userData._ws;
   }
 
   cast(origin, dir, far) {
@@ -238,7 +243,7 @@ export class Flight {
       this.yaw += angDiff(this.camYaw, this.yaw) * k(3, dt);
       this.speed = inp.dive ? Math.min(f.swimMax, Math.max(this.speed, 0.4) + f.swimAccel * dt) : Math.max(0, this.speed - 2.2 * dt);     // hold the mouse button to paddle, faster the longer it is held
       this.paddle = Math.min(1, this.speed / f.swimMax);
-      const fw = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), move = fw.clone().multiplyScalar(this.speed); move.z += this.drift;
+      const fw = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)), move = fw.clone().multiplyScalar(this.speed); move.x += this.driftX; move.z += this.drift;
       if (move.lengthSq() > 1e-4) {
         _o.copy(this.pos); _o.y += 0.15;
         const h = this.cast(_o, move.clone().normalize(), 0.3 + 0.45 * S.bird.scale);
@@ -250,7 +255,8 @@ export class Flight {
       }
       this.pos.addScaledVector(move, dt); this.pos.y = this.waterY + 0.14 * S.bird.scale + Math.sin(this.swimT * 2.4) * 0.03;
       this.makeWay();      // the swimmer (or the diver) comes past: the floating bird is nudged aside, never swum through
-      if (Math.abs(this.pos.x) > 12.5 && this.waterY < 1) this.pos.x = Math.sign(this.pos.x) * 12.5;
+      if (this.swimClamp) this.swimClamp(this.pos, this.waterY);
+      else if (Math.abs(this.pos.x) > 12.5 && this.waterY < 1) this.pos.x = Math.sign(this.pos.x) * 12.5;
       if (inp.takeoff) {
         this.mode = 'flying'; this.yaw = this.camYaw; this.pitch = rad(f.takeoffPitch); this.mousePitch = 0.06;
         this.speed = f.takeoffSpeed * 0.85; this.lift = f.takeoffLift + 1; this.grace = 0.5; this.airT = 0; this.pos.y += 0.2;

@@ -4,12 +4,30 @@
 // browser's own speech voice for Croatian/Bosnian/Serbian (a placeholder, see CREDITS.md).
 import S from './settings.js';
 
-let ctx = null, master, sfx, mus, amb, noiseBuf;
+let ctx = null, master, sfx, mus, amb, town, noiseBuf, townPaused = false;
 const wait = (s) => new Promise((r) => setTimeout(r, s * 1000));
 // recorded sounds: loaded once the sound is unlocked; until then (or if one fails) the synthesised one plays
 const SFX_URLS = Object.fromEntries(Object.entries(import.meta.glob('../assets/audio/sfx/*.mp3', { eager: true, query: '?url', import: 'default' })).map(([p, u]) => [p.split('/').pop().slice(0, -4), u]));
+const MAP_SFX_URLS = {};
+for (const [p, u] of Object.entries(import.meta.glob('../assets/audio/sfx/*/*.mp3', { eager: true, query: '?url', import: 'default' }))) {
+  const parts = p.split('/'), mapId = parts[parts.length - 2], name = parts[parts.length - 1].slice(0, -4);
+  (MAP_SFX_URLS[mapId] ||= {})[name] = u;
+}
 const sfxBufs = {};
-function loadClips() { for (const [n, u] of Object.entries(SFX_URLS)) fetch(u).then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b)).then((buf) => { sfxBufs[n] = buf; }).catch(() => {}); }
+let activeMapSfx = null;
+function decodeUrl(n, u) {
+  if (!ctx || sfxBufs[n] !== undefined) return;
+  sfxBufs[n] = null;
+  fetch(u).then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b)).then((buf) => { sfxBufs[n] = buf; }).catch(() => { delete sfxBufs[n]; });
+}
+function loadClips() {
+  for (const [n, u] of Object.entries(SFX_URLS)) decodeUrl(n, u);
+  if (activeMapSfx && MAP_SFX_URLS[activeMapSfx]) for (const [n, u] of Object.entries(MAP_SFX_URLS[activeMapSfx])) decodeUrl(n, u);
+}
+export function loadMapSfx(mapId) {
+  activeMapSfx = mapId;
+  if (ctx && MAP_SFX_URLS[mapId]) for (const [n, u] of Object.entries(MAP_SFX_URLS[mapId])) decodeUrl(n, u);
+}
 // play a recording; returns false if it is not loaded (so the caller can fall back)
 function clip(name, vol, o = {}) {
   const buf = sfxBufs[name]; if (!ctx || !buf) return false;
@@ -40,6 +58,7 @@ export function unlock() {
       sfx = ctx.createGain(); sfx.connect(master); sfx.connect(delay); delay.connect(fb); fb.connect(delay); fb.connect(master);
       mus = ctx.createGain(); mus.gain.value = S.audio.music; mus.connect(master); mus.connect(delay);
       amb = ctx.createGain(); amb.connect(master);
+      town = ctx.createGain(); town.gain.value = townPaused ? 0 : 1; town.connect(amb);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       startLoops(); setInterval(musicTick, 200); loadClips();
@@ -71,19 +90,26 @@ function noise(t, dur, o = {}) {
   src.connect(flt).connect(g).connect(o.bus || sfx); src.start(t, Math.random()); src.stop(t + dur + 0.05);
   return { src, g };
 }
-function loop(type, freq, q) {
+function loop(type, freq, q, bus) {
   const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
   const flt = ctx.createBiquadFilter(); flt.type = type; flt.frequency.value = freq; flt.Q.value = q;
-  const g = ctx.createGain(); g.gain.value = 0; src.connect(flt).connect(g).connect(amb); src.start();
+  const g = ctx.createGain(); g.gain.value = 0; src.connect(flt).connect(g).connect(bus || amb); src.start();
   return { g, flt };
 }
 const ramp = (param, v, s = 0.3) => { if (ctx) param.setTargetAtTime(v, now(), s); };
+export function setTownPaused(p) {
+  if (townPaused === !!p) return;
+  townPaused = !!p;
+  if (ctx && town) ramp(town.gain, townPaused ? 0 : 1, 0.06);
+}
 
 // ---------- continuous layers ----------
 let rush, rushLow, songBus = null, windL, leavesL, waterL, murmurL, wind = 0, water = 0, birds = false, city = 0, murmur = 0;
+const loops = {};
+const trackedShots = [];
 function startLoops() {
-  rush = loop('bandpass', 420, 1.3); rushLow = loop('lowpass', 240, 0.5);       // wind in a fast dive: silent at cruising speed
-  windL = loop('lowpass', 380, 0.4); leavesL = loop('highpass', 3500, 0.3); waterL = loop('bandpass', 900, 0.5); murmurL = loop('bandpass', 480, 1.4);
+  rush = loop('bandpass', 420, 1.3, amb); rushLow = loop('lowpass', 240, 0.5, amb);       // wind in a fast dive: silent at cruising speed
+  windL = loop('lowpass', 380, 0.4, town); leavesL = loop('highpass', 3500, 0.3, town); waterL = loop('bandpass', 900, 0.5, town); murmurL = loop('bandpass', 480, 1.4, town);
   setInterval(() => {
     if (!ctx) return;
     const t = now();
@@ -91,9 +117,55 @@ function startLoops() {
     ramp(leavesL.g.gain, wind * Math.max(0, 0.012 + 0.014 * Math.sin(t * 0.53 + 1)), 0.6);
     ramp(waterL.g.gain, water * (0.05 + 0.015 * Math.sin(t * 2.3)), 0.4);
     ramp(waterL.flt.frequency, 800 + 300 * Math.sin(t * 1.7) + 150 * Math.sin(t * 5.1), 0.2);
-    if (birds && Math.random() < 0.16) { const f = 2600 + Math.random() * 2200, n = 1 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.11, [[0, f], [0.05, f * 1.2], [0.09, f * 0.95]], 0.035, { bus: amb }); }
+    if (birds && !townPaused && Math.random() < 0.16) { const f = 2600 + Math.random() * 2200, n = 1 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone(t + i * 0.11, [[0, f], [0.05, f * 1.2], [0.09, f * 0.95]], 0.035, { bus: town }); }
     ramp(murmurL.g.gain, murmur * (0.012 + 0.03 * Math.random()), 0.12); ramp(murmurL.flt.frequency, 380 + Math.random() * 320, 0.15);   // voices, far off
   }, 250);
+}
+// reusable positional loop backed by an sfx clip (loaded per map)
+export function setLoop(name, g, o = {}) {
+  if (!ctx) return;
+  let l = loops[name];
+  if (!l) {
+    const buf = sfxBufs[name]; if (!buf || g <= 0) return;
+    const gain = ctx.createGain(); gain.gain.value = 0;
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.playbackRate.value = o.rate ?? 1;
+    if (o.loopStart != null) src.loopStart = o.loopStart;
+    if (o.loopEnd != null) src.loopEnd = Math.min(o.loopEnd, buf.duration);
+    src.connect(gain).connect(town); src.start(now(), o.loopStart ?? 0);
+    l = loops[name] = { gain, vol: o.vol ?? 0.35 };
+  }
+  l.gain.gain.setTargetAtTime((o.vol ?? l.vol) * Math.max(0, g), now(), o.tau ?? 0.25);
+}
+// play a one-shot clip, optionally following the bird's distance each frame via updateTracked(birdPos)
+export function playClip(name, vol = 0.3, o = {}) {
+  if (!ctx || vol <= 0) return false;
+  return clip(name, vol, { bus: town, ...o });
+}
+export function playNear(name, pos, radius, vol = 0.3, o = {}) {
+  const buf = sfxBufs[name]; if (!ctx || !buf || vol <= 0) return false;
+  const src = ctx.createBufferSource(), env = ctx.createGain(), distG = ctx.createGain(), t = now();
+  src.buffer = buf; src.playbackRate.value = o.rate ?? 1;
+  const dur = o.dur ?? buf.duration / src.playbackRate.value, fade = Math.min(o.fade ?? 0.015, dur / 3);
+  if (o.dur) src.loop = true;
+  env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(vol, t + fade);
+  env.gain.setValueAtTime(vol, t + dur - fade); env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  distG.gain.value = o.initGain ?? 1;
+  src.connect(env).connect(distG).connect(town); src.start(t, o.offset ?? 0); src.stop(t + dur + 0.05);
+  const item = { pos, radius, distG, end: t + dur + 0.05 };
+  trackedShots.push(item);
+  return true;
+}
+export function updateTracked(birdPos) {
+  if (!ctx || !trackedShots.length) return;
+  const t = now();
+  for (let i = trackedShots.length - 1; i >= 0; i--) {
+    const it = trackedShots[i];
+    if (t >= it.end) { trackedShots.splice(i, 1); continue; }
+    const p = typeof it.pos === 'function' ? it.pos() : it.pos;
+    const d = Math.hypot(birdPos.x - p.x, birdPos.y - p.y, birdPos.z - p.z);
+    const g = Math.max(0, 1 - d / it.radius) ** 1.6;
+    it.distG.gain.setTargetAtTime(g, t, 0.08);
+  }
 }
 let lastSpeed = 0, accel = 0;
 // wind past the bird, by its speed: it starts at about take-off speed, is clearly there at full cruising speed and
@@ -135,7 +207,7 @@ export function bark(g = 1) { if (ctx && g > 0) clip(Math.random() < 0.5 ? 'dog-
 let fountainGain = null;
 export function setFountain(g) {
   if (!ctx) return;
-  if (!fountainGain) { const buf = sfxBufs.fountain; if (!buf || g <= 0) return; fountainGain = ctx.createGain(); fountainGain.gain.value = 0; const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(fountainGain).connect(amb); src.start(); }
+  if (!fountainGain) { const buf = sfxBufs.fountain; if (!buf || g <= 0) return; fountainGain = ctx.createGain(); fountainGain.gain.value = 0; const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(fountainGain).connect(town); src.start(); }
   fountainGain.gain.setTargetAtTime(0.32 * g, now(), 0.25);
 }
 // a knuckle on a wooden door
@@ -153,7 +225,7 @@ export function birdSplash(p) { if (!ctx) return; const t = now(); noise(t, 0.25
 let applauseGain = null;
 export function setApplause(g) {
   if (!ctx) return;
-  if (!applauseGain) { const buf = sfxBufs.applause; if (!buf || g <= 0) return; applauseGain = ctx.createGain(); applauseGain.gain.value = 0; const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.loopStart = 1; src.loopEnd = Math.min(7.5, buf.duration); src.connect(applauseGain).connect(amb); src.start(now(), 1); }
+  if (!applauseGain) { const buf = sfxBufs.applause; if (!buf || g <= 0) return; applauseGain = ctx.createGain(); applauseGain.gain.value = 0; const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.loopStart = 1; src.loopEnd = Math.min(7.5, buf.duration); src.connect(applauseGain).connect(town); src.start(now(), 1); }
   applauseGain.gain.setTargetAtTime(0.55 * g, now(), 0.25);
 }
 // a crowd clapping; gain below 1 is the same crowd heard from further off

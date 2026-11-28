@@ -107,6 +107,8 @@ const G = {
   head: new THREE.SphereGeometry(0.13, 12, 10), hair: new THREE.SphereGeometry(0.139, 12, 7, 0, Math.PI * 2, 0, 1.75), scarf: hijab(),
   torso: lathe([[0.001, 0], [0.15, 0], [0.155, 0.14], [0.145, 0.28], [0.19, 0.5], [0.2, 0.57], [0.15, 0.64], [0.07, 0.68], [0.06, 0.74], [0.001, 0.74]]),
   skirt: lathe([[0.001, -0.89], [0.31, -0.89], [0.17, 0.02], [0.001, 0.02]]), robe: lathe([[0.001, -0.88], [0.27, -0.88], [0.18, 0.02], [0.001, 0.02]]),   // listed bottom to top, so the surface faces outwards
+  coat: lathe([[0.001, -0.68], [0.27, -0.68], [0.22, -0.2], [0.17, 0.04], [0.175, 0.28], [0.215, 0.52], [0.22, 0.59], [0.16, 0.66], [0.08, 0.72], [0.001, 0.72]]),
+  neckScarf: new THREE.TorusGeometry(0.115, 0.042, 7, 14).rotateX(Math.PI / 2),
   uarm: cap(0.052, 0.2), farm: cap(0.048, 0.2),
   fes: new THREE.CylinderGeometry(0.085, 0.1, 0.13, 10), cap: new THREE.SphereGeometry(0.137, 10, 5, 0, Math.PI * 2, 0, 1.1), bloom: new THREE.IcosahedronGeometry(0.07, 0),
   catBody: new THREE.SphereGeometry(1, 12, 10), catLeg: new THREE.CylinderGeometry(0.04, 0.035, 0.26, 6).translate(0, -0.13, 0), catTail: new THREE.CylinderGeometry(0.035, 0.05, 0.6, 6).translate(0, 0.3, 0), ear: new THREE.ConeGeometry(0.07, 0.14, 4),
@@ -149,35 +151,73 @@ export function createPeople(scene, world, R) {
   function person(o) {
     const pos = new THREE.Vector3(o.x, o.y, o.z), sc = o.sc || 1, P = painter(o.tag, pos, undefined, o.first, o.paintAt);
     const root = new THREE.Group(); root.position.copy(pos); root.rotation.y = o.ry || 0; root.scale.setScalar(1.05 * sc); scene.add(root);
-    const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : bottom0, gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
+    const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : (o.bottom || bottom0), gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled'].includes(o.kind), skirtC = o.woman && !o.robe && !o.sport && o.kind !== 'girl' ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine', 'blDrum', 'blListen', 'blDraw', 'tuzPiano', 'tuzAccordion', 'bihPotter', 'bihTambura', 'visAuthor', 'visRower'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu') || o.kind?.startsWith('bl') || o.kind?.startsWith('tuz') || o.kind?.startsWith('vis'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
-    if ((!gown || seated || (skirtC && sc < 1)) && o.kind !== 'girl' && o.kind !== 'raft') for (const s of [-1, 1]) {
+    if ((!gown || seated || winterTrousers || (skirtC && sc < 1) || o.coatTag || o.topTag) && o.kind !== 'girl' && o.kind !== 'raft' && o.kind !== 'sarNana') for (const s of [-1, 1]) {
       const hip = grp(hips, s * 0.09, 0, 0); P(G.thigh, legC, hip, 0, -0.2, 0);
       const knee = grp(hip, 0, -0.42, 0); P(G.calf, (skirtC && seated) || o.sport ? skin : bottom, knee, 0, -0.2, 0);      // (shorts: bare calves)
       const f = P(G.foot, o.trunks ? skin : '#3a322c', knee, 0, -0.42, 0.06); f.rotation.x = Math.PI / 2;
       legs.push({ hip, knee, foot: f });
     }
-    const torso = grp(hips, 0, 0, 0); const body = P(G.torso, top, torso, 0, 0, 0); body.scale.z = 0.72;
+    const torso = grp(hips, 0, 0, 0);
+    const coatP = o.coatTag ? painter(o.coatTag, pos, undefined, o.coatFirst, o.coatAt) : null;
+    const topP = o.topTag ? painter(o.topTag, pos, undefined, o.topFirst, o.topAt) : null;
+    if (coatP) { const ct = coatP(G.coat, o.coatCol || '#7a3c34', torso, 0, 0, 0, o.coatBleed || '#592922'); ct.scale.z = 0.78; }
+    else if (topP) { const body = topP(G.torso, o.topCol || top, torso, 0, 0, 0, o.topBleed || o.topCol || top); body.scale.set(o.padded ? 1.14 : 1.04, 1, o.padded ? 0.92 : 0.76); }
+    else { const body = P(G.torso, top, torso, 0, 0, 0); body.scale.z = 0.72; }
+    if (o.neckScarfTag) {
+      const SP = painter(o.neckScarfTag, pos, undefined, o.neckScarfFirst, o.neckScarfAt);
+      const scC = o.neckScarfCol || '#b8452c', scB = o.neckScarfBleed || '#8a3020';
+      SP(G.neckScarf, scC, torso, 0, 0.69, 0.01, scB);
+      const tail = SP(G.box, scC, torso, 0.05, 0.48, 0.145, scB); tail.scale.set(0.09, 0.34, 0.035); tail.rotation.z = -0.08;
+    }
     if (o.trunks) { const tr = P(G.catBody, '#c0392b', hips, 0, -0.06, 0, '#8f2a20'); tr.scale.set(0.19, 0.17, 0.15); }      // swimming trunks
     const head = grp(torso, 0, 0.85, 0.01); P(G.head, skin, head, 0, 0, 0);
     if (sc < 1) head.scale.setScalar(1.25);                       // children: a bigger head
+    const useScarf = o.scarfChoice !== undefined ? o.scarfChoice === 'yes' : (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl' && sc >= 1);
     if (o.fes) painter('fes', pos, undefined, false, o.fesAt)(G.fes, '#b3312c', head, 0, 0.15, 0, '#8f2420'); else if (o.robe) P(G.cap, '#f3efe6', head, 0, 0.02, 0);
-    else if (o.kind === 'post') { P(G.cap, '#23405e', head, 0, 0.03, 0, '#1a2f45'); const v = P(G.box, '#1a2f45', head, 0, 0.05, 0.13); v.scale.set(0.2, 0.025, 0.11); }
-    else if (o.woman && (o.scarf || R() < 0.5) && o.kind !== 'girl' && sc >= 1) P(G.scarf, pick(TOPS), head, 0, 0, 0);
+    else if (o.helmetTag) {
+      const HP = painter(o.helmetTag, pos, undefined, false, o.helmetAt);
+      const hm = HP(G.cap, o.helmetCol || '#2b5ea8', head, 0, 0.025, -0.005, o.helmetBleed || '#1d4078'); hm.scale.set(1.16, 1.15, 1.16);
+    } else if (o.hatTag || o.beanie) {
+      const BP = o.hatTag ? painter(o.hatTag, pos, undefined, false, o.hatAt) : P;
+      const hc = o.hatCol || '#b84434', hb = o.hatBleed || '#8c2e22';
+      const bn = BP(G.cap, hc, head, 0, 0.04, 0, hb); bn.scale.set(1.08, 1.25, 1.08);
+      BP(G.ball, '#f3efe6', head, 0, 0.18, 0, '#d8d2c4').scale.setScalar(0.05);
+    } else if (o.sunHatTag || o.sunHat) {
+      const SHP = o.sunHatTag ? painter(o.sunHatTag, pos, undefined, false, o.sunHatAt) : P;
+      const brim = SHP(G.disc, o.sunHatCol || '#e4c788', head, 0, 0.09, 0, '#c2a264'); brim.scale.set(0.32, 0.32, 0.025); brim.rotation.x = Math.PI / 2;
+      const crown = SHP(G.fes, o.sunHatCol || '#e4c788', head, 0, 0.16, 0, '#c2a264'); crown.scale.set(1.25, 0.72, 1.25);
+      const band = SHP(G.disc, '#c84238', head, 0, 0.115, 0, '#962c24'); band.scale.set(0.165, 0.165, 0.032); band.rotation.x = Math.PI / 2;
+    } else if (o.capCap) {
+      const CP = painter(o.capTag || o.tag, pos);
+      const topC = CP(G.disc, '#f8f6f0', head, 0, 0.14, 0.01, '#d8d2c6'); topC.scale.set(0.17, 0.17, 0.055); topC.rotation.x = Math.PI / 2;
+      CP(G.cap, '#1e3554', head, 0, 0.04, 0, '#13243b').scale.set(1.04, 0.85, 1.04);
+      const vis = CP(G.box, '#162436', head, 0, 0.06, 0.14); vis.scale.set(0.22, 0.024, 0.12);
+      const badge = CP(G.ball, '#e0b83a', head, 0, 0.10, 0.13); badge.scale.setScalar(0.028);
+    } else if (o.kind === 'post') { P(G.cap, '#23405e', head, 0, 0.03, 0, '#1a2f45'); const v = P(G.box, '#1a2f45', head, 0, 0.05, 0.13); v.scale.set(0.2, 0.025, 0.11); }
+    else if (useScarf) P(G.scarf, o.scarfCol || pick(TOPS), head, 0, 0, 0);
     else {      // (a girl who drew a hijab gets hair instead. One draw either way, so nobody else changes)
-      const hc = pick(HAIRS), h = P(G.hair, hc, head, 0, 0.012, -0.012); h.rotation.x = -0.3;
+      const hc = o.hairCol || pick(HAIRS), h = P(G.hair, hc, head, 0, 0.012, -0.012); h.rotation.x = -0.3;
       if (o.woman) { const long = P(G.head, hc, head, 0, -0.13, -0.075); long.scale.set(1.02, 1.75, 0.62); }      // long hair down the back
       if (o.kind === 'girl') { const fl = P(G.bloom, '#f2c230', head, 0.1, 0.09, 0.06); fl.scale.setScalar(0.7); }
     }
-    const arms = [-1, 1].map((s) => { const sh = grp(torso, s * 0.2, 0.56, 0); P(G.uarm, top, sh, 0, -0.135, 0); const el = grp(sh, 0, -0.27, 0); P(G.farm, top, el, 0, -0.14, 0); const hand = P(G.hand, skin, el, 0, -0.3, 0); return { sh, el, hand, s }; });
+    if (o.gogglesTag) {
+      const GP = painter(o.gogglesTag, pos, undefined, false, o.gogglesAt);
+      const gg = GP(G.box, o.gogglesCol || '#e07a24', head, 0, 0.03, 0.125, '#a85214'); gg.scale.set(0.18, 0.075, 0.045);
+      const st = GP(G.box, '#262a30', head, 0, 0.03, 0.0, '#181a1f'); st.scale.set(0.27, 0.04, 0.25);
+    }
+    const sleeveP = coatP || topP || P, sleeveC = coatP ? (o.coatCol || '#7a3c34') : topP ? (o.topCol || top) : top;
+    const mitP = o.mittensTag ? painter(o.mittensTag, pos, undefined, false, o.mittensAt) : null;
+    const arms = [-1, 1].map((s) => { const sh = grp(torso, s * 0.2, 0.56, 0); sleeveP(G.uarm, sleeveC, sh, 0, -0.135, 0); const el = grp(sh, 0, -0.27, 0); sleeveP(G.farm, sleeveC, el, 0, -0.14, 0); const hand = (mitP || P)(G.hand, mitP ? (o.mittensCol || '#c24834') : skin, el, 0, -0.3, 0); if (mitP) hand.scale.setScalar(1.35); return { sh, el, hand, s }; });
     const p = { o, root, hips, torso, head, legs, arms, phase: R() * 6, clap: 0, s: 0, dir: 1, P, sc, y0: o.y };
-    const moving = o.kind === 'walk' || o.kind === 'bike' || o.kind === 'keeper' || o.kind === 'swimmer' || o.kind === 'skate';
+    const moving = o.kind === 'walk' || o.kind === 'bike' || o.kind === 'keeper' || o.kind === 'swimmer' || o.kind === 'skate' || o.kind === 'sarCarry';
     if (o.kind === 'swimmer') p.block = block(o.x, 0.3, o.z, 1.0, 1.1, 2.3, { wall: true, person: true });
-    else if (o.kind !== 'girl' && o.kind !== 'swing') p.block = block(o.x, o.y + sc, o.z, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), 2 * sc, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), { wall: true, person: true });
+    else if (o.kind !== 'girl' && o.kind !== 'swing' && o.kind !== 'sarNana' && o.kind !== 'sarDriver') p.block = block(o.x, o.y + sc, o.z, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), 2 * sc, 0.8 * sc + (o.kind === 'bike' ? 0.5 : 0), { wall: true, person: true });
     if (moving && o.to) { p.from = pos.clone(); p.to = new THREE.Vector3(o.to[0], o.y, o.to[1]); root.rotation.y = Math.atan2(p.to.x - p.from.x, p.to.z - p.from.z); }
     if (moving && o.to && o.dog) { p.loopS = 0; loopAt(p, 0); }
     if (seated || o.kind === 'raft') { hips.position.y = 0.5; for (const l of legs) { l.hip.rotation.x = -1.5; l.knee.rotation.x = o.kind === 'raft' ? 0.55 : 1.45; } }
@@ -295,6 +335,492 @@ export function createPeople(scene, world, R) {
     if (o.dog) p.dogBlock = block(o.x, o.y + 0.4, o.z, 0.5, 0.8, 0.9, { wall: true, person: true });
     if (o.kind === 'keeper') { for (const l of legs) { l.hip.rotation.x = -0.45; l.knee.rotation.x = 0.8; l.hip.rotation.z = 0; } hips.position.y = 0.84; for (const a of arms) a.sh.rotation.z = a.s * 0.95; }
     if (o.kind === 'cheer') { arms[1].sh.rotation.z = 2.5; }
+
+    // ---- Sarajevo activities (built fresh to Mostar's hand-contact standard) ----
+    if (o.kind === 'sarCornSell') {
+      const cup = P(G.fes, '#e8e0cf', arms[0].el, 0, -0.31, 0.03, '#cfc6b0'); cup.scale.set(0.45, 0.65, 0.45); cup.rotation.x = Math.PI;
+      const KP = painter('kukuruz', pos);
+      const corn = KP(G.ball, '#f0be2d', arms[0].el, 0, -0.34, 0.03, '#d49a1a'); corn.scale.set(0.042, 0.025, 0.042);
+    }
+    if (o.kind === 'sarSweep') {
+      // broom parented to left forearm at the hand, angled down so right hand grips the upper shaft
+      const br = grp(arms[1].el, 0, -0.3, 0); br.rotation.set(0.35, 0, 0.35);
+      rod(P, br, [0, 0.45, 0], [0, -0.95, 0], 0.017, '#8c6a42');
+      const headB = P(G.box, '#c9a252', br, 0, -0.97, 0, '#9c7834'); headB.scale.set(0.38, 0.14, 0.09);
+      p.broom = br;
+    }
+    if (o.kind === 'sarHammer') {
+      const h = grp(arms[0].el, 0, -0.3, 0);
+      rod(P, h, [0, 0, -0.04], [0, 0, 0.24], 0.015, '#7a5432');
+      const hd = P(G.box, '#52565c', h, 0, 0, 0.25, '#383b40'); hd.scale.set(0.11, 0.055, 0.065);
+    }
+    if (o.kind === 'sarCarry') {
+      const SP = painter('somun', pos);
+      const st = p.somunStack = grp(torso, 0, 0.32, 0.26);
+      for (let i = 0; i < 3; i++) {
+        const loaf = SP(G.catBody, '#d9a45a', st, (i - 1) * 0.02, i * 0.075, 0, '#b57e38');
+        loaf.scale.set(0.15, 0.038, 0.15);
+      }
+    }
+    if (o.kind === 'sarWaiter') {
+      const tr = grp(arms[0].el, 0.06, -0.32, 0.06); tr.rotation.x = Math.PI / 2;
+      const tray = P(G.disc, '#c48d56', tr, 0, 0, 0, '#9a6838'); tray.scale.set(0.105, 0.105, 0.014);
+      const DP = painter('dzezva', pos);
+      const pot = DP(G.fes, '#c97848', tr, 0, 0.02, -0.06, '#99522c'); pot.scale.set(0.45, 0.62, 0.45); pot.rotation.x = -Math.PI / 2;
+      rod(DP, tr, [0, 0.02, -0.07], [0.13, 0.02, -0.11], 0.007, '#99522c');
+      p.tray = tr;
+      if (o.loop) p.loopPts = o.loop.map(([x, z]) => new THREE.Vector3(x, o.y, z));
+    }
+    if (o.kind === 'sarChestnutSell') {
+      const sp = grp(arms[0].el, 0, -0.3, 0);
+      rod(P, sp, [0, 0, -0.02], [0, 0, 0.32], 0.014, '#7a5634');
+      const cn = P(G.cone, '#d9c8a6', arms[1].el, 0, -0.32, 0.02, '#b8a580'); cn.scale.setScalar(0.9); cn.rotation.x = Math.PI;
+      const KP = painter('kesteni', pos);
+      const nuts = KP(G.ball, '#5c3422', arms[1].el, 0, -0.37, 0.02, '#3d2014'); nuts.scale.set(0.045, 0.032, 0.045);
+    }
+    if (o.kind === 'sarBuy') {
+      const cn = P(G.cone, '#d9c8a6', arms[1].el, 0, -0.32, 0.02, '#b8a580'); cn.scale.setScalar(0.85); cn.rotation.x = Math.PI;
+      const KP = painter('kesteni', pos);
+      const nuts = KP(G.ball, '#5c3422', arms[1].el, 0, -0.37, 0.02, '#3d2014'); nuts.scale.set(0.04, 0.028, 0.04);
+      const coin = P(G.disc, '#e0b84a', arms[0].el, 0, -0.31, 0.03, '#b58d28'); coin.scale.set(0.022, 0.022, 0.006);
+    }
+    if (o.kind === 'sarUmbrellaWait') {
+      // closed umbrella hanging cleanly from her bent right hand/wrist; coloured ONLY by 'kisobran'
+      const UP = painter('kisobran', pos);
+      const ug = p.umb = grp(arms[0].el, 0, -0.3, 0.01); ug.rotation.set(0.25, 0, 0);
+      rod(UP, ug, [0, 0.02, 0], [0, -0.78, 0], 0.013, '#4a382c');
+      const furled = UP(G.cone, '#2f5878', ug, 0, -0.44, 0, '#1f3e58'); furled.scale.set(0.95, 3.6, 0.95); furled.rotation.x = Math.PI;
+      const hook = UP(G.box, '#4a382c', ug, 0, 0.04, -0.03, '#33261d'); hook.scale.set(0.022, 0.055, 0.075);
+    }
+    if (o.kind === 'sarReadBench') {
+      const NP = painter('novine', pos);
+      const pg = p.paper = grp(torso, 0, 0.42, 0.43); pg.rotation.x = -0.32;
+      const leftP = NP(G.box, '#f2ece0', pg, -0.11, 0, 0, '#d8d0be'); leftP.scale.set(0.22, 0.30, 0.01); leftP.rotation.y = 0.14;
+      const rightP = NP(G.box, '#f2ece0', pg, 0.11, 0, 0, '#d8d0be'); rightP.scale.set(0.22, 0.30, 0.01); rightP.rotation.y = -0.14;
+    }
+    if (o.kind === 'sarRoast') {
+      const tg = grp(arms[0].el, 0, -0.3, 0);
+      rod(P, tg, [0, 0, -0.02], [0, 0, 0.28], 0.01, '#585c62');
+      const PP = painter('paprike', pos);
+      const pep = PP(G.catBody, '#c93828', tg, 0, 0, 0.30, '#962218'); pep.scale.set(0.04, 0.035, 0.09);
+    }
+    if (o.kind === 'sarPick') {
+      const AP = painter('jabuka', pos);
+      const ap = AP(G.ball, '#cf3e2e', arms[0].el, 0, -0.33, 0.01, '#a02b1f'); ap.scale.setScalar(0.045);
+    }
+    if (o.kind === 'sarNana') {
+      hips.position.y = 0.74; torso.rotation.x = 0.14;
+      for (const l of legs) l.hip.visible = false;
+      for (const ch of hips.children) if (ch !== torso && !legs.some((l) => l.hip === ch)) ch.visible = false;
+    }
+    if (o.kind === 'sarPaint') {
+      const br = grp(arms[0].el, 0, -0.3, 0);
+      rod(P, br, [0, 0, -0.02], [0, 0, 0.22], 0.008, '#7a5432');
+      const tip = P(G.cone, '#d97832', br, 0, 0, 0.24, '#a64d1e'); tip.scale.set(0.25, 0.28, 0.25); tip.rotation.x = Math.PI / 2;
+      const pal = P(G.disc, '#c99f6b', arms[1].el, 0, -0.3, 0.02, '#a37b4b'); pal.scale.set(0.11, 0.085, 0.014); pal.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'sarDriver') {
+      p.isTramDriver = true;
+    }
+    // ---- Jajce spring activities ----
+    if (o.kind === 'jajBinoc') {
+      const BP = painter('dvogled', pos);
+      const bg = grp(arms[0].el, -0.05, -0.30, 0.03);
+      for (const sx of [-0.045, 0.045]) {
+        const tube = BP(G.rod, '#33363b', bg, sx, 0, 0.07, '#222428');
+        tube.scale.set(0.032, 0.14, 0.032); tube.rotation.x = Math.PI / 2;
+      }
+      const bridge = BP(G.box, '#4a4e54', bg, 0, 0, 0.05, '#2f3236');
+      bridge.scale.set(0.07, 0.025, 0.035);
+    }
+    if (o.kind === 'jajHiker') {
+      const RP = painter('ruksak', pos);
+      const pack = RP(G.box, '#c95b32', torso, 0, 0.30, -0.22, '#994020');
+      pack.scale.set(0.32, 0.44, 0.20);
+      const flap = RP(G.box, '#e07a42', torso, 0, 0.49, -0.22, '#b05526');
+      flap.scale.set(0.34, 0.10, 0.22);
+      const pocket = RP(G.box, '#a84422', torso, 0, 0.20, -0.33, '#7d2f16');
+      pocket.scale.set(0.22, 0.18, 0.06);
+    }
+    if (o.kind === 'jajMiller') {
+      const VP = painter('vreca', pos);
+      const sk = VP(G.catBody, '#dfd3b8', torso, 0.12, 0.56, -0.04, '#bfb090');
+      sk.scale.set(0.22, 0.24, 0.36); sk.rotation.z = -0.35;
+    }
+    if (o.kind === 'jajFish') {
+      const UP = painter('udica', pos);
+      const rodG = p.rod = grp(arms[0].el, 0, -0.30, 0.02);
+      rod(UP, rodG, [0, 0, 0], [0, 0.45, 2.3], 0.014, '#7d5a34');
+      rod(UP, rodG, [0, 0.45, 2.3], [0, -1.65, 2.55], 0.005, '#d8e4ea');
+      const bob = UP(G.ball, '#d94232', rodG, 0, -1.52, 2.55, '#a82c20');
+      bob.scale.set(0.045, 0.075, 0.045);
+    }
+    if (o.kind === 'jajGarden') {
+      const WP = painter('zalijevati', pos);
+      const can = grp(arms[0].el, 0, -0.32, 0.05);
+      const body = WP(G.rod, '#4f8a68', can, 0, -0.06, 0.08, '#38694c'); body.scale.set(0.11, 0.22, 0.11);
+      rod(WP, can, [0, -0.10, 0.16], [0, 0.04, 0.38], 0.018, '#4f8a68');
+      const rose = WP(G.cone, '#c9a648', can, 0, 0.05, 0.40, '#9c7c2c'); rose.scale.set(0.55, 0.45, 0.55); rose.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'jajGuitar') {
+      const GP = painter('gitara', pos);
+      const gg = p.guitar = grp(torso, 0.04, 0.22, 0.24);
+      gg.rotation.set(0.08, 0.15, -0.32);
+      const lo = GP(G.disc, '#c97e38', gg, -0.08, 0, 0, '#965820'); lo.scale.set(0.17, 0.19, 0.065);
+      const up = GP(G.disc, '#c97e38', gg, 0.08, 0.04, 0, '#965820'); up.scale.set(0.13, 0.14, 0.065);
+      const hole = GP(G.disc, '#3a2416', gg, 0.01, 0.01, 0.036, '#22140c'); hole.scale.set(0.055, 0.055, 0.008);
+      rod(GP, gg, [0.16, 0.06, 0], [0.56, 0.16, 0], 0.024, '#5e3a20');
+    }
+    // ---- Jahorina winter figures (all brand-new jah* kinds) ----
+    if (o.kind === 'jahThrow') {
+      const GP = painter('grudva', pos);
+      const sb = p.snowball = GP(G.ball, '#f4f8fc', arms[0].el, 0, -0.32, 0.03, '#c8d6e6'); sb.scale.setScalar(0.068);
+    }
+    if (o.kind === 'jahChop') {
+      const AP = painter('sjekira', pos);
+      const ax = grp(arms[0].el, 0, -0.3, 0);
+      rod(AP, ax, [0, 0, -0.05], [0, 0, 0.56], 0.018, '#7a5434');
+      const bl = AP(G.box, '#586068', ax, 0, 0.04, 0.54, '#363c42'); bl.scale.set(0.04, 0.2, 0.14);
+    }
+    if (o.kind === 'jahShovel') {
+      const SP = painter('lopata', pos);
+      const sh = p.shovel = grp(root, 0, 0, 0.52);
+      rod(SP, sh, [0, 1.05, -0.22], [0, 0.08, 0.22], 0.018, '#7a5434');
+      const scoop = SP(G.box, '#b84834', sh, 0, 0.08, 0.30, '#8a3222'); scoop.scale.set(0.36, 0.04, 0.28); scoop.rotation.x = 0.25;
+    }
+    if (o.kind === 'jahSledRide') {
+      const KP = painter(o.sledTag || 'sanke', pos);
+      const sl = grp(root, 0, 0.05, 0.05);
+      for (const s of [-0.19, 0.19]) {
+        const run = KP(G.box, '#7a5230', sl, s, 0.05, 0, '#54361e'); run.scale.set(0.035, 0.06, 1.15);
+        rod(KP, sl, [s, 0.05, 0.56], [s, 0.2, 0.68], 0.02, '#7a5230');
+      }
+      const seat = KP(G.box, '#9c6b3e', sl, 0, 0.20, -0.04, '#754e2b'); seat.scale.set(0.46, 0.05, 0.95);
+      if (o.path) p.pathPts = o.path.map(([x, y, z]) => new THREE.Vector3(x, y, z));
+    }
+    if (o.kind === 'jahSledPull') {
+      const KP = painter('sanke', pos);
+      const sl = p.pullSled = grp(root, 0, 0.05, -1.25);
+      for (const s of [-0.19, 0.19]) {
+        const run = KP(G.box, '#7a5230', sl, s, 0.05, 0, '#54361e'); run.scale.set(0.035, 0.06, 1.05);
+      }
+      const seat = KP(G.box, '#9c6b3e', sl, 0, 0.20, 0, '#754e2b'); seat.scale.set(0.44, 0.05, 0.88);
+      rod(P, torso, [-0.18, 0.08, -0.15], [0, -0.68, -0.78], 0.012, '#c8b490');
+    }
+    if (o.kind === 'jahSkater') {
+      const BP = painter('klizaljke', pos);
+      for (const l of legs) {
+        const boot = BP(G.box, '#f2eee6', l.knee, 0, -0.40, 0.05, '#c8c2b6'); boot.scale.set(0.095, 0.14, 0.22);
+        const blade = BP(G.box, '#788490', l.knee, 0, -0.49, 0.06, '#48525c'); blade.scale.set(0.018, 0.04, 0.26);
+      }
+      if (o.orbit) p.orbit = o.orbit;
+    }
+    if (o.kind === 'jahSkier' || o.kind === 'jahTumble') {
+      const KP = painter('skije', pos);
+      const PP = painter('stapovi', pos);
+      if (o.kind === 'jahSkier') {
+        for (const s of [-0.13, 0.13]) {
+          const sk = KP(G.box, o.skiCol || '#cc3c2c', root, s, 0.025, 0.14, '#96281c'); sk.scale.set(0.09, 0.03, 1.65);
+          const tip = KP(G.box, o.skiCol || '#cc3c2c', root, s, 0.08, 0.99, '#96281c'); tip.scale.set(0.09, 0.03, 0.2); tip.rotation.x = -0.5;
+        }
+        for (const a of arms) {
+          rod(PP, a.el, [0, -0.3, 0], [0, -0.3, -1.02], 0.012, '#3a4048');
+          const bsk = PP(G.disc, '#262b30', a.el, 0, -0.3, -0.94); bsk.scale.set(0.045, 0.045, 0.01);
+        }
+        if (o.path) p.pathPts = o.path.map(([x, y, z]) => new THREE.Vector3(x, y, z));
+      } else {
+        // playful beginner tumbled in soft powder snow, skis tilted up cleanly
+        root.rotation.order = 'YXZ';
+        hips.position.set(0, 0.36, 0); torso.rotation.x = -0.82;
+        legs[0].hip.rotation.set(-1.75, 0, -0.25); legs[0].knee.rotation.x = 0.45;
+        legs[1].hip.rotation.set(-1.35, 0, 0.35); legs[1].knee.rotation.x = 0.6;
+        for (const [i, l] of legs.entries()) {
+          const sk = KP(G.box, '#2c6eb8', l.knee, 0, -0.45, 0.06, '#1c4d85'); sk.scale.set(0.09, 0.03, 1.45); sk.rotation.x = Math.PI / 2 + (i ? 0.15 : -0.15);
+        }
+        for (const a of arms) { a.sh.rotation.set(-0.9, 0, a.s * 0.65); a.el.rotation.x = -0.4; }
+      }
+    }
+    // ---- Travnik summer activities ----
+    if (o.kind === 'trvWaitress') {
+      const tr = grp(arms[0].el, 0.06, -0.32, 0.06); tr.rotation.x = Math.PI / 2;
+      const tray = P(G.disc, '#c99358', tr, 0, 0, 0, '#996a38'); tray.scale.set(0.11, 0.11, 0.014);
+      const gl = P(G.rod, '#f5db4c', tr, 0, 0.02, -0.05, '#c9ae26'); gl.scale.set(0.032, 0.08, 0.032); gl.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'trvChef') {
+      const hat = P(G.rod, '#faf8f2', head, 0, 0.24, 0, '#dcd8ce'); hat.scale.set(0.13, 0.22, 0.13);
+      const puff = P(G.ball, '#ffffff', head, 0, 0.35, 0, '#e3e0d8'); puff.scale.set(0.17, 0.12, 0.17);
+      const sp = grp(arms[0].el, 0, -0.30, 0);
+      rod(P, sp, [0, 0, -0.02], [0, 0, 0.34], 0.012, '#7d5634');
+    }
+    if (o.kind === 'trvWriter') {
+      const PP = painter('pero', pos);
+      const q = grp(arms[0].el, 0, -0.30, 0.02);
+      rod(PP, q, [0, 0, 0], [0.06, 0.24, 0.10], 0.009, '#f7f4ec');
+      const fl = PP(G.box, '#ffffff', q, 0.05, 0.18, 0.08, '#dde2e8'); fl.scale.set(0.05, 0.16, 0.015);
+    }
+    if (o.kind === 'trvShepherd') {
+      const SP = painter('stap', pos);
+      const st = grp(arms[0].el, 0, -0.28, 0.03);
+      rod(SP, st, [0, 0.65, 0], [0, -0.92, 0], 0.020, '#7a5430');
+      const hk = SP(G.box, '#7a5430', st, 0, 0.68, 0.05, '#593b1f'); hk.scale.set(0.04, 0.05, 0.12);
+    }
+    if (o.kind === 'trvVizier') {
+      const turb = P(G.ball, '#f5efe2', head, 0, 0.18, 0, '#d9d0be'); turb.scale.set(0.21, 0.14, 0.21);
+      const crest = P(G.ball, '#d94c38', head, 0, 0.22, 0.16, '#a63322'); crest.scale.set(0.045, 0.07, 0.045);
+    }
+    // ---- Neum Adriatic summer figures (all brand-new neu* kinds) ----
+    if (o.kind === 'neuSunbathe') {
+      root.rotation.order = 'YXZ';
+      root.rotation.x = -1.24;
+      hips.position.set(0, 0.54, 0);
+      legs[0].hip.rotation.x = -0.22; legs[0].knee.rotation.x = 0.25;
+      legs[1].hip.rotation.x = -0.18; legs[1].knee.rotation.x = 0.20;
+      for (const a of arms) { a.sh.rotation.set(-2.45, 0, a.s * 0.42); a.el.rotation.x = -1.65; }
+    }
+    if (o.kind === 'neuNap') {
+      root.rotation.order = 'YXZ';
+      root.rotation.x = -Math.PI / 2;
+      hips.position.set(0, 0.16, 0);
+      legs[0].hip.rotation.x = -0.05; legs[0].knee.rotation.x = 0.08;
+      legs[1].hip.rotation.x = -0.12; legs[1].knee.rotation.x = 0.16;
+      arms[0].sh.rotation.set(-0.2, 0, -0.35); arms[0].el.rotation.x = -1.1;
+      arms[1].sh.rotation.set(-2.3, 0, 0.35); arms[1].el.rotation.x = -1.2;
+      head.rotation.y = 0.35;
+    }
+    if (o.kind === 'neuRead') {
+      const BP = o.bookTag ? painter(o.bookTag, pos, undefined, false, o.bookAt) : P;
+      const bk = p.book = grp(torso, 0, 0.42, 0.38); bk.rotation.x = -0.48;
+      const lft = BP(G.box, '#f6f1e4', bk, -0.11, 0, 0, '#dcd4c0'); lft.scale.set(0.20, 0.26, 0.02); lft.rotation.y = 0.22;
+      const rgt = BP(G.box, '#f6f1e4', bk, 0.11, 0, 0, '#dcd4c0'); rgt.scale.set(0.20, 0.26, 0.02); rgt.rotation.y = -0.22;
+      const cov = BP(G.box, o.bookCol || '#2b78a8', bk, 0, 0, -0.014, '#1b5478'); cov.scale.set(0.42, 0.28, 0.012);
+      for (const a of arms) { a.sh.rotation.set(-0.85, 0, a.s * -0.18); a.el.rotation.x = -0.85; }
+    }
+    if (o.kind === 'neuFan') {
+      const fn = p.fan = grp(arms[1].el, 0, -0.32, 0.06);
+      const blade = P(G.disc, '#e8684a', fn, 0, 0, 0, '#b84830'); blade.scale.set(0.18, 0.14, 0.015);
+      rod(P, fn, [0, -0.12, 0], [0, 0.02, 0], 0.012, '#7a5430');
+    }
+    if (o.kind === 'neuSnorkel') {
+      root.rotation.order = 'YXZ';
+      root.rotation.x = 1.48;
+      hips.position.set(0, 0.45, 0);
+      const MP = o.maskTag ? painter(o.maskTag, pos, undefined, false, o.maskAt) : P;
+      const mk = MP(G.box, '#2b86c4', head, 0, 0.02, 0.135, '#1c5e8c'); mk.scale.set(0.19, 0.095, 0.05);
+      rod(MP, head, [0.12, 0.02, 0.10], [0.16, 0.36, -0.04], 0.016, '#f2b82a');
+      const FP = o.finTag ? painter(o.finTag, pos, undefined, false, o.finAt) : P;
+      for (const l of legs) {
+        const fin = FP(G.box, '#f2b82a', l.knee, 0, -0.50, 0.14, '#c48d18'); fin.scale.set(0.15, 0.03, 0.44);
+      }
+      if (o.orbit) p.orbit = o.orbit;
+    }
+    if (o.kind === 'neuLifeguard') {
+      const tube = P(G.box, '#d9382c', torso, 0, 0.24, 0.30, '#a3241c'); tube.scale.set(0.54, 0.10, 0.11);
+      arms[0].sh.rotation.set(-2.2, 0, -0.35); arms[0].el.rotation.x = -1.25;
+      arms[1].sh.rotation.set(-0.7, 0, 0.12); arms[1].el.rotation.x = -0.6;
+    }
+    if (o.kind === 'neuSailor') {
+      rod(P, arms[0].el, [0, -0.3, 0], [0, -0.3, -0.55], 0.018, '#7a5230');
+    }
+    if (o.kind === 'neuDine') {
+      const gl = P(G.rod, '#f2da5e', arms[1].el, 0, -0.32, 0.06, '#d4b838'); gl.scale.set(0.038, 0.11, 0.038);
+    }
+    // ---- Banja Luka figures (all brand-new bl* kinds) ----
+    if (o.kind === 'blDajak') {
+      const MP = o.poleTag ? painter(o.poleTag, pos, undefined, false, o.poleAt) : P;
+      const pole = p.pole = grp(torso, 0.24, 0.36, 0.18);
+      rod(MP, pole, [0, 1.35, 0.28], [0, -2.15, -0.65], 0.028, '#a67b48');
+      const tip = MP(G.cone, '#5a6066', pole, 0, -2.2, -0.68, '#363b40'); tip.scale.set(0.55, 1.2, 0.55); tip.rotation.x = Math.PI;
+    }
+    if (o.kind === 'blViolin') {
+      const VP = o.violinTag ? painter(o.violinTag, pos) : P;
+      const vl = grp(torso, -0.14, 0.62, 0.28); vl.rotation.set(0.15, 0.45, 0.25);
+      VP(G.disc, '#9c4c24', vl, 0, 0, 0, '#6e3214').scale.set(0.11, 0.17, 0.05);
+      rod(VP, vl, [0, 0.14, 0], [0, 0.42, 0], 0.018, '#4a2614');
+      rod(VP, arms[1].el, [0, -0.3, -0.04], [0, -0.3, 0.52], 0.010, '#d8be8a');
+    }
+    if (o.kind === 'blDrum') {
+      const DP = o.drumTag ? painter(o.drumTag, pos) : P;
+      const dr = DP(G.rod, '#cc3e32', root, 0, 0.56, 0.56, '#96281e'); dr.scale.set(0.32, 0.42, 0.32);
+      const topD = DP(G.disc, '#f4eedc', root, 0, 0.78, 0.56, '#d8d0be'); topD.scale.set(0.31, 0.31, 0.02); topD.rotation.x = Math.PI / 2;
+      for (const a of arms) rod(DP, a.el, [0, -0.3, 0], [0, -0.3, 0.34], 0.012, '#d8be8a');
+    }
+    if (o.kind === 'blTrumpet') {
+      const TP2 = o.trumpetTag ? painter(o.trumpetTag, pos) : P;
+      const tr = grp(head, 0, -0.06, 0.14);
+      rod(TP2, tr, [0, 0, 0], [0, 0.04, 0.44], 0.02, '#e8bc38');
+      const bell = TP2(G.cone, '#e8bc38', tr, 0, 0.05, 0.50, '#b88e1e'); bell.scale.set(1.4, 1.4, 1.4); bell.rotation.x = -Math.PI / 2;
+    }
+    if (o.kind === 'blWaitress') {
+      const tr = P(G.disc, '#c8ced4', arms[1].el, 0, -0.30, 0.08, '#969ea6'); tr.scale.set(0.24, 0.24, 0.022); tr.rotation.x = Math.PI / 2;
+      P(G.rod, '#f8f4ea', arms[1].el, -0.06, -0.24, 0.08).scale.set(0.036, 0.08, 0.036);
+      P(G.rod, '#f8f4ea', arms[1].el, 0.07, -0.24, 0.09).scale.set(0.036, 0.08, 0.036);
+    }
+    if (o.kind === 'blScooter') {
+      const SP = o.scooterTag ? painter(o.scooterTag, pos) : P;
+      const scG = grp(root, 0, 0, 0);
+      SP(G.box, '#e24a38', scG, 0, 0.10, 0.02, '#aa2e20').scale.set(0.18, 0.04, 0.72);
+      for (const z of [-0.32, 0.34]) { const w = SP(G.disc, '#2e343a', scG, 0, 0.09, z); w.scale.set(0.09, 0.09, 0.04); w.rotation.y = Math.PI / 2; }
+      rod(SP, scG, [0, 0.12, 0.34], [0, 0.88, 0.28], 0.022, '#e24a38');
+      rod(SP, scG, [-0.22, 0.88, 0.28], [0.22, 0.88, 0.28], 0.02, '#2e343a');
+    }
+    if (o.kind === 'blFrisbee') {
+      const FP = o.frisbeeTag ? painter(o.frisbeeTag, pos) : P;
+      const fb = p.frisbee = FP(G.disc, '#f25c38', arms[1].el, 0, -0.32, 0.12, '#c03c1e'); fb.scale.set(0.18, 0.18, 0.024); fb.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'blTennis') {
+      const RP = o.racketTag ? painter(o.racketTag, pos) : P;
+      const rk = grp(arms[1].el, 0, -0.30, 0);
+      rod(RP, rk, [0, 0, 0], [0, 0, 0.34], 0.016, '#2a3440');
+      const hd = RP(G.disc, '#e8e4da', rk, 0, 0, 0.50, '#2a6cb8'); hd.scale.set(0.16, 0.21, 0.025);
+    }
+    if (o.kind === 'blBasket') {
+      const BP = o.ballTag ? painter(o.ballTag, pos) : P;
+      const bb = p.bball = BP(G.ball, '#e07228', arms[1].el, -0.06, -0.36, 0.12, '#a84c14'); bb.scale.setScalar(0.13);
+    }
+    if (o.kind === 'blStroller') {
+      const CP = o.strollerTag ? painter(o.strollerTag, pos) : P;
+      const st = grp(root, 0, 0, 0.82);
+      CP(G.box, '#2b6ea8', st, 0, 0.56, 0.12, '#1c4d78').scale.set(0.56, 0.38, 0.78);
+      const hood = CP(G.cap, '#2b6ea8', st, 0, 0.74, -0.10, '#1c4d78'); hood.scale.set(2.2, 1.8, 2.2);
+      for (const sx of [-0.26, 0.26]) for (const sz of [-0.26, 0.34]) {
+        const w = CP(G.disc, '#2e343a', st, sx, 0.14, sz); w.scale.set(0.14, 0.14, 0.05); w.rotation.y = Math.PI / 2;
+        rod(CP, st, [sx, 0.14, sz], [sx, 0.45, sz * 0.5], 0.018, '#8a949e');
+      }
+      for (const sx of [-0.26, 0.26]) rod(CP, st, [sx, 0.55, -0.22], [sx, 0.92, -0.52], 0.018, '#8a949e');
+      rod(CP, st, [-0.26, 0.92, -0.52], [0.26, 0.92, -0.52], 0.02, '#2e343a');
+    }
+    if (o.kind === 'blPhoto') {
+      const e = arms[1].el;
+      const cam = P(G.box, '#2e3238', e, -0.08, -0.34, -0.02, '#1a1d20'); cam.scale.set(0.24, 0.15, 0.12);
+      const lens = P(G.rod, '#58606a', e, -0.08, -0.34, -0.12); lens.scale.set(0.05, 0.10, 0.05); lens.rotation.x = Math.PI / 2;
+    }
+    if (o.kind === 'blDraw') {
+      const pad = P(G.box, '#faf6ea', torso, 0, 0.44, 0.38, '#d8d2c2'); pad.scale.set(0.38, 0.28, 0.025); pad.rotation.x = -0.55;
+      rod(P, arms[1].el, [0, -0.30, 0], [0, -0.30, 0.22], 0.01, '#e8a828');
+    }
+    // ---- Bihać figures ----
+    if (o.kind === 'bihPotter') {
+      const clay = P(G.ball, '#b86c48', torso, 0, 0.42, 0.36, '#8c4c2e'); clay.scale.set(0.16, 0.14, 0.16);
+    }
+    if (o.kind === 'bihGuard') {
+      const sp = grp(arms[1].el, 0, -0.32, 0);
+      sp.rotation.x = 1.38;
+      rod(P, sp, [0, -0.82, 0], [0, 1.38, 0], 0.022, '#6d4c32');
+      const tip = P(G.cone, '#c8d0d8', sp, 0, 1.50, 0, '#8d96a0'); tip.scale.set(0.8, 1.8, 0.4);
+      const helm = P(G.cap, '#9aa4b0', head, 0, 0.08, 0, '#6d7782'); helm.scale.set(1.06, 1.04, 1.06);
+    }
+    if (o.kind === 'bihTambura') {
+      const TP = painter(o.tamburaTag || 'tambura', pos);
+      const tb = p.tambura = grp(torso, 0.02, 0.36, 0.28);
+      tb.rotation.z = -0.26;
+      TP(G.ball, '#c47b3b', tb, -0.14, 0, 0, '#8c501d').scale.set(0.19, 0.14, 0.07);
+      TP(G.disc, '#3b2414', tb, -0.14, 0, 0.068).scale.set(0.045, 0.045, 0.015);
+      TP(G.box, '#6e421c', tb, 0.18, 0, 0.01, '#4a2a0f').scale.set(0.46, 0.045, 0.03);
+      TP(G.box, '#3b2414', tb, 0.42, 0, 0.01).scale.set(0.08, 0.07, 0.035);
+    }
+    // ---- Tuzla figures (all brand-new tuz* kinds) ----
+    if (o.kind === 'tuzFloat') {
+      root.rotation.order = 'YXZ';
+      root.rotation.x = -Math.PI / 2;
+      hips.position.set(0, 0.22, 0);
+      for (const l of legs) { l.hip.rotation.x = -0.05; l.knee.rotation.x = 0.08; }
+      for (const a of arms) { a.sh.rotation.set(-0.35, 0, a.s * 0.95); a.el.rotation.x = -0.25; }
+    }
+    if (o.kind === 'tuzSplash') {
+      const drops = p.splashes = [];
+      for (let i = 0; i < 6; i++) {
+        const d = P(G.ball, i % 2 ? '#b8f0f4' : '#ffffff', root, (i - 2.5) * 0.16, 0.72, 0.42, '#5ec8d4');
+        d.scale.setScalar(0.055 + (i % 3) * 0.018);
+        drops.push(d);
+      }
+    }
+    if (o.kind === 'tuzMiner') {
+      const LP = o.lampTag ? painter(o.lampTag, pos, undefined, false, o.lampAt) : P;
+      const housing = LP(G.rod, '#2e343c', head, 0, 0.11, 0.15, '#1c2026'); housing.scale.set(0.055, 0.06, 0.055); housing.rotation.x = Math.PI / 2;
+      const lens = LP(G.ball, '#fff29c', head, 0, 0.11, 0.185, '#f2c830'); lens.scale.setScalar(0.058);
+      const KP = o.pickTag ? painter(o.pickTag, pos, undefined, false, o.pickAt) : P;
+      const pk = grp(arms[1].el, 0, -0.30, 0);
+      rod(KP, pk, [0, 0, -0.10], [0, 0, 0.72], 0.022, '#8a623c');
+      const headBar = KP(G.box, '#586068', pk, 0, 0, 0.70, '#383e44'); headBar.scale.set(0.56, 0.055, 0.065);
+      for (const s of [-1, 1]) {
+        const pt = KP(G.cone, '#586068', pk, s * 0.34, 0, 0.67, '#383e44'); pt.scale.set(0.45, 0.9, 0.45); pt.rotation.z = s * -1.45;
+      }
+    }
+    if (o.kind === 'tuzStudent') {
+      const nb = P(G.box, '#2b6cb8', arms[0].el, 0.06, -0.28, 0.10, '#1c4a82'); nb.scale.set(0.24, 0.30, 0.055);
+      const nb2 = P(G.box, '#e89b32', arms[0].el, 0.07, -0.27, 0.15, '#b8721c'); nb2.scale.set(0.22, 0.28, 0.04);
+      const bag = P(G.box, '#6e4c30', torso, 0, 0.26, -0.19, '#4a301c'); bag.scale.set(0.32, 0.42, 0.14);
+    }
+    if (o.kind === 'tuzAccordion') {
+      const AP = o.accordionTag ? painter(o.accordionTag, pos, undefined, false, o.accordionAt) : P;
+      const ac = p.accordion = grp(torso, 0, 0.34, 0.26);
+      AP(G.box, '#c8342c', ac, -0.16, 0, 0, '#8f201a').scale.set(0.10, 0.34, 0.20);
+      AP(G.box, '#c8342c', ac, 0.16, 0, 0, '#8f201a').scale.set(0.10, 0.34, 0.20);
+      AP(G.box, '#f6f2e8', ac, 0.22, 0, 0.02).scale.set(0.025, 0.30, 0.14);
+      const bel = p.bellows = AP(G.box, '#2e3238', ac, 0, 0, 0, '#181a1e'); bel.scale.set(0.24, 0.30, 0.17);
+    }
+    if (o.kind === 'tuzFlute') {
+      const FP = o.fluteTag ? painter(o.fluteTag, pos, undefined, false, o.fluteAt) : P;
+      rod(FP, head, [-0.06, -0.05, 0.15], [0.58, -0.09, 0.15], 0.015, '#d8e2ea');
+    }
+    if (o.kind === 'tuzSing') {
+      const NP = o.noteTag ? painter(o.noteTag, pos, undefined, false, o.noteAt) : P;
+      p.notes = [];
+      for (let i = 0; i < 3; i++) {
+        const ng = grp(root, (i - 1) * 0.26, 2.05 + i * 0.18, 0.22);
+        NP(G.ball, '#f2c438', ng, 0, 0, 0, '#c8941c').scale.set(0.065, 0.05, 0.05);
+        rod(NP, ng, [0.05, 0, 0], [0.05, 0.22, 0], 0.012, '#f2c438');
+        NP(G.box, '#f2c438', ng, 0.09, 0.20, 0).scale.set(0.09, 0.035, 0.02);
+        p.notes.push(ng);
+      }
+    }
+    if (o.kind === 'tuzRaincoat') {
+      const HP = o.coatTag ? painter(o.coatTag, pos, undefined, false, o.coatAt) : P;
+      const hood = HP(G.cap, o.coatCol || '#eab824', head, 0, 0.04, -0.03, o.coatBleed || '#be8e12'); hood.scale.set(1.22, 1.24, 1.26);
+    }
+    // ---- Višegrad figures ----
+    if (o.kind === 'visMason') {
+      const mh = grp(arms[1].el, 0, -0.30, 0);
+      rod(P, mh, [0, 0, 0], [0, 0, 0.34], 0.016, '#8f6438');
+      P(G.box, '#4a5059', mh, 0, 0, 0.34, '#2e3338').scale.set(0.14, 0.08, 0.09);
+    }
+    if (o.kind === 'visAuthor') {
+      rod(P, arms[1].el, [0, -0.28, 0], [0, -0.28, 0.24], 0.011, '#2a2a30');
+      P(G.cap, '#4a3d33', head, 0, 0.08, 0, '#2e251e').scale.set(1.06, 0.72, 1.06);
+    }
+    if (o.kind === 'visSmith') {
+      const sh = grp(arms[1].el, 0, -0.32, 0);
+      rod(P, sh, [0, 0, 0], [0, 0, 0.42], 0.018, '#6e4c2e');
+      P(G.box, '#383d45', sh, 0, 0, 0.42, '#1f2226').scale.set(0.18, 0.11, 0.12);
+      P(G.box, '#5c3c28', torso, 0, 0.18, 0.14, '#3d2618').scale.set(0.36, 0.56, 0.05);
+    }
+    if (o.kind === 'visLumber') {
+      P(G.cap, '#9e3828', head, 0, 0.07, 0, '#6e2216').scale.set(1.06, 0.9, 1.06);
+    }
+    if (o.kind === 'visConductor') {
+      P(G.cap, '#222b3d', head, 0, 0.08, 0, '#121824').scale.set(1.10, 0.85, 1.16);
+      const WP = painter(o.whistleTag || 'zvizdaljka', pos);
+      const wh = grp(torso, 0.02, 0.54, 0.22);
+      WP(G.rod, '#e8be3a', wh, 0, 0, 0, '#b58d18').scale.set(0.055, 0.18, 0.055);
+      WP(G.ball, '#e8be3a', wh, 0, -0.08, 0.04, '#b58d18').scale.setScalar(0.068);
+    }
+    if (o.kind === 'visRaftsman') {
+      const pl = grp(arms[1].el, 0, -0.32, 0);
+      pl.rotation.x = 1.25;
+      rod(P, pl, [0, -1.1, 0], [0, 1.45, 0], 0.024, '#8f6438');
+    }
+    if (o.kind === 'visRower') {
+      for (const s of [0, 1]) {
+        const oar = grp(arms[s].el, 0, -0.30, 0);
+        rod(P, oar, [0, 0, -0.25], [(s ? 1 : -1) * 1.15, -0.38, 0.45], 0.020, '#8f6438');
+      }
+    }
+    if (o.kind === 'visTraveller') {
+      const st = grp(arms[1].el, 0, -0.32, 0);
+      st.rotation.x = 1.32;
+      rod(P, st, [0, -0.82, 0], [0, 1.05, 0], 0.022, '#6d4c32');
+      P(G.box, '#785030', torso, 0, 0.28, -0.19, '#52341c').scale.set(0.32, 0.42, 0.15);
+    }
     list.push(p); return p;
   }
   function a0pose(arms, x0, x1) { arms[0].sh.rotation.x = x0; arms[1].sh.rotation.x = x1; }
@@ -333,18 +859,302 @@ export function createPeople(scene, world, R) {
   });
   // (each map has its own set of these features; a map without one simply does not get it)
   const PG = world.pigeons || { x: 0, y: -999, z: 0 }, pcentre = new THREE.Vector3(PG.x, PG.y, PG.z), pigeons = [];
-  for (let i = 0; i < (world.pigeons ? 8 : 0); i++) {
-    const ang = (i / 8) * 6.28 + R(), rad = 0.5 + R() * 1.5, home = new THREE.Vector3(PG.x + Math.cos(ang) * rad, PG.y, PG.z + Math.sin(ang) * rad);
-    const P = painter('pigeon', home, 1.2), g = new THREE.Group(); g.position.copy(home); g.rotation.y = R() * 6.28; scene.add(g);
+  const pCount = world.pigeons ? (PG.count || 8) : 0, pTag = PG.tag || 'pigeon';
+  for (let i = 0; i < pCount; i++) {
+    const ang = (i / pCount) * 6.28 + R(), rad = 0.5 + R() * (PG.spread || 1.5), home = new THREE.Vector3(PG.x + Math.cos(ang) * rad, PG.y, PG.z + Math.sin(ang) * rad);
+    const P = painter(pTag, home, 1.2), g = new THREE.Group(); g.position.copy(home); g.rotation.y = R() * 6.28; scene.add(g);
     const col = ['#8f9aa6', '#a7aeb5', '#7d8794', '#c9c4bc'][i % 4], b = P(G.catBody, col, g, 0, 0.11, 0, '#6a7480'); b.scale.set(0.07, 0.075, 0.13);
     const hd = grp(g, 0, 0.2, 0.09); P(G.catBody, '#6f8a84', hd, 0, 0, 0).scale.set(0.045, 0.045, 0.045); const bk = P(G.cone, '#d9a25a', hd, 0, 0, 0.055); bk.scale.set(0.3, 0.3, 0.3); bk.rotation.x = Math.PI / 2;
     const tl = P(G.box, '#6a7480', g, 0, 0.1, -0.15); tl.scale.set(0.07, 0.015, 0.12);
     const wings = [-1, 1].map((s) => { const w = grp(g, s * 0.05, 0.14, 0); const m = P(G.box, col, w, s * 0.11, 0, 0, '#6a7480'); m.scale.set(0.22, 0.012, 0.12); w.visible = false; return w; });
     pigeons.push({ g, hd, wings, home, mode: 'ground', t: 0, phase: R() * 6, r: 3 + R() * 2.5, h: 3 + R() * 2.5, yaw: g.rotation.y });
   }
+  let pigeonsForced = 0;
+
+  // ---- Sarajevo wildlife: ducks on the Miljacka, squirrel on walnut branch, kitten in courtyard ----
+  const ducks = (world.ducks || []).map((dk, i) => {
+    const dp = new THREE.Vector3(dk.x, dk.y, dk.z), DP = painter(dk.tag || 'patke', dp, 1.4), g = new THREE.Group();
+    g.position.copy(dp); g.rotation.y = dk.ry || 0; scene.add(g);
+    const drake = i === 0, bodyC = drake ? '#9e978c' : '#8f7254', headC = drake ? '#2b6b4c' : '#7b6046';
+    const b = DP(G.catBody, bodyC, g, 0, 0.13, 0, '#6a5b48'); b.scale.set(0.16, 0.12, 0.24);
+    const neck = grp(g, 0, 0.22, 0.18);
+    DP(G.catBody, headC, neck, 0, 0.08, 0.02, '#1e4a34').scale.set(0.085, 0.085, 0.095);
+    const bill = DP(G.box, '#e2a332', neck, 0, 0.07, 0.13, '#c4831e'); bill.scale.set(0.06, 0.026, 0.09);
+    const tail = DP(G.cone, '#5a4e42', g, 0, 0.18, -0.24); tail.scale.set(1.2, 0.8, 1.2); tail.rotation.x = -0.9;
+    return { g, neck, home: dp.clone(), r: dk.r || 1.6, phase: i * 2.1, speed: 0.38 + i * 0.08 };
+  });
+
+  let squirrel = null;
+  if (world.squirrel) {
+    const SQ = world.squirrel, sp = new THREE.Vector3(SQ.x, SQ.y, SQ.z), SP = painter(SQ.tag || 'vjeverica', sp, 1.2), g = new THREE.Group();
+    g.position.copy(sp); g.rotation.y = SQ.ry || 0; scene.add(g);
+    const C1 = '#a85124', C2 = '#7a3615';
+    const bd = SP(G.catBody, C1, g, 0, 0.14, 0, C2); bd.scale.set(0.09, 0.11, 0.16);
+    const hd = grp(g, 0, 0.24, 0.12); SP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.07, 0.068, 0.08);
+    for (const s of [-1, 1]) SP(G.ear, C2, hd, s * 0.04, 0.07, -0.01).scale.set(0.35, 0.4, 0.35);
+    const nut = SP(G.ball, '#7a5230', hd, 0, -0.05, 0.09, '#57381e'); nut.scale.setScalar(0.032);
+    const tl = grp(g, 0, 0.15, -0.14);
+    const t1 = SP(G.catBody, C1, tl, 0, 0.14, -0.05, C2); t1.scale.set(0.07, 0.17, 0.09); t1.rotation.x = -0.4;
+    const t2 = SP(G.catBody, '#c96832', tl, 0, 0.28, -0.02, C1); t2.scale.set(0.075, 0.13, 0.08); t2.rotation.x = 0.45;
+    squirrel = { g, hd, tl, home: sp.clone(), dir: new THREE.Vector3(Math.sin(SQ.ry || 0), 0, Math.cos(SQ.ry || 0)), span: SQ.span || 1.2 };
+  }
+
+  let kitten = null;
+  if (world.kitten) {
+    const KT = world.kitten, kp = new THREE.Vector3(KT.x, KT.y, KT.z), KP = painter(KT.tag || 'mace', kp, 1.2), g = new THREE.Group();
+    g.position.copy(kp); g.rotation.y = KT.ry || 0; g.scale.setScalar(0.62); scene.add(g);
+    const C1 = '#e39a4a', C2 = '#c9752f';
+    const body = grp(g, 0, 0, 0);
+    KP(G.catBody, C1, body, 0, 0.34, 0, C2).scale.set(0.19, 0.21, 0.36);
+    const hd = grp(body, 0, 0.56, 0.34); KP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.18, 0.17, 0.18);
+    for (const s of [-1, 1]) KP(G.ear, C2, hd, s * 0.1, 0.18, 0.02).scale.setScalar(0.95);
+    const tl = grp(body, 0, 0.38, -0.35); KP(G.catTail, C1, tl, 0, 0, 0, C2); tl.rotation.x = -0.5;
+    const legs = [[0.1, 0.2], [-0.1, 0.2], [0.1, -0.2], [-0.1, -0.2]].map(([x, z]) => { const lg = grp(body, x, 0.24, z); KP(G.catLeg, C1, lg, 0, 0, 0, C2); return lg; });
+    kitten = { g, body, hd, tl, legs, home: kp.clone(), ry: KT.ry || 0 };
+  }
+  // ---- Jahorina mountain wildlife: fox, hare, owl, roe deer, wolf, crow ----
+  const jahAnimals = (world.jahAnimals || []).map((o) => {
+    const ap = new THREE.Vector3(o.x, o.y, o.z), AP = painter(o.tag, ap, 1.8), g = new THREE.Group();
+    g.position.copy(ap); g.rotation.y = o.ry || 0; scene.add(g);
+    const body = grp(g, 0, 0, 0); let hd = null, tl = null, neck = null; const legs = [], wings = [];
+    if (o.kind === 'fox') {
+      const C1 = '#d45c26', C2 = '#a34014', W = '#f4efe4';
+      AP(G.catBody, C1, body, 0, 0.42, 0, C2).scale.set(0.18, 0.2, 0.42);
+      AP(G.catBody, W, body, 0, 0.38, 0.22).scale.set(0.14, 0.14, 0.18);
+      hd = grp(body, 0, 0.58, 0.4); AP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.14, 0.13, 0.18);
+      AP(G.cone, C1, hd, 0, -0.02, 0.22, C2).rotation.x = Math.PI / 2;
+      for (const s of [-1, 1]) AP(G.ear, C2, hd, s * 0.08, 0.15, -0.02).scale.set(1.1, 1.35, 1.1);
+      tl = grp(body, 0, 0.44, -0.4); AP(G.catBody, C1, tl, 0, 0.04, -0.22, C2).scale.set(0.12, 0.13, 0.28);
+      AP(G.ball, W, tl, 0, 0.06, -0.44).scale.setScalar(0.1);
+      for (const [x, z] of [[0.1, 0.24], [-0.1, 0.24], [0.1, -0.24], [-0.1, -0.24]]) { const lg = grp(body, x, 0.3, z); AP(G.catLeg, '#362e2a', lg, 0, 0, 0).scale.set(0.95, 1.15, 0.95); legs.push(lg); }
+    } else if (o.kind === 'hare') {
+      const C1 = '#dcd6ca', C2 = '#b2aa9c';
+      AP(G.catBody, C1, body, 0, 0.24, 0, C2).scale.set(0.16, 0.18, 0.26);
+      hd = grp(body, 0, 0.42, 0.22); AP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.12, 0.12, 0.14);
+      for (const s of [-1, 1]) { const e = AP(G.catLeg, C2, hd, s * 0.06, 0.20, -0.03); e.scale.set(0.85, 0.95, 0.6); e.rotation.z = s * -0.14; }
+      tl = grp(body, 0, 0.22, -0.26); AP(G.ball, '#f8f8f4', tl, 0, 0, 0).scale.setScalar(0.085);
+    } else if (o.kind === 'owl') {
+      const C1 = '#7c624a', C2 = '#543f2d', W = '#e8dfd0';
+      AP(G.catBody, C1, body, 0, 0.34, 0, C2).scale.set(0.2, 0.28, 0.18);
+      AP(G.catBody, W, body, 0, 0.30, 0.08).scale.set(0.14, 0.2, 0.12);
+      hd = grp(body, 0, 0.62, 0.02); AP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.17, 0.16, 0.16);
+      AP(G.cone, '#d99a26', hd, 0, -0.02, 0.17).scale.set(0.38, 0.45, 0.38);
+      for (const s of [-1, 1]) {
+        AP(G.ear, C2, hd, s * 0.1, 0.15, 0.01);
+        AP(G.ball, '#f0c438', hd, s * 0.065, 0.02, 0.14).scale.setScalar(0.035);
+        const w = grp(body, s * 0.18, 0.38, -0.02); AP(G.catBody, C2, w, 0, -0.06, 0).scale.set(0.06, 0.22, 0.14); wings.push(w);
+      }
+    } else if (o.kind === 'roe') {
+      const C1 = '#9c6e44', C2 = '#704b2c', W = '#f0eadc';
+      AP(G.catBody, C1, body, 0, 0.88, 0, C2).scale.set(0.22, 0.25, 0.52);
+      AP(G.ball, W, body, 0, 0.88, -0.5).scale.set(0.15, 0.17, 0.1);
+      neck = grp(body, 0, 1.04, 0.42); AP(G.catBody, C1, neck, 0, 0.26, 0.1, C2).scale.set(0.095, 0.32, 0.12);
+      hd = grp(neck, 0, 0.52, 0.2); AP(G.catBody, C1, hd, 0, 0, 0.06, C2).scale.set(0.09, 0.1, 0.2);
+      for (const s of [-1, 1]) { const e = AP(G.ear, C2, hd, s * 0.08, 0.12, -0.04); e.scale.set(1.0, 1.5, 1.0); e.rotation.z = s * -0.35; }
+      for (const [x, z] of [[0.12, 0.34], [-0.12, 0.34], [0.12, -0.34], [-0.12, -0.34]]) { const lg = grp(body, x, 0.72, z); AP(G.catLeg, C2, lg, 0, 0, 0).scale.set(0.95, 2.8, 0.95); legs.push(lg); }
+    } else if (o.kind === 'wolf') {
+      const C1 = '#7b8088', C2 = '#4d525a', W = '#d8dce0';
+      AP(G.catBody, C1, body, 0, 0.66, 0, C2).scale.set(0.24, 0.26, 0.55);
+      AP(G.catBody, W, body, 0, 0.60, 0.26).scale.set(0.20, 0.20, 0.22);
+      neck = grp(body, 0, 0.82, 0.44);
+      hd = grp(neck, 0, 0.14, 0.14); AP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.16, 0.15, 0.22);
+      AP(G.catBody, W, hd, 0, -0.03, 0.22).scale.set(0.085, 0.075, 0.14);
+      for (const s of [-1, 1]) AP(G.ear, C2, hd, s * 0.1, 0.16, -0.04).scale.set(1.1, 1.35, 1.1);
+      tl = grp(body, 0, 0.66, -0.52); AP(G.catBody, C2, tl, 0, -0.14, -0.14).scale.set(0.09, 0.24, 0.11);
+      for (const [x, z] of [[0.13, 0.34], [-0.13, 0.34], [0.13, -0.34], [-0.13, -0.34]]) { const lg = grp(body, x, 0.52, z); AP(G.catLeg, C2, lg, 0, 0, 0).scale.set(1.1, 2.0, 1.1); legs.push(lg); }
+    } else if (o.kind === 'crow') {
+      const C1 = '#24272c', C2 = '#14161a';
+      AP(G.catBody, C1, body, 0, 0.22, 0, C2).scale.set(0.12, 0.13, 0.24);
+      hd = grp(body, 0, 0.34, 0.18); AP(G.ball, C1, hd, 0, 0, 0, C2).scale.setScalar(0.095);
+      const bk = AP(G.cone, '#3a3e44', hd, 0, -0.01, 0.14); bk.scale.set(0.32, 0.7, 0.32); bk.rotation.x = Math.PI / 2;
+      tl = grp(body, 0, 0.2, -0.24); AP(G.box, C2, tl, 0, 0, -0.06).scale.set(0.12, 0.03, 0.18);
+      for (const s of [-0.05, 0.05]) rod(AP, body, [s, 0.12, 0], [s, 0, 0], 0.01, '#3a3e44');
+    }
+    return { o, g, body, hd, tl, neck, legs, wings, home: ap.clone(), phase: R() * 6 };
+  });
+  // ---- Neum Adriatic coastal & marine wildlife: seagull, dolphin, crab, octopus, jellyfish, lizard ----
+  const neuAnimals = (world.neuAnimals || []).map((o) => {
+    const ap = new THREE.Vector3(o.x, o.y, o.z), AP = painter(o.tag, ap, 2.2), g = new THREE.Group();
+    g.position.copy(ap); g.rotation.y = o.ry || 0; scene.add(g);
+    const body = grp(g, 0, 0, 0); let hd = null, tl = null; const legs = [], wings = [], armsA = [];
+    if (o.kind === 'gull') {
+      const W = '#fbfaf6', G1 = '#8e9aa6', BK = '#e6a828';
+      AP(G.catBody, W, body, 0, 0.24, 0, '#dce2e8').scale.set(0.13, 0.13, 0.28);
+      hd = grp(body, 0, 0.36, 0.22); AP(G.ball, W, hd, 0, 0, 0).scale.setScalar(0.095);
+      const bk = AP(G.cone, BK, hd, 0, -0.01, 0.15); bk.scale.set(0.32, 0.72, 0.32); bk.rotation.x = Math.PI / 2;
+      tl = grp(body, 0, 0.24, -0.28); AP(G.box, W, tl, 0, 0, -0.08).scale.set(0.14, 0.025, 0.18);
+      for (const s of [-1, 1]) {
+        const w = grp(body, s * 0.10, 0.28, 0.02);
+        const wm = AP(G.box, G1, w, s * 0.30, 0, -0.02, '#6c7884'); wm.scale.set(0.62, 0.026, 0.19);
+        const wt = AP(G.box, '#2b3036', w, s * 0.58, 0, -0.04); wt.scale.set(0.16, 0.024, 0.13);
+        if (!o.fly) { w.rotation.z = s * -1.15; w.scale.set(0.55, 1, 0.85); }
+        wings.push(w);
+      }
+      if (!o.fly) for (const s of [-0.05, 0.05]) rod(AP, body, [s, 0.14, 0], [s, 0, 0], 0.011, BK);
+    } else if (o.kind === 'dolphin') {
+      const C1 = '#6f8ea8', C2 = '#4a6680', BL = '#d8e4ee';
+      AP(G.catBody, C1, body, 0, 0, 0, C2).scale.set(0.28, 0.30, 0.92);
+      AP(G.catBody, BL, body, 0, -0.09, 0.05).scale.set(0.22, 0.18, 0.74);
+      const snout = AP(G.cone, C1, body, 0, -0.04, 1.02, C2); snout.scale.set(1.1, 1.4, 1.1); snout.rotation.x = Math.PI / 2;
+      const dorsal = AP(G.ear, C2, body, 0, 0.34, -0.06); dorsal.scale.set(0.9, 2.2, 1.8); dorsal.rotation.x = -0.35;
+      for (const s of [-1, 1]) { const fl = AP(G.box, C2, body, s * 0.34, -0.10, 0.24); fl.scale.set(0.32, 0.04, 0.16); fl.rotation.z = s * -0.45; }
+      tl = grp(body, 0, 0, -0.92);
+      AP(G.catBody, C2, tl, 0, 0, -0.22).scale.set(0.12, 0.12, 0.32);
+      const fluke = AP(G.box, C2, tl, 0, 0, -0.52); fluke.scale.set(0.62, 0.045, 0.24);
+    } else if (o.kind === 'crab') {
+      const C1 = '#d94c2c', C2 = '#a33218';
+      AP(G.catBody, C1, body, 0, 0.15, 0, C2).scale.set(0.24, 0.11, 0.19);
+      for (const s of [-1, 1]) {
+        AP(G.ball, '#1e2024', body, s * 0.08, 0.25, 0.12).scale.setScalar(0.028);
+        const cl = grp(body, s * 0.18, 0.16, 0.18);
+        AP(G.catBody, C1, cl, s * 0.06, 0.02, 0.10, C2).scale.set(0.08, 0.065, 0.12);
+        armsA.push(cl);
+        for (const z of [-0.10, 0, 0.09]) { const lg = grp(body, s * 0.22, 0.13, z); rod(AP, lg, [0, 0, 0], [s * 0.18, -0.12, z * 0.3], 0.018, C2); legs.push(lg); }
+      }
+    } else if (o.kind === 'octopus') {
+      const C1 = '#c45848', C2 = '#8f3a2e';
+      AP(G.catBody, C1, body, 0, 0.34, 0, C2).scale.set(0.24, 0.28, 0.26);
+      for (const s of [-1, 1]) AP(G.ball, '#f2e8c8', body, s * 0.12, 0.26, 0.20).scale.setScalar(0.045);
+      for (let i = 0; i < 6; i++) {
+        const ang = (i / 6) * Math.PI * 2;
+        const tn = grp(body, Math.cos(ang) * 0.16, 0.14, Math.sin(ang) * 0.16);
+        tn.rotation.y = -ang;
+        rod(AP, tn, [0, 0, 0], [0.32, -0.08, 0.06], 0.042, C1);
+        rod(AP, tn, [0.32, -0.08, 0.06], [0.56, 0.04, -0.04], 0.026, C2);
+        armsA.push(tn);
+      }
+    } else if (o.kind === 'jellyfish') {
+      const C1 = '#d89ce6', C2 = '#b372c4';
+      const dome = AP(G.cap, C1, body, 0, 0.22, 0, C2); dome.scale.set(2.2, 1.9, 2.2);
+      for (let i = 0; i < 5; i++) {
+        const ang = (i / 5) * Math.PI * 2;
+        const tn = grp(body, Math.cos(ang) * 0.10, 0.14, Math.sin(ang) * 0.10);
+        rod(AP, tn, [0, 0, 0], [Math.cos(ang) * 0.05, -0.44, Math.sin(ang) * 0.05], 0.015, '#e8c4f2');
+        armsA.push(tn);
+      }
+    } else if (o.kind === 'lizard') {
+      const C1 = '#589c42', C2 = '#396e28';
+      AP(G.catBody, C1, body, 0, 0.08, 0, C2).scale.set(0.08, 0.06, 0.22);
+      hd = grp(body, 0, 0.09, 0.24); AP(G.catBody, C1, hd, 0, 0, 0.04, C2).scale.set(0.065, 0.05, 0.10);
+      tl = grp(body, 0, 0.07, -0.22); rod(AP, tl, [0, 0, 0], [0, -0.02, -0.36], 0.022, C2);
+      for (const [x, z] of [[0.08, 0.12], [-0.08, 0.12], [0.08, -0.10], [-0.08, -0.10]]) {
+        const lg = grp(body, x, 0.06, z); rod(AP, lg, [0, 0, 0], [Math.sign(x) * 0.09, -0.06, 0.02], 0.014, C2); legs.push(lg);
+      }
+    }
+    return { o, g, body, hd, tl, legs, wings, armsA, home: ap.clone(), phase: R() * 6 };
+  });
+  // ---- Banja Luka river & park wildlife: heron, otter, hedgehog, sparrow, ladybug, goose ----
+  const blAnimals = (world.blAnimals || []).map((o) => {
+    const ap = new THREE.Vector3(o.x, o.y, o.z), AP = painter(o.tag, ap, 2.0), g = new THREE.Group();
+    g.position.copy(ap); g.rotation.y = o.ry || 0; scene.add(g);
+    const body = grp(g, 0, 0, 0); let hd = null, neck = null, tl = null; const legs = [], wings = [];
+    if (o.kind === 'heron') {
+      const C1 = '#96a4b0', C2 = '#6a7886', W = '#f2f4f6';
+      for (const s of [-0.08, 0.08]) rod(AP, body, [s, 0.72, 0], [s, 0, 0], 0.018, '#5a5244');
+      AP(G.catBody, C1, body, 0, 0.84, 0, C2).scale.set(0.18, 0.22, 0.38);
+      neck = grp(body, 0, 0.96, 0.28);
+      rod(AP, neck, [0, 0, 0], [0, 0.42, 0.08], 0.042, W);
+      hd = grp(neck, 0, 0.46, 0.10);
+      AP(G.catBody, W, hd, 0, 0, 0, C1).scale.set(0.08, 0.08, 0.13);
+      const bk = AP(G.cone, '#e4a828', hd, 0, -0.01, 0.24); bk.scale.set(0.32, 1.4, 0.32); bk.rotation.x = Math.PI / 2;
+    } else if (o.kind === 'otter') {
+      const C1 = '#6e4a30', C2 = '#4a301d';
+      AP(G.catBody, C1, body, 0, 0.22, 0, C2).scale.set(0.18, 0.16, 0.46);
+      hd = grp(body, 0, 0.34, 0.42); AP(G.catBody, C1, hd, 0, 0, 0, C2).scale.set(0.13, 0.11, 0.15);
+      AP(G.catBody, '#d8c8b0', hd, 0, -0.03, 0.12).scale.set(0.08, 0.06, 0.07);
+      tl = grp(body, 0, 0.18, -0.44); rod(AP, tl, [0, 0, 0], [0, -0.06, -0.46], 0.05, C2);
+    } else if (o.kind === 'hedgehog') {
+      const C1 = '#6e5848', C2 = '#4a3a2e';
+      AP(G.catBody, C1, body, 0, 0.18, 0, C2).scale.set(0.20, 0.18, 0.25);
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        coneH(AP, C2, body, Math.cos(a) * 0.14, 0.26, Math.sin(a) * 0.16);
+      }
+      hd = grp(body, 0, 0.14, 0.24); AP(G.cone, '#c8b49a', hd, 0, 0, 0.06).rotation.x = Math.PI / 2;
+    } else if (o.kind === 'sparrow') {
+      const C1 = '#8e6844', C2 = '#5e4228';
+      AP(G.catBody, C1, body, 0, 0.14, 0, C2).scale.set(0.085, 0.09, 0.14);
+      hd = grp(body, 0, 0.22, 0.10); AP(G.ball, C2, hd, 0, 0, 0).scale.setScalar(0.065);
+      const bk = AP(G.cone, '#d4a238', hd, 0, -0.01, 0.09); bk.scale.set(0.24, 0.45, 0.24); bk.rotation.x = Math.PI / 2;
+      for (const s of [-0.035, 0.035]) rod(AP, body, [s, 0.07, 0], [s, 0, 0], 0.008, '#4a3828');
+    } else if (o.kind === 'ladybug') {
+      AP(G.cap, '#d92e28', body, 0, 0.05, 0, '#9e1c18').scale.set(2.2, 2.0, 2.6);
+      AP(G.ball, '#1e2024', body, 0, 0.12, 0.24).scale.setScalar(0.095);
+      for (const [sx, sz] of [[-0.10, 0.06], [0.10, 0.06], [-0.11, -0.08], [0.11, -0.08], [0, -0.14]]) {
+        AP(G.ball, '#1e2024', body, sx, 0.24, sz).scale.setScalar(0.042);
+      }
+    } else if (o.kind === 'goose') {
+      const W = '#faf8f2', B = '#e68c28';
+      AP(G.catBody, W, body, 0, 0.36, 0, '#dcd6c6').scale.set(0.20, 0.20, 0.36);
+      neck = grp(body, 0, 0.48, 0.26);
+      rod(AP, neck, [0, 0, 0], [0, 0.34, 0.06], 0.052, W);
+      hd = grp(neck, 0, 0.36, 0.08); AP(G.ball, W, hd, 0, 0, 0).scale.setScalar(0.085);
+      const bk = AP(G.box, B, hd, 0, -0.01, 0.12); bk.scale.set(0.06, 0.036, 0.12);
+      for (const s of [-0.08, 0.08]) rod(AP, body, [s, 0.20, 0], [s, 0, 0], 0.018, B);
+    }
+    return { o, g, body, hd, neck, tl, legs, wings, home: ap.clone(), phase: R() * 6 };
+  });
+  // ---- Tuzla park & lakeside wildlife: woodpecker, mole, snail, firefly, dragonfly ----
+  const tuzAnimals = (world.tuzAnimals || []).map((o) => {
+    const ap = new THREE.Vector3(o.x, o.y, o.z), AP = painter(o.tag, ap, 2.0), g = new THREE.Group();
+    g.position.copy(ap); g.rotation.y = o.ry || 0; scene.add(g);
+    const body = grp(g, 0, 0, 0); let hd = null, tl = null; const wings = [], glow = [];
+    if (o.kind === 'woodpecker') {
+      AP(G.catBody, '#262a30', body, 0, 0, 0, '#14161a').scale.set(0.11, 0.22, 0.12);
+      AP(G.catBody, '#f4f2ec', body, 0, 0.02, 0.07).scale.set(0.085, 0.17, 0.07);
+      hd = grp(body, 0, 0.24, 0.02);
+      AP(G.ball, '#262a30', hd, 0, 0, 0).scale.setScalar(0.085);
+      AP(G.cap, '#d9342c', hd, 0, 0.04, -0.01, '#a01e18').scale.set(0.85, 0.85, 0.85);
+      const bk = AP(G.cone, '#5a6068', hd, 0, 0, 0.14); bk.scale.set(0.28, 0.95, 0.28); bk.rotation.x = Math.PI / 2;
+      tl = AP(G.box, '#262a30', body, 0, -0.22, -0.03); tl.scale.set(0.08, 0.18, 0.03);
+    } else if (o.kind === 'mole') {
+      AP(G.cone, '#7a5a3c', g, 0, 0.16, 0, '#5a3e26').scale.set(5.2, 2.4, 5.2);
+      AP(G.catBody, '#2c2a2e', body, 0, 0.30, 0, '#1a181c').scale.set(0.17, 0.19, 0.18);
+      hd = grp(body, 0, 0.44, 0.06);
+      AP(G.catBody, '#2c2a2e', hd, 0, 0, 0).scale.set(0.13, 0.11, 0.15);
+      AP(G.ball, '#e89ca8', hd, 0, -0.01, 0.16).scale.setScalar(0.045);
+      for (const s of [-1, 1]) {
+        const pw = AP(G.box, '#e098a2', body, s * 0.17, 0.34, 0.12); pw.scale.set(0.09, 0.045, 0.11);
+      }
+    } else if (o.kind === 'snail') {
+      AP(G.catBody, '#d8c49a', body, 0, 0.07, 0.04, '#b8a074').scale.set(0.10, 0.07, 0.28);
+      const sh = AP(G.ball, '#9c6238', body, 0, 0.20, -0.05, '#6e4020'); sh.scale.set(0.14, 0.17, 0.17);
+      const sh2 = AP(G.ball, '#c4864e', body, 0.08, 0.20, -0.05, '#8c582c'); sh2.scale.set(0.09, 0.11, 0.11);
+      for (const s of [-1, 1]) {
+        rod(AP, body, [s * 0.04, 0.11, 0.26], [s * 0.08, 0.26, 0.32], 0.012, '#c8b082');
+        AP(G.ball, '#2a2826', body, s * 0.08, 0.27, 0.32).scale.setScalar(0.022);
+      }
+    } else if (o.kind === 'firefly') {
+      for (let i = 0; i < 5; i++) {
+        const fg = grp(body, (i - 2) * 0.38, 0.4 + (i % 3) * 0.24, Math.sin(i * 1.9) * 0.35);
+        AP(G.catBody, '#36322c', fg, 0, 0, 0.05).scale.set(0.04, 0.04, 0.08);
+        AP(G.ball, '#ffe45e', fg, 0, -0.01, -0.04, '#f2b81e').scale.setScalar(0.075);
+        for (const s of [-1, 1]) {
+          const w = AP(G.box, '#f6f4e8', fg, s * 0.07, 0.04, 0.02); w.scale.set(0.12, 0.012, 0.05);
+          wings.push(w);
+        }
+        glow.push(fg);
+      }
+    } else if (o.kind === 'dragonfly') {
+      AP(G.catBody, '#1c9cb4', body, 0, 0.20, 0.04, '#106c80').scale.set(0.055, 0.055, 0.18);
+      rod(AP, body, [0, 0.20, -0.12], [0, 0.18, -0.58], 0.024, '#24b4cc');
+      AP(G.ball, '#187c94', body, 0, 0.21, 0.22).scale.setScalar(0.068);
+      for (const z of [0.08, -0.04]) for (const s of [-1, 1]) {
+        const w = grp(body, s * 0.04, 0.24, z);
+        const wm = AP(G.box, '#cceef6', w, s * 0.22, 0, 0, '#88d0e4'); wm.scale.set(0.44, 0.012, 0.09);
+        wings.push(w);
+      }
+    }
+    return { o, g, body, hd, tl, wings, glow, home: ap.clone(), phase: R() * 6 };
+  });
+  function coneH(AP, col, parent, x, y, z) { const m = AP(G.cone, col, parent, x, y, z); m.scale.set(0.45, 0.55, 0.45); return m; }
   let fishT0 = 0;      // the fish's jumps count from here (the finale sets it so one comes early in the diver's shot)
-  const FS = world.fish || { x: 0, z: 0 }, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), FP = painter('fish', fishHome, 1), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7; if (world.fish) scene.add(fish);
-  if (world.fish) FP(G.catBody, '#9fb6c2', fish, 0, 0, 0, '#6f8a9a').scale.set(0.05, 0.1, 0.24); if (world.fish) { const t = FP(G.ear, '#6f8a9a', fish, 0, 0, -0.27); t.scale.set(0.5, 1.3, 1.6); t.rotation.x = Math.PI / 2; }
+  const FS = world.fish || { x: 0, z: 0 }, fishHome = new THREE.Vector3(FS.x, 0.55, FS.z), fish = new THREE.Group(); fish.position.copy(fishHome); fish.rotation.x = -0.7;
+  if (world.fish) {
+    const FP = painter('fish', fishHome, 1); scene.add(fish);
+    FP(G.catBody, '#9fb6c2', fish, 0, 0, 0, '#6f8a9a').scale.set(0.05, 0.1, 0.24);
+    const t = FP(G.ear, '#6f8a9a', fish, 0, 0, -0.27); t.scale.set(0.5, 1.3, 1.6); t.rotation.x = Math.PI / 2;
+  }
   const birdD = new THREE.Vector3();
 
   // ---- smoke from a chimney: still curls in the sketch, then it rises and drifts ----
@@ -353,7 +1163,7 @@ export function createPeople(scene, world, R) {
     return { SM, k, puffs: Array.from({ length: 9 }, (_, i) => SMP(G.ball, i % 2 ? '#e2dfd8' : '#d0ccc4', scene, 0, 0, 0, '#b4b0a8')) };
   });
   // ---- the šadrvan: eight thin streams fall from the rim of its upper bowl into the basin (still in the sketch) ----
-  const FT = world.fountain || { x: 0, y: 0, z: 0 }, FTP = painter('fountain', new THREE.Vector3(FT.x, FT.y + 1.6, FT.z), 2.4);
+  const FT = world.fountain || { x: 0, y: 0, z: 0 }, FTP = world.fountain ? painter(world.fountainTag || 'fountain', new THREE.Vector3(FT.x, FT.y + 1.6, FT.z), 2.4) : null;
   const FALL = 0.574, DROPS = 16, R0F = 0.86, R1F = 1.3, Y0F = FT.y + 2.29, VY0 = 0.25;      // seconds to fall; from the rim to the water
   const streams = Array.from({ length: world.fountain ? 8 : 0 }, (_, i) => {
     const a = (i + 0.5) * Math.PI / 4, dx = Math.sin(a), dz = Math.cos(a);
@@ -440,7 +1250,7 @@ export function createPeople(scene, world, R) {
 
   // ---- the football ----
   const kickers = list.filter((p) => p.o.ball !== undefined).sort((a, b) => a.o.ball - b.o.ball);
-  const ballHome = new THREE.Vector3(...(world.ball || [31.2, 12.29, 76.2])), BP = painter('ball', ballHome, 1), ball = kickers.length ? BP(G.ball, '#f8f4ea', scene, 0, 0, 0, '#cfd6d8') : new THREE.Object3D();
+  const ballHome = new THREE.Vector3(...(world.ball || [31.2, 12.29, 76.2])), ball = kickers.length ? painter('ball', ballHome, 1)(G.ball, '#f8f4ea', scene, 0, 0, 0, '#cfd6d8') : new THREE.Object3D();
   ball.scale.setScalar(0.17); ball.position.copy(ballHome);
   const ballBlock = kickers.length ? block(ballHome.x, ballHome.y, ballHome.z, 0.4, 0.4, 0.4, { wall: true, person: true }) : new THREE.Object3D(), dogP = new THREE.Vector3();
   const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3();
@@ -469,26 +1279,33 @@ export function createPeople(scene, world, R) {
   }
 
   // ---- the cat ----
-  const C = world.cat || { x: 0, y: -999, z: 0, x0: 0, x1: 0 }, cpos = new THREE.Vector3(C.x, C.y, C.z), ctm = timing('cat', cpos), cmat = washMat('cat');
-  const cat = new THREE.Group(); cat.position.copy(cpos); if (world.cat) scene.add(cat);
-  const CP = (geo, parent, x, y, z, sx = 1, sy = 1, sz = 1, col = '#e39a4a') => {
-    const m = new THREE.Mesh(paintGeo(geo, { col, bleed: '#c9752f', seed: [C.x, C.y + 0.4, C.z], radius: 1.4, delay: ctm.delay, dur: 3, hatch: 0.4 }), cmat);
-    m.position.set(x, y, z); m.scale.set(sx, sy, sz); addHull(m, 1.5); parent.add(m); return m;
-  };
+  const C = world.cat || { x: 0, y: -999, z: 0, x0: 0, x1: 0 }, cpos = new THREE.Vector3(C.x, C.y, C.z);
+  const cat = new THREE.Group(); cat.position.copy(cpos);
   const cbody = new THREE.Group(); cat.add(cbody);
-  CP(G.catBody, cbody, 0, 0.36, 0, 0.4, 0.22, 0.19);
   const chead = new THREE.Group(); chead.position.set(0.38, 0.6, 0); cbody.add(chead);
-  CP(G.catBody, chead, 0, 0, 0, 0.2, 0.19, 0.2); for (const s of [-1, 1]) CP(G.ear, chead, 0.02, 0.2, s * 0.11);
-  const ctail = new THREE.Group(); ctail.position.set(-0.4, 0.4, 0); cbody.add(ctail); CP(G.catTail, ctail, 0, 0, 0);
-  const clegs = [[0.24, 0.1], [0.24, -0.1], [-0.24, 0.1], [-0.24, -0.1]].map(([x, z]) => { const g = new THREE.Group(); g.position.set(x, 0.26, z); cbody.add(g); CP(G.catLeg, g, 0, 0, 0); return g; });
+  const ctail = new THREE.Group(); ctail.position.set(-0.4, 0.4, 0); cbody.add(ctail);
+  const clegs = [[0.24, 0.1], [0.24, -0.1], [-0.24, 0.1], [-0.24, -0.1]].map(([x, z]) => { const g = new THREE.Group(); g.position.set(x, 0.26, z); cbody.add(g); return g; });
+  if (world.cat) {
+    scene.add(cat);
+    const ctm = timing('cat', cpos), cmat = washMat('cat');
+    const CP = (geo, parent, x, y, z, sx = 1, sy = 1, sz = 1, col = '#e39a4a') => {
+      const m = new THREE.Mesh(paintGeo(geo, { col, bleed: '#c9752f', seed: [C.x, C.y + 0.4, C.z], radius: 1.4, delay: ctm.delay, dur: 3, hatch: 0.4 }), cmat);
+      m.position.set(x, y, z); m.scale.set(sx, sy, sz); addHull(m, 1.5); parent.add(m); return m;
+    };
+    CP(G.catBody, cbody, 0, 0.36, 0, 0.4, 0.22, 0.19);
+    CP(G.catBody, chead, 0, 0, 0, 0.2, 0.19, 0.2); for (const s of [-1, 1]) CP(G.ear, chead, 0.02, 0.2, s * 0.11);
+    CP(G.catTail, ctail, 0, 0, 0);
+    for (const g of clegs) CP(G.catLeg, g, 0, 0, 0);
+  }
   const catS = { walk: 0, x: C.x, dir: 1, rest: 2 };
   const CAT_SIT = { tilt: 0.5, drop: 0.04, front: 1.17, hind: 0.95, walkY: 0.0 };
 
   return {
     flagCloth: cloth, animals,
-    list, cat, ball,
+    list, cat, ball, ducks,
     fishJumpAt(t) { fishT0 = t; },
     applaud() { for (const p of list) if (p.o.kind === 'watch') p.cheer = true; },
+    launchPigeons(dur = 9) { pigeonsForced = dur; for (const q of pigeons) { q.mode = 'fly'; q.t = 0; q.back = 0; for (const w of q.wings) w.visible = true; } this.onScatter?.(); },
     update(dt, time, life, bird) {
       const mv = this.movers = [];      // whatever is walking this frame (where, which way, how wide): main.js lifts the bird out of their way
       const go = (pos, ry, r, h, v = 1.2) => mv.push({ x: pos.x, y: pos.y, z: pos.z, fx: Math.sin(ry), fz: Math.cos(ry), r, h, v });      // v: how fast it comes (the faster, the sooner the bird must go)
@@ -711,7 +1528,538 @@ export function createPeople(scene, world, R) {
             p.arms.forEach((a, i) => { a.sh.rotation.set(-2.2 - (i === lead ? 0.35 * lift : 0), 0, a.s * 0.12); a.el.rotation.x = -0.35; });
             p.torso.rotation.x = 0.12;
           } else { p.torso.rotation.x = 0; for (const a of p.arms) a.el.rotation.x = 0; }
+        } else if (o.kind === 'sarCornSell') {
+          a0.sh.rotation.set(-1.05 + (alive ? Math.sin(t * 2.2) * 0.16 : 0), 0, -0.15); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-0.25 + (alive ? Math.sin(t * 1.7) * 0.18 : 0), 0, 0.12); a1.el.rotation.x = -0.35;
+          p.head.rotation.y = alive ? Math.sin(t * 0.9) * 0.35 : 0.1;
+          if (alive && pigeonsForced > 0) p.head.rotation.x = -0.38; else p.head.rotation.x = 0.05;
+        } else if (o.kind === 'sarFeed') {
+          const thr = alive ? Math.sin(t * 2.6) : 0.65;
+          a0.sh.rotation.set(-0.9 - thr * 0.45, 0, -0.18); a0.el.rotation.x = -0.55 + thr * 0.35;
+          a1.sh.rotation.set(-0.45, 0, 0.14); a1.el.rotation.x = -0.6;
+          p.torso.rotation.x = 0.12 + thr * 0.06;
+          p.head.rotation.x = alive && pigeonsForced > 0 ? -0.42 : 0.22;
+        } else if (o.kind === 'sarSweep') {
+          const w = alive ? Math.sin(t * 2.2) : 0.35;
+          p.torso.rotation.y = w * 0.24; p.torso.rotation.x = 0.14;
+          a1.sh.rotation.set(-0.88, 0, 0.16); a1.el.rotation.x = -0.48;
+          a0.sh.rotation.set(-0.62, 0, -0.26); a0.el.rotation.x = -0.78;
+          if (p.broom) p.broom.rotation.z = 0.35 + w * 0.22;
+          p.head.rotation.x = alive && pigeonsForced > 0 ? -0.35 : 0.28;
+        } else if (o.kind === 'sarDrinkSpout') {
+          const c = alive ? (time + p.phase) % 6.0 : 0.5;
+          const bend = alive ? (c < 2.6 ? 1 : c < 3.4 ? 1 - sm((c - 2.6) / 0.8) : c < 5.2 ? 0 : sm((c - 5.2) / 0.8)) : 1;
+          const wipe = alive && c >= 3.4 && c < 4.7 ? Math.sin(((c - 3.4) / 1.3) * Math.PI) : 0;
+          p.torso.rotation.x = 0.58 * bend;
+          a0.sh.rotation.set(-0.85 * bend - 1.15 * wipe, 0, -0.22 * bend - 0.15 * wipe); a0.el.rotation.x = -0.85 * bend - 1.45 * wipe;
+          a1.sh.rotation.set(-0.85 * bend, 0, 0.22 * bend); a1.el.rotation.x = -0.85 * bend;
+          p.head.rotation.x = 0.12 * bend - 0.1 * wipe;
+        } else if (o.kind === 'sarHammer') {
+          const c = alive ? (time + p.phase) % 3.6 : 0.15;
+          const strike = c < 2.4 ? Math.max(0, Math.sin(c * Math.PI * 3.0)) : 0;
+          a0.sh.rotation.set(-0.75 - 0.72 * strike, 0, -0.14); a0.el.rotation.x = -0.95 - 0.35 * strike;
+          a1.sh.rotation.set(-0.85, 0, 0.18); a1.el.rotation.x = -0.75;
+          p.torso.rotation.x = 0.16; p.head.rotation.x = 0.34;
+          p.head.rotation.y = alive && c >= 2.4 ? Math.sin((c - 2.4) * 3.2) * 0.22 : 0;
+        } else if (o.kind === 'sarCarry') {
+          const speed = o.speed || 1.0;
+          if (alive && p.from && p.to) {
+            p.s += p.dir * dt * speed / p.from.distanceTo(p.to);
+            if (p.s > 1 || p.s < 0) { p.dir *= -1; p.s = Math.min(1, Math.max(0, p.s)); }
+            p.root.position.lerpVectors(p.from, p.to, p.s);
+            const want = Math.atan2((p.to.x - p.from.x) * p.dir, (p.to.z - p.from.z) * p.dir);
+            p.root.rotation.y += Math.atan2(Math.sin(want - p.root.rotation.y), Math.cos(want - p.root.rotation.y)) * k(5, dt);
+            p.block.matrixWorld.setPosition(p.root.position.x, p.root.position.y + p.sc, p.root.position.z);
+            go(p.root.position, p.root.rotation.y, 0.45 * p.sc, 1.9 * p.sc, speed);
+          }
+          const sw = alive ? Math.sin(t * 4.8) * 0.42 : 0.28;
+          p.legs.forEach((l, i) => { const s = i ? sw : -sw; l.hip.rotation.x = s; l.knee.rotation.x = Math.max(0, -s) * 0.85; });
+          for (const a of p.arms) { a.sh.rotation.set(-0.52, 0, a.s * -0.14); a.el.rotation.x = -1.25; }
+          p.torso.rotation.x = -0.05;
+          p.hips.position.y = 0.92 + (alive ? Math.abs(Math.cos(t * 4.8)) * 0.014 : 0);
+        } else if (o.kind === 'sarWaiter') {
+          if (alive && p.loopPts && p.loopPts.length >= 2) {
+            const speed = o.speed || 0.95;
+            p.wi = p.wi ?? 0; p.ws = p.ws ?? 0;
+            const A = p.loopPts[p.wi], B = p.loopPts[(p.wi + 1) % p.loopPts.length], L = Math.max(0.1, A.distanceTo(B));
+            p.ws += dt * speed / L;
+            if (p.ws >= 1) { p.ws -= 1; p.wi = (p.wi + 1) % p.loopPts.length; }
+            const A2 = p.loopPts[p.wi], B2 = p.loopPts[(p.wi + 1) % p.loopPts.length];
+            p.root.position.lerpVectors(A2, B2, p.ws);
+            const want = Math.atan2(B2.x - A2.x, B2.z - A2.z);
+            p.root.rotation.y += Math.atan2(Math.sin(want - p.root.rotation.y), Math.cos(want - p.root.rotation.y)) * k(6, dt);
+            p.block.matrixWorld.setPosition(p.root.position.x, p.root.position.y + p.sc, p.root.position.z);
+            go(p.root.position, p.root.rotation.y, 0.45 * p.sc, 1.9 * p.sc, speed);
+          }
+          const sw = alive ? Math.sin(t * 4.4) * 0.36 : 0.22;
+          p.legs.forEach((l, i) => { const s = i ? sw : -sw; l.hip.rotation.x = s; l.knee.rotation.x = Math.max(0, -s) * 0.75; });
+          a0.sh.rotation.set(-1.35, 0, -0.22); a0.el.rotation.x = -1.55;
+          a1.sh.rotation.set(sw * 0.4, 0, 0.08); a1.el.rotation.x = -0.2;
+          p.hips.position.y = 0.92 + (alive ? Math.abs(Math.cos(t * 4.4)) * 0.012 : 0);
+        } else if (o.kind === 'sarTalk') {
+          const mine = alive ? sm(Math.sin(t * 0.65 + (o.turn ? Math.PI : 0)) * 2.5) : (o.turn ? 0 : 1);
+          const gest = alive ? Math.sin(t * 4.2) : 0.4;
+          p.torso.rotation.x = 0.05 + 0.14 * mine;
+          a0.sh.rotation.set(-0.6 - 0.45 * mine, 0, -0.15 - 0.2 * mine * gest); a0.el.rotation.x = -0.8 - 0.3 * mine;
+          a1.sh.rotation.set(-0.55 - 0.25 * mine, 0, 0.15 + 0.15 * mine * gest); a1.el.rotation.x = -0.85;
+          p.head.rotation.y = alive ? Math.sin(t * 1.1) * 0.22 : (o.turn ? -0.15 : 0.15);
+          p.head.rotation.x = alive && !mine ? Math.sin(t * 2.8) * 0.08 : 0;
+        } else if (o.kind === 'sarDriver') {
+          a0.sh.rotation.set(-0.85, 0, -0.15); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-0.85, 0, 0.15); a1.el.rotation.x = -0.45;
+          p.head.rotation.y = alive ? Math.sin(t * 0.6) * 0.18 : 0;
+        } else if (o.kind === 'sarChestnutSell') {
+          const st = alive ? Math.sin(t * 3.1) : 0.3;
+          a0.sh.rotation.set(-0.78 + st * 0.14, 0, -0.18 + st * 0.12); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-1.05 + (alive ? Math.sin(t * 1.4) * 0.15 : 0), 0, 0.12); a1.el.rotation.x = -0.5;
+          p.head.rotation.x = 0.18; p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.25 : 0;
+        } else if (o.kind === 'sarBuy') {
+          const bite = alive ? sm(Math.sin(t * 1.2) * 2.2) : 0;
+          a1.sh.rotation.set(-0.85 - 0.35 * bite, 0, 0.14); a1.el.rotation.x = -0.75 - 0.5 * bite;
+          a0.sh.rotation.set(-0.75, 0, -0.1); a0.el.rotation.x = -0.45;
+          p.head.rotation.x = 0.08 * bite;
+        } else if (o.kind === 'sarUmbrellaWait') {
+          const watch = alive ? sm(Math.sin(t * 0.5) * 3 - 1.6) : 0;
+          a0.sh.rotation.set(-0.35, 0, -0.1); a0.el.rotation.x = -1.25;
+          a1.sh.rotation.set(-0.85 * watch, 0, 0.1); a1.el.rotation.x = -1.35 * watch;
+          p.head.rotation.x = 0.32 * watch; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.65 * (1 - watch) : 0.45;
+        } else if (o.kind === 'sarChess') {
+          const myTurn = alive ? sm(Math.sin(t * 0.55 + (o.turn ? Math.PI : 0)) * 3) : (o.turn ? 0 : 1);
+          p.torso.rotation.x = 0.15 + 0.32 * myTurn;
+          a0.sh.rotation.set(-0.45 - 0.85 * myTurn, 0, -0.1); a0.el.rotation.x = -0.4 - 0.35 * myTurn;
+          a1.sh.rotation.set(-0.3, 0, 0.12); a1.el.rotation.x = -0.35;
+          p.head.rotation.x = 0.35;
+        } else if (o.kind === 'sarReadBench') {
+          const up = alive ? sm(Math.sin(t * 0.45) * 3 - 1.8) : 0;
+          for (const a of p.arms) { a.sh.rotation.set(-0.72, 0, a.s * 0.06); a.el.rotation.x = -1.05; }
+          p.head.rotation.x = 0.28 - 0.38 * up; p.head.rotation.y = alive ? Math.sin(t * 0.35) * 0.25 * up : 0;
+          if (p.paper) p.paper.rotation.z = alive ? Math.sin(t * 0.9) * 0.025 : 0;
+        } else if (o.kind === 'sarRoast') {
+          const c = alive ? (time + p.phase) % 5.5 : 0.4;
+          const wipe = alive && c > 4.0 ? Math.sin(((c - 4.0) / 1.5) * Math.PI) : 0;
+          const turn = alive && c <= 4.0 ? Math.sin(c * 3.5) : 0.25;
+          a0.sh.rotation.set(-0.85 + turn * 0.14, 0, -0.14); a0.el.rotation.x = -0.68;
+          a1.sh.rotation.set(-0.35 - 1.55 * wipe, 0, 0.15 - 0.25 * wipe); a1.el.rotation.x = -0.45 - 1.1 * wipe;
+          p.torso.rotation.x = 0.16 * (1 - wipe); p.head.rotation.x = 0.24 * (1 - wipe);
+        } else if (o.kind === 'sarPick') {
+          const reach = alive ? 0.5 + 0.5 * Math.sin(t * 1.4) : 0.85;
+          a0.sh.rotation.set(-2.05 - 0.42 * reach, 0, -0.18); a0.el.rotation.x = -0.55 + 0.3 * reach;
+          a1.sh.rotation.set(-1.05, 0, 0.18); a1.el.rotation.x = -0.75;
+          p.head.rotation.x = -0.35; p.torso.rotation.x = -0.06;
+        } else if (o.kind === 'sarNana') {
+          const wave = alive ? sm(Math.sin(t * 0.6) * 2.2) : 0;
+          a0.sh.rotation.set(-0.95 - 0.95 * wave, 0, -0.22 - 0.35 * wave); a0.el.rotation.x = -1.15 + 0.5 * wave;
+          a0.el.rotation.z = alive && wave > 0.2 ? Math.sin(t * 5.2) * 0.28 * wave : 0;
+          a1.sh.rotation.set(-0.95, 0, 0.22); a1.el.rotation.x = -1.15;
+          p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.35 : 0.1; p.head.rotation.x = 0.15;
+        } else if (o.kind === 'sarRimSit') {
+          const pt = o.point ? 1 : 0;
+          a0.sh.rotation.set(-0.55 - 1.1 * pt + (alive ? Math.sin(t * 1.2) * 0.18 : 0), 0, -0.15); a0.el.rotation.x = -0.65 + 0.45 * pt;
+          a1.sh.rotation.set(-0.5 + (alive ? Math.sin(t * 1.5 + 1) * 0.16 : 0), 0, 0.15); a1.el.rotation.x = -0.75;
+          p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.35 : (pt ? -0.15 : 0.2);
+          p.head.rotation.x = 0.08;
+        } else if (o.kind === 'sarPaint') {
+          const st = alive ? Math.sin(t * 3.4) : 0.2;
+          const stepBack = alive ? sm(Math.sin(t * 0.45) * 2.4 - 1.4) : 0;
+          a0.sh.rotation.set(-1.15 + st * 0.16 * (1 - stepBack), 0, -0.12 + Math.cos(t * 2.1) * 0.12 * (1 - stepBack));
+          a0.el.rotation.x = -0.55 - 0.2 * stepBack;
+          a1.sh.rotation.set(-0.85, 0, 0.22); a1.el.rotation.x = -0.95;
+          p.torso.rotation.x = -0.08 * stepBack; p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.2 * stepBack : 0;
+        } else if (o.kind === 'jajBinoc') {
+          const pan = alive ? Math.sin(t * 0.6) * 0.35 : 0;
+          a0.sh.rotation.set(-1.35, 0, -0.18); a0.el.rotation.x = -1.35;
+          a1.sh.rotation.set(-1.35, 0, 0.18); a1.el.rotation.x = -1.35;
+          p.head.rotation.y = pan; p.torso.rotation.y = pan * 0.45;
+        } else if (o.kind === 'jajHiker') {
+          a0.sh.rotation.set(-0.35 + (alive ? Math.sin(t * 0.7) * 0.15 : 0), 0, -0.12); a0.el.rotation.x = -0.5;
+          a1.sh.rotation.set(-0.25, 0, 0.12); a1.el.rotation.x = -0.4;
+          p.head.rotation.y = alive ? Math.sin(t * 0.55) * 0.35 : 0.15;
+        } else if (o.kind === 'jajMiller') {
+          const bob = alive ? Math.sin(t * 1.8) * 0.08 : 0;
+          a0.sh.rotation.set(-1.55 + bob, 0, -0.25); a0.el.rotation.x = -1.1;
+          a1.sh.rotation.set(-0.35 - bob, 0, 0.12); a1.el.rotation.x = -0.4;
+          p.torso.rotation.x = 0.08; p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.25 : 0;
+        } else if (o.kind === 'jajFish') {
+          const tug = alive ? Math.sin(t * 1.4) * 0.08 : 0;
+          a0.sh.rotation.set(-0.85 + tug, 0, -0.08); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-0.78 + tug * 0.7, 0, 0.12); a1.el.rotation.x = -0.7;
+          p.head.rotation.x = 0.18; p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.18 : 0;
+        } else if (o.kind === 'jajGarden') {
+          const pour = alive ? 0.5 + 0.5 * Math.sin(t * 1.4) : 0.65;
+          a0.sh.rotation.set(-0.75 - 0.35 * pour, 0, -0.12); a0.el.rotation.x = -0.55;
+          a1.sh.rotation.set(-0.35, 0, 0.15); a1.el.rotation.x = -0.45;
+          p.torso.rotation.x = 0.16 * pour; p.head.rotation.x = 0.28 * pour;
+        } else if (o.kind === 'jajGuitar') {
+          const strum = alive ? Math.sin(t * 7.5) * 0.18 : 0;
+          a0.sh.rotation.set(-0.62 + strum, 0, -0.18); a0.el.rotation.x = -0.95 + strum * 0.5;
+          a1.sh.rotation.set(-0.82, 0, 0.26); a1.el.rotation.x = -0.85;
+          p.head.rotation.x = alive ? Math.sin(t * 3.75) * 0.09 : 0.05;
+        } else if (o.kind === 'jajSing') {
+          const sway = alive ? Math.sin(t * 2.2) : 0;
+          a0.sh.rotation.set(-0.72 + sway * 0.18, 0, -0.25); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-0.72 - sway * 0.18, 0, 0.25); a1.el.rotation.x = -0.75;
+          p.torso.rotation.z = sway * 0.08; p.head.rotation.x = -0.12 + sway * 0.06;
+        } else if (o.kind === 'jajWarmSit') {
+          a0.sh.rotation.set(-0.45, 0, -0.15); a0.el.rotation.x = -0.55;
+          a1.sh.rotation.set(-0.45, 0, 0.15); a1.el.rotation.x = -0.55;
+          p.head.rotation.x = -0.22; p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.3 : 0;
+        } else if (o.kind === 'jahThrow') {
+          const c = alive ? (time * 0.7 + p.phase) % 2.4 : 0.35;
+          const wind = c < 0.7 ? sm(c / 0.7) : c < 1.05 ? 1 - sm((c - 0.7) / 0.35) : 0;
+          const thr = c >= 0.7 && c < 1.2 ? Math.sin(((c - 0.7) / 0.5) * Math.PI) : 0;
+          a0.sh.rotation.set(-1.9 * wind - 0.65 * thr, 0, -0.22); a0.el.rotation.x = -0.85 * wind - 0.15;
+          a1.sh.rotation.set(-0.6, 0, 0.25); a1.el.rotation.x = -0.4;
+          p.torso.rotation.y = 0.25 * wind - 0.3 * thr;
+        } else if (o.kind === 'jahChop') {
+          const c = alive ? (time * 0.85 + p.phase) % 2.2 : 0.2;
+          const lift = c < 1.0 ? sm(c / 1.0) : c < 1.35 ? 1 - sm((c - 1.0) / 0.35) : 0;
+          a0.sh.rotation.set(-0.85 - 1.45 * lift, 0, -0.12); a0.el.rotation.x = -0.55 - 0.4 * lift;
+          a1.sh.rotation.set(-0.85 - 1.35 * lift, 0, 0.18); a1.el.rotation.x = -0.55 - 0.4 * lift;
+          p.torso.rotation.x = 0.25 * (1 - lift) - 0.08 * lift;
+        } else if (o.kind === 'jahShovel') {
+          const w = alive ? Math.sin(t * 2.0) : 0.4;
+          p.torso.rotation.x = 0.24 - w * 0.12; p.torso.rotation.y = w * 0.28;
+          a0.sh.rotation.set(-0.75 - w * 0.2, 0, -0.16); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-0.92, 0, 0.14); a1.el.rotation.x = -0.45;
+          if (p.shovel) { p.shovel.rotation.y = w * 0.28; p.shovel.position.y = Math.max(0, w) * 0.14; }
+        } else if (o.kind === 'jahWarm') {
+          const rub = alive ? Math.sin(t * 4.5) * 0.08 : 0;
+          p.torso.rotation.x = 0.22;
+          a0.sh.rotation.set(-0.92, 0, -0.2 + rub); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-0.92, 0, 0.2 - rub); a1.el.rotation.x = -0.65;
+          p.head.rotation.x = 0.15;
+        } else if (o.kind === 'jahShiver') {
+          const sh = alive ? Math.sin(t * 16) * 0.045 : 0;
+          p.torso.rotation.z = sh; p.torso.rotation.x = 0.1;
+          a0.sh.rotation.set(-0.55, 0, -0.48); a0.el.rotation.x = -1.55;
+          a1.sh.rotation.set(-0.55, 0, 0.48); a1.el.rotation.x = -1.55;
+          p.head.rotation.x = 0.18;
+        } else if (o.kind === 'jahSledRide') {
+          if (alive && p.pathPts && p.pathPts.length >= 2) {
+            const u = ((time * 0.16 + p.phase * 0.1) % 1);
+            const seg = u * (p.pathPts.length - 1), i = Math.min(p.pathPts.length - 2, Math.floor(seg)), f = seg - i;
+            p.root.position.lerpVectors(p.pathPts[i], p.pathPts[i + 1], f);
+            const dx = p.pathPts[i + 1].x - p.pathPts[i].x, dz = p.pathPts[i + 1].z - p.pathPts[i].z;
+            p.root.rotation.y = Math.atan2(dx, dz);
+            if (p.block) p.block.matrixWorld.setPosition(p.root.position.x, p.root.position.y + 0.7, p.root.position.z);
+          }
+          a0.sh.rotation.set(-1.1, 0, -0.2); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-1.1, 0, 0.2); a1.el.rotation.x = -0.45;
+          p.torso.rotation.x = -0.12;
+        } else if (o.kind === 'jahSledPull') {
+          const sw = alive ? Math.sin(t * 3.8) * 0.36 : 0.22;
+          p.legs.forEach((l, i) => { const s = i ? sw : -sw; l.hip.rotation.x = s; l.knee.rotation.x = Math.max(0, -s) * 0.7; });
+          p.torso.rotation.x = 0.18;
+          a0.sh.rotation.set(0.42, 0, -0.14); a0.el.rotation.x = -0.35;
+          a1.sh.rotation.set(-0.35 + sw * 0.4, 0, 0.14); a1.el.rotation.x = -0.35;
+        } else if (o.kind === 'jahLaugh') {
+          const b = alive ? Math.abs(Math.sin(t * 5.0)) : 0.5;
+          p.hips.position.y = 0.92 + b * 0.06;
+          a0.sh.rotation.set(-2.3 - b * 0.25, 0, -0.45); a0.el.rotation.x = -0.35;
+          a1.sh.rotation.set(-2.3 - b * 0.25, 0, 0.45); a1.el.rotation.x = -0.35;
+          p.head.rotation.x = -0.25; p.torso.rotation.x = -0.1;
+        } else if (o.kind === 'jahSkater') {
+          if (alive && p.orbit) {
+            const ang = time * (p.orbit.speed || 0.45) + p.phase;
+            const nx = p.orbit.cx + Math.cos(ang) * p.orbit.rx, nz = p.orbit.cz + Math.sin(ang) * p.orbit.rz;
+            p.root.position.set(nx, p.y0, nz);
+            p.root.rotation.y = Math.atan2(-Math.sin(ang) * p.orbit.rx, Math.cos(ang) * p.orbit.rz);
+            if (p.block) p.block.matrixWorld.setPosition(nx, p.y0 + p.sc, nz);
+            go(p.root.position, p.root.rotation.y, 0.5, 1.9, 2.2);
+          }
+          const gl = alive ? Math.sin(t * 2.2) : 0.4;
+          p.torso.rotation.x = 0.18; p.torso.rotation.z = gl * 0.12;
+          p.legs[0].hip.rotation.x = -0.25 + gl * 0.35; p.legs[0].knee.rotation.x = 0.45;
+          p.legs[1].hip.rotation.x = -0.25 - gl * 0.35; p.legs[1].knee.rotation.x = 0.45;
+          a0.sh.rotation.set(-0.35, 0, -0.65 - gl * 0.2); a0.el.rotation.x = -0.25;
+          a1.sh.rotation.set(-0.35, 0, 0.65 - gl * 0.2); a1.el.rotation.x = -0.25;
+        } else if (o.kind === 'jahSlip') {
+          const w = alive ? Math.sin(t * 5.2) : 0.55;
+          p.torso.rotation.z = w * 0.22; p.torso.rotation.x = -0.16;
+          a0.sh.rotation.set(-0.4 + w * 0.5, 0, -1.25); a0.el.rotation.x = -0.2;
+          a1.sh.rotation.set(-0.4 - w * 0.5, 0, 1.25); a1.el.rotation.x = -0.2;
+          p.legs[0].hip.rotation.x = -0.35; p.legs[1].hip.rotation.x = 0.2;
+        } else if (o.kind === 'jahSkier') {
+          if (alive && p.pathPts && p.pathPts.length >= 2) {
+            const u = ((time * (o.speed || 0.11) + p.phase * 0.12) % 1);
+            const seg = u * (p.pathPts.length - 1), i = Math.min(p.pathPts.length - 2, Math.floor(seg)), f = seg - i;
+            p.root.position.lerpVectors(p.pathPts[i], p.pathPts[i + 1], f);
+            const dx = p.pathPts[i + 1].x - p.pathPts[i].x, dz = p.pathPts[i + 1].z - p.pathPts[i].z;
+            p.root.rotation.y = Math.atan2(dx, dz) + Math.sin(u * Math.PI * 6) * 0.28;
+            if (p.block) p.block.matrixWorld.setPosition(p.root.position.x, p.root.position.y + p.sc, p.root.position.z);
+            go(p.root.position, p.root.rotation.y, 0.6, 1.9, 4.5);
+          }
+          const carve = alive ? Math.sin(t * 2.4) : 0.35;
+          p.hips.position.y = 0.80; p.torso.rotation.x = 0.30; p.torso.rotation.z = carve * 0.16;
+          for (const l of p.legs) { l.hip.rotation.x = -0.4; l.knee.rotation.x = 0.72; }
+          a0.sh.rotation.set(-0.65, 0, -0.35); a0.el.rotation.x = -0.55;
+          a1.sh.rotation.set(-0.65, 0, 0.35); a1.el.rotation.x = -0.55;
+        } else if (o.kind === 'jahTumble') {
+          const w = alive ? Math.sin(t * 3.2) : 0;
+          a0.sh.rotation.set(-0.9 + w * 0.25, 0, -0.65); a1.sh.rotation.set(-0.9 - w * 0.25, 0, 0.65);
+          p.head.rotation.y = w * 0.28;
+        } else if (o.kind === 'trvWaitress') {
+          const sw = alive ? Math.sin(t * 1.8) * 0.10 : 0;
+          a0.sh.rotation.set(-1.45 + sw, 0, -0.18); a0.el.rotation.x = -1.25;
+          a1.sh.rotation.set(-0.35 - sw, 0, 0.14); a1.el.rotation.x = -0.45;
+          p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.3 : 0.1;
+        } else if (o.kind === 'trvTailor') {
+          const sew = alive ? Math.sin(t * 3.4) : 0;
+          a0.sh.rotation.set(-0.85 + sew * 0.22, 0, -0.15); a0.el.rotation.x = -0.95 + sew * 0.15;
+          a1.sh.rotation.set(-0.82, 0, 0.18); a1.el.rotation.x = -0.9;
+          p.head.rotation.x = 0.28;
+        } else if (o.kind === 'trvWriter') {
+          const scrib = alive ? Math.sin(t * 5.0) : 0;
+          a0.sh.rotation.set(-0.88 + scrib * 0.06, 0, -0.14 + Math.cos(t * 3.1) * 0.05); a0.el.rotation.x = -0.92;
+          a1.sh.rotation.set(-0.80, 0, 0.16); a1.el.rotation.x = -0.85;
+          p.head.rotation.x = 0.32;
+        } else if (o.kind === 'trvChef') {
+          const stir = alive ? Math.sin(t * 3.2) : 0;
+          a0.sh.rotation.set(-0.92 + stir * 0.16, 0, -0.16 + Math.cos(t * 3.2) * 0.12); a0.el.rotation.x = -0.78;
+          a1.sh.rotation.set(-0.52, 0, 0.16); a1.el.rotation.x = -0.55;
+          p.torso.rotation.x = 0.12; p.head.rotation.x = 0.22;
+        } else if (o.kind === 'trvShepherd') {
+          a0.sh.rotation.set(-0.58, 0, -0.16); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-0.25 + (alive ? Math.sin(t * 0.8) * 0.12 : 0), 0, 0.14); a1.el.rotation.x = -0.4;
+          p.head.rotation.y = alive ? Math.sin(t * 0.45) * 0.38 : 0.1;
+        } else if (o.kind === 'trvVizier') {
+          a0.sh.rotation.set(-0.42, 0, -0.14); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-0.42, 0, 0.14); a1.el.rotation.x = -0.75;
+          p.head.rotation.y = alive ? Math.sin(t * 0.4) * 0.28 : 0;
+        } else if (o.kind === 'neuSunbathe') {
+          const br = alive ? Math.sin(t * 1.1) * 0.03 : 0;
+          p.torso.rotation.x = br;
+          p.head.rotation.y = alive ? Math.sin(t * 0.45) * 0.18 : 0.08;
+        } else if (o.kind === 'neuNap') {
+          const br = alive ? Math.sin(t * 0.9) * 0.025 : 0;
+          p.torso.rotation.x = br;
+        } else if (o.kind === 'neuRead') {
+          const pg = alive ? Math.max(0, Math.sin(t * 0.6)) ** 5 : 0;
+          a1.sh.rotation.set(-0.85 - pg * 0.25, 0, 0.18 - pg * 0.15);
+          p.head.rotation.x = 0.30; p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.12 : 0;
+        } else if (o.kind === 'neuFan') {
+          const fw = alive ? Math.sin(t * 6.5) : 0.4;
+          a1.sh.rotation.set(-1.15, 0, 0.18); a1.el.rotation.x = -0.95;
+          a1.el.rotation.z = fw * 0.35;
+          a0.sh.rotation.set(-0.25, 0, -0.18); a0.el.rotation.x = -0.25;
+          p.head.rotation.x = -0.06;
+        } else if (o.kind === 'neuSnorkel') {
+          if (alive && p.orbit) {
+            const ang = time * (p.orbit.speed || 0.25) + p.phase;
+            const nx = p.orbit.cx + Math.cos(ang) * p.orbit.rx, nz = p.orbit.cz + Math.sin(ang) * p.orbit.rz;
+            p.root.position.set(nx, p.y0 + Math.sin(t * 2.2) * 0.04, nz);
+            p.root.rotation.y = Math.atan2(-Math.sin(ang) * p.orbit.rx, Math.cos(ang) * p.orbit.rz);
+            if (p.block) p.block.matrixWorld.setPosition(nx, p.y0 + 0.3, nz);
+            go(p.root.position, p.root.rotation.y, 0.7, 0.9, 1.0);
+          }
+          const kk = alive ? Math.sin(t * 4.5) * 0.32 : 0.15;
+          p.legs[0].hip.rotation.x = kk; p.legs[1].hip.rotation.x = -kk;
+          a0.sh.rotation.set(-0.3, 0, -0.45); a1.sh.rotation.set(-0.3, 0, 0.45);
+        } else if (o.kind === 'neuLifeguard') {
+          p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.6 : 0.2;
+          a0.sh.rotation.set(-2.2, 0, -0.35); a0.el.rotation.x = -1.25;
+        } else if (o.kind === 'neuVolley') {
+          const jp = o.jump ? (alive ? Math.max(0, Math.sin(t * 2.2)) ** 2 : 0.65) : 0;
+          p.root.position.y = p.y0 + jp * 0.75;
+          if (o.jump) {
+            a0.sh.rotation.set(-2.65, 0, -0.22); a0.el.rotation.x = -0.2;
+            a1.sh.rotation.set(-2.45, 0, 0.28); a1.el.rotation.x = -0.3;
+            p.legs[0].knee.rotation.x = 0.5 * jp; p.legs[1].knee.rotation.x = 0.4 * jp;
+          } else {
+            const b = alive ? Math.sin(t * 2.2 + 1.4) * 0.15 : 0;
+            p.hips.position.y = 0.82; p.torso.rotation.x = 0.25;
+            a0.sh.rotation.set(-1.05 + b, 0, -0.28); a0.el.rotation.x = -0.15;
+            a1.sh.rotation.set(-1.05 + b, 0, 0.28); a1.el.rotation.x = -0.15;
+          }
+        } else if (o.kind === 'neuSailor') {
+          const sw = alive ? Math.sin(t * 1.4) * 0.16 : 0.08;
+          p.torso.rotation.z = sw;
+          a0.sh.rotation.set(-0.75, 0, -0.3); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-0.55, 0, 0.35); a1.el.rotation.x = -0.35;
+        } else if (o.kind === 'neuCaptain') {
+          const wv = alive ? Math.sin(t * 4.2) * 0.32 : 0;
+          a0.sh.rotation.set(-2.2, 0, -0.45 + wv * 0.4); a0.el.rotation.x = -0.35; a0.el.rotation.z = wv;
+          a1.sh.rotation.set(-0.65, 0, 0.12); a1.el.rotation.x = -0.5;
+          p.head.rotation.y = alive ? Math.sin(t * 0.6) * 0.35 : 0.1;
+        } else if (o.kind === 'neuDine') {
+          const sip = alive ? Math.max(0, Math.sin(t * 0.8)) ** 4 : 0.2;
+          a1.sh.rotation.set(-0.75 - sip * 0.55, 0, 0.15); a1.el.rotation.x = -0.75 - sip * 0.55;
+          a0.sh.rotation.set(-0.6, 0, -0.15); a0.el.rotation.x = -0.65;
+          p.head.rotation.y = alive ? Math.sin(t * 0.5) * 0.25 : 0;
+        } else if (o.kind === 'blDajak') {
+          const st = alive ? Math.sin(t * 1.9) : 0.3;
+          p.torso.rotation.x = 0.12 + st * 0.14;
+          a0.sh.rotation.set(-0.75 - st * 0.35, 0, -0.14); a0.el.rotation.x = -0.55;
+          a1.sh.rotation.set(-1.05 - st * 0.45, 0, 0.14); a1.el.rotation.x = -0.45;
+          if (p.pole) p.pole.rotation.x = st * 0.24;
+        } else if (o.kind === 'blViolin') {
+          const bw = alive ? Math.sin(t * 5.2) : 0.2;
+          a0.sh.rotation.set(-1.2, 0, -0.25); a0.el.rotation.x = -1.1;
+          a1.sh.rotation.set(-0.85 + bw * 0.22, 0, 0.25 + bw * 0.15); a1.el.rotation.x = -0.95;
+          p.head.rotation.z = 0.22;
+        } else if (o.kind === 'blDrum') {
+          const b0 = alive ? Math.sin(t * 7.5) : 0.3, b1 = alive ? Math.sin(t * 7.5 + Math.PI) : -0.3;
+          a0.sh.rotation.set(-0.65 + b0 * 0.2, 0, -0.16); a0.el.rotation.x = -0.85 - b0 * 0.3;
+          a1.sh.rotation.set(-0.65 + b1 * 0.2, 0, 0.16); a1.el.rotation.x = -0.85 - b1 * 0.3;
+        } else if (o.kind === 'blTrumpet') {
+          const sw = alive ? Math.sin(t * 2.2) * 0.12 : 0;
+          a0.sh.rotation.set(-1.35, 0, -0.28); a0.el.rotation.x = -1.25;
+          a1.sh.rotation.set(-1.35, 0, 0.28); a1.el.rotation.x = -1.25;
+          p.torso.rotation.x = -0.10 + sw;
+        } else if (o.kind === 'blDance') {
+          const sw = alive ? Math.sin(t * 3.4) : 0.3;
+          p.hips.position.y = 0.92 + Math.abs(sw) * 0.05;
+          p.torso.rotation.y = sw * 0.28;
+          a0.sh.rotation.set(-1.6 - sw * 0.35, 0, -0.45); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-1.6 + sw * 0.35, 0, 0.45); a1.el.rotation.x = -0.45;
+        } else if (o.kind === 'blListen') {
+          p.head.rotation.x = alive ? Math.sin(t * 3.2) * 0.10 : 0.04;
+          a0.sh.rotation.set(-0.55, 0, -0.1); a0.el.rotation.x = -0.85;
+          a1.sh.rotation.set(-0.55, 0, 0.1); a1.el.rotation.x = -0.85;
+        } else if (o.kind === 'blWaitress') {
+          a1.sh.rotation.set(-0.85, 0, 0.22); a1.el.rotation.x = -1.25;
+          a0.sh.rotation.set(-0.25, 0, -0.15); a0.el.rotation.x = -0.35;
+          p.head.rotation.y = alive ? Math.sin(t * 0.8) * 0.3 : 0.1;
+        } else if (o.kind === 'blScooter') {
+          const ps = alive ? Math.sin(t * 3.6) : 0.3;
+          a0.sh.rotation.set(-0.95, 0, -0.1); a0.el.rotation.x = -0.35;
+          a1.sh.rotation.set(-0.95, 0, 0.1); a1.el.rotation.x = -0.35;
+          p.legs[1].hip.rotation.x = 0.25 + Math.max(0, ps) * 0.55;
+        } else if (o.kind === 'blFrisbee') {
+          const tw = alive ? Math.sin(t * 2.4) : 0.4;
+          p.torso.rotation.y = tw * 0.55;
+          a1.sh.rotation.set(-1.05, 0, 0.35 + tw * 0.45); a1.el.rotation.x = -0.45;
+          a0.sh.rotation.set(-0.4, 0, -0.35);
+        } else if (o.kind === 'blTennis') {
+          const sw = alive ? Math.sin(t * 2.8) : 0.3;
+          p.torso.rotation.y = sw * 0.45;
+          a1.sh.rotation.set(-0.95 - sw * 0.55, 0, 0.35); a1.el.rotation.x = -0.45;
+          a0.sh.rotation.set(-0.5, 0, -0.25);
+        } else if (o.kind === 'blBasket') {
+          const sh = alive ? Math.max(0, Math.sin(t * 2.0)) ** 2 : 0.6;
+          p.root.position.y = p.y0 + sh * 0.45;
+          a1.sh.rotation.set(-2.3 - sh * 0.4, 0, 0.12); a1.el.rotation.x = -0.35;
+          a0.sh.rotation.set(-2.1 - sh * 0.3, 0, -0.15); a0.el.rotation.x = -0.45;
+        } else if (o.kind === 'blStroller') {
+          const sw = alive ? Math.sin(t * 3.0) * 0.25 : 0.15;
+          p.legs[0].hip.rotation.x = sw; p.legs[1].hip.rotation.x = -sw;
+          a0.sh.rotation.set(-0.82, 0, -0.12); a0.el.rotation.x = -0.28;
+          a1.sh.rotation.set(-0.82, 0, 0.12); a1.el.rotation.x = -0.28;
+        } else if (o.kind === 'blPhoto') {
+          a0.sh.rotation.set(-1.35, 0, -0.35); a0.el.rotation.x = -1.2;
+          a1.sh.rotation.set(-1.35, 0, 0.35); a1.el.rotation.x = -1.2;
+          p.head.rotation.y = alive ? Math.sin(t * 0.55) * 0.35 : 0;
+        } else if (o.kind === 'blDraw') {
+          const sk = alive ? Math.sin(t * 6.0) * 0.14 : 0.1;
+          a0.sh.rotation.set(-0.85, 0, -0.18); a0.el.rotation.x = -0.95;
+          a1.sh.rotation.set(-0.92 + sk, 0, 0.15 + sk); a1.el.rotation.x = -0.95;
+          p.head.rotation.x = 0.30;
+        } else if (o.kind === 'bihPotter') {
+          const wr = alive ? Math.sin(t * 3.8) * 0.12 : 0.08;
+          a0.sh.rotation.set(-0.92 + wr, 0, -0.18); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-0.92 - wr, 0, 0.18); a1.el.rotation.x = -0.75;
+          p.head.rotation.x = 0.28;
+        } else if (o.kind === 'bihGuard') {
+          a0.sh.rotation.set(-0.18, 0, -0.12); a0.el.rotation.x = -0.25;
+          a1.sh.rotation.set(-0.78, 0, 0.14); a1.el.rotation.x = -0.62;
+          p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.35 : 0.08;
+        } else if (o.kind === 'bihTambura') {
+          const st = alive ? Math.sin(t * 5.2) : 0.3;
+          a0.sh.rotation.set(-0.88 + st * 0.18, 0, -0.20); a0.el.rotation.x = -0.92;
+          a1.sh.rotation.set(-0.82, 0, 0.36); a1.el.rotation.x = -0.78;
+          p.head.rotation.z = alive ? Math.sin(t * 1.4) * 0.12 : 0.05;
+        } else if (o.kind === 'tuzFloat') {
+          const bob = alive ? Math.sin(t * 1.4) * 0.08 : 0;
+          p.root.position.y = p.y0 + bob;
+          p.root.rotation.z = alive ? Math.sin(t * 0.9) * 0.08 : 0;
+          const sw = alive ? Math.sin(t * 1.1) * 0.15 : 0;
+          a0.sh.rotation.set(-0.35, 0, -0.95 + sw); a1.sh.rotation.set(-0.35, 0, 0.95 - sw);
+        } else if (o.kind === 'tuzSplash') {
+          const sp = alive ? Math.sin(t * 5.2) : 0.4;
+          a0.sh.rotation.set(-0.95 + sp * 0.45, 0, -0.30); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-0.95 - sp * 0.45, 0, 0.30); a1.el.rotation.x = -0.65;
+          if (p.splashes) p.splashes.forEach((d, i) => {
+            const cyc = ((t * 1.8 + i * 0.21) % 1);
+            d.position.y = alive ? 0.65 + Math.sin(cyc * Math.PI) * 0.72 : 0.72 + (i % 3) * 0.15;
+            d.position.z = 0.38 + cyc * 0.35;
+          });
+        } else if (o.kind === 'tuzMiner') {
+          const sw = alive ? Math.sin(t * 2.8) : 0.3;
+          a1.sh.rotation.set(-1.1 - sw * 0.48, 0, 0.18); a1.el.rotation.x = -0.55;
+          a0.sh.rotation.set(-0.65, 0, -0.18); a0.el.rotation.x = -0.4;
+          p.torso.rotation.x = alive ? 0.14 + sw * 0.08 : 0.12;
+        } else if (o.kind === 'tuzStudent') {
+          a0.sh.rotation.set(-0.65, 0, -0.18); a0.el.rotation.x = -0.95;
+          a1.sh.rotation.set(-0.25 + (alive ? Math.sin(t * 1.8) * 0.25 : 0), 0, 0.15);
+          p.head.rotation.y = alive ? Math.sin(t * 0.9) * 0.35 : 0;
+        } else if (o.kind === 'tuzAccordion') {
+          const sq = alive ? Math.sin(t * 3.2) : 0.2;
+          if (p.bellows) p.bellows.scale.x = 0.24 + sq * 0.07;
+          a0.sh.rotation.set(-0.75, 0, -0.25 - sq * 0.12); a0.el.rotation.x = -0.95;
+          a1.sh.rotation.set(-0.75, 0, 0.25 + sq * 0.12); a1.el.rotation.x = -0.95;
+          p.torso.rotation.z = alive ? sq * 0.07 : 0;
+        } else if (o.kind === 'tuzPiano') {
+          const pk = alive ? Math.sin(t * 5.8) : 0.2;
+          a0.sh.rotation.set(-0.95, 0, -0.14); a0.el.rotation.x = -0.75 + pk * 0.14;
+          a1.sh.rotation.set(-0.95, 0, 0.14); a1.el.rotation.x = -0.75 - pk * 0.14;
+          p.torso.rotation.z = alive ? Math.sin(t * 1.4) * 0.08 : 0;
+        } else if (o.kind === 'tuzFlute') {
+          const fl = alive ? Math.sin(t * 1.8) * 0.08 : 0;
+          a0.sh.rotation.set(-1.25, 0, 0.25); a0.el.rotation.x = -1.15;
+          a1.sh.rotation.set(-1.15, 0, 0.55); a1.el.rotation.x = -1.05;
+          p.torso.rotation.z = fl; p.head.rotation.z = fl * 0.8;
+        } else if (o.kind === 'tuzSing') {
+          const sg = alive ? Math.sin(t * 2.4) : 0.3;
+          a1.sh.rotation.set(-1.35 + sg * 0.22, 0, 0.32); a1.el.rotation.x = -0.55;
+          a0.sh.rotation.set(-0.75, 0, -0.18); a0.el.rotation.x = -0.85;
+          p.head.rotation.x = -0.12 + (alive ? Math.sin(t * 1.6) * 0.08 : 0);
+          if (p.notes) p.notes.forEach((n, i) => {
+            n.position.y = 2.02 + i * 0.18 + (alive ? Math.sin(t * 2.5 + i * 1.4) * 0.14 : 0);
+            n.rotation.y = alive ? t * 0.9 + i : 0;
+          });
+        } else if (o.kind === 'tuzRaincoat') {
+          a0.sh.rotation.set(-0.22, 0, -0.10); a1.sh.rotation.set(-0.22, 0, 0.10);
+          p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.38 : 0;
+        } else if (o.kind === 'visMason') {
+          const tap = alive ? Math.sin(t * 4.5) * 0.22 : 0.12;
+          a0.sh.rotation.set(-0.85, 0, -0.18); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-0.95 - tap, 0, 0.18); a1.el.rotation.x = -0.68;
+          p.head.rotation.x = 0.25;
+        } else if (o.kind === 'visAuthor') {
+          const wr = alive ? Math.sin(t * 5.2) * 0.12 : 0.08;
+          a0.sh.rotation.set(-0.82, 0, -0.18); a0.el.rotation.x = -0.92;
+          a1.sh.rotation.set(-0.88 + wr, 0, 0.16 + wr); a1.el.rotation.x = -0.90;
+          p.head.rotation.x = 0.30;
+        } else if (o.kind === 'visSmith') {
+          const hm = alive ? Math.sin(t * 3.8) : 0.35;
+          a0.sh.rotation.set(-0.82, 0, -0.16); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-1.15 - hm * 0.45, 0, 0.18); a1.el.rotation.x = -0.58;
+          p.torso.rotation.x = alive ? 0.12 + hm * 0.06 : 0.10;
+        } else if (o.kind === 'visLumber') {
+          a0.sh.rotation.set(-0.35, 0, -0.18); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-0.35, 0, 0.18); a1.el.rotation.x = -0.45;
+          p.head.rotation.y = alive ? Math.sin(t * 0.8) * 0.35 : 0.08;
+        } else if (o.kind === 'visConductor') {
+          const wv = alive ? Math.sin(t * 2.2) * 0.22 : 0.12;
+          a0.sh.rotation.set(-0.35, 0, -0.14); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-1.35 + wv, 0, 0.24); a1.el.rotation.x = -0.85;
+          p.head.rotation.y = alive ? Math.sin(t * 0.9) * 0.3 : 0.06;
+        } else if (o.kind === 'visRaftsman') {
+          const sw = alive ? Math.sin(t * 1.6) * 0.18 : 0.08;
+          a0.sh.rotation.set(-0.72 + sw, 0, -0.14); a0.el.rotation.x = -0.52;
+          a1.sh.rotation.set(-0.76 - sw, 0, 0.14); a1.el.rotation.x = -0.56;
+          p.torso.rotation.z = alive ? Math.sin(t * 1.2) * 0.06 : 0;
+        } else if (o.kind === 'visRower') {
+          const rw = alive ? Math.sin(t * 2.4) : 0.2;
+          p.torso.rotation.x = rw * 0.16;
+          a0.sh.rotation.set(-0.85 - rw * 0.30, 0, -0.22); a0.el.rotation.x = -0.55;
+          a1.sh.rotation.set(-0.85 - rw * 0.30, 0, 0.22); a1.el.rotation.x = -0.55;
+        } else if (o.kind === 'visTraveller') {
+          a0.sh.rotation.set(-0.22, 0, -0.12); a0.el.rotation.x = -0.25;
+          a1.sh.rotation.set(-0.76, 0, 0.14); a1.el.rotation.x = -0.58;
+          p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.38 : 0.10;
         }
+        if (o.lookUpOnClimax && alive && pigeonsForced > 0) p.head.rotation.x = -0.45;
       }
       // the ball goes back and forth between the two who chase it
       if (alive && kickers.length === 2) {
@@ -765,6 +2113,7 @@ export function createPeople(scene, world, R) {
         a.legs.forEach((l, i) => { l.rotation.x = i === 0 || i === 3 ? sw : -sw; });
       }
       // pigeons peck about; once the town is alive they scatter when the nightingale comes close, circle, and come back
+      if (pigeonsForced > 0) pigeonsForced = Math.max(0, pigeonsForced - dt);
       const near = bird ? bird.pos.distanceTo(pcentre) : 99, scare = alive && (near < 3 || (near < 5.5 && bird.mode === 'perched'));
       if (scare && pigeons[0]?.mode === 'ground') this.onScatter?.();
       for (const q of pigeons) {
@@ -773,12 +2122,173 @@ export function createPeople(scene, world, R) {
           if (scare) { q.mode = 'fly'; q.t = 0; for (const w of q.wings) w.visible = true; }
           q.hd.rotation.x = alive ? Math.max(0, Math.sin(t * 2.3)) ** 4 * 1.1 : 0; if (alive) { q.yaw += Math.sin(t * 0.5) * dt * 0.6; q.g.rotation.y = q.yaw; q.g.position.x = q.home.x + Math.sin(t * 0.3) * 0.25; q.g.position.z = q.home.z + Math.cos(t * 0.23) * 0.25; }
         } else {
-          q.t += dt; const back = near > 7 && q.t > 5 ? (q.back = (q.back || 0) + dt / 2.2) : (q.back = 0), up = sm(q.t / 1.3) * (1 - sm(back));
+          q.t += dt; const back = pigeonsForced <= 0 && near > 7 && q.t > 5 ? (q.back = (q.back || 0) + dt / 2.2) : (q.back = 0), up = sm(q.t / 1.3) * (1 - sm(back));
           const a = q.t * 1.5 + q.phase, rr = 2 + (q.r - 3) * 0.9, tx = PG.fx + Math.cos(a) * rr, tz = PG.fz + Math.sin(a) * rr;
           q.g.position.set(q.home.x + (tx - q.home.x) * up, q.home.y + (PG.fh + q.h * 0.4) * up + Math.sin(t * 3) * 0.15 * up, q.home.z + (tz - q.home.z) * up);
           q.g.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a)); q.hd.rotation.x = 0;
           q.wings.forEach((w, i) => { w.rotation.z = (i ? 1 : -1) * Math.sin(t * 38) * 0.9; });
           if (back >= 1) { q.mode = 'ground'; q.back = 0; for (const w of q.wings) w.visible = false; q.g.position.copy(q.home); }
+        }
+      }
+      // ducks paddling on the Miljacka
+      for (const dk of ducks) {
+        const a = (alive ? time * dk.speed : 0) + dk.phase;
+        if (alive) {
+          dk.g.position.set(dk.home.x + Math.cos(a) * dk.r, dk.home.y + Math.sin(time * 2.5 + dk.phase) * 0.025, dk.home.z + Math.sin(a) * dk.r * 0.65);
+          dk.g.rotation.y = Math.atan2(-Math.sin(a) * dk.r, Math.cos(a) * dk.r * 0.65);
+          const dab = Math.max(0, Math.sin(time * 0.9 + dk.phase)) ** 6;
+          dk.neck.rotation.x = dab * 0.75;
+        }
+      }
+      // squirrel on the walnut branch
+      if (squirrel) {
+        if (alive) {
+          const c = (time * 0.45) % 4.0, scurry = c < 1.5 ? sm(c / 1.5) : c < 2.2 ? 1 : c < 3.7 ? 1 - sm((c - 2.2) / 1.5) : 0;
+          squirrel.g.position.copy(squirrel.home).addScaledVector(squirrel.dir, scurry * squirrel.span);
+          squirrel.g.position.y += Math.abs(Math.sin(scurry * Math.PI * 4)) * 0.05;
+          squirrel.hd.rotation.x = (c >= 1.5 && c < 2.2) || c >= 3.7 ? Math.sin(time * 12) * 0.14 : 0;
+          squirrel.tl.rotation.x = Math.sin(time * 4.5) * 0.16;
+        }
+      }
+      // kitten pouncing at leaves in the old house courtyard
+      if (kitten) {
+        if (alive) {
+          const c = (time * 0.55) % 4.2, pounce = c < 0.7 ? Math.sin((c / 0.7) * Math.PI) : 0;
+          const off = c < 0.7 ? sm(c / 0.7) * 0.55 : c < 2.4 ? 0.55 : c < 3.4 ? 0.55 * (1 - sm((c - 2.4) / 1.0)) : 0;
+          kitten.g.position.set(kitten.home.x + Math.sin(kitten.ry) * off, kitten.home.y + pounce * 0.24, kitten.home.z + Math.cos(kitten.ry) * off);
+          kitten.body.rotation.x = -pounce * 0.35 + (c >= 3.4 ? 0.18 : 0);
+          kitten.tl.rotation.z = Math.sin(time * 5.2) * 0.4;
+          kitten.hd.rotation.y = Math.sin(time * 1.4) * 0.35;
+        }
+      }
+      // Jahorina mountain wildlife
+      for (const a of jahAnimals) {
+        if (!alive) continue;
+        const t = time + a.phase;
+        if (a.o.kind === 'fox') {
+          const ang = t * 0.38, r = a.o.r || 2.4;
+          a.g.position.set(a.home.x + Math.cos(ang) * r, a.home.y, a.home.z + Math.sin(ang) * r * 0.65);
+          a.g.rotation.y = Math.atan2(-Math.sin(ang) * r, Math.cos(ang) * r * 0.65);
+          const sw = Math.sin(t * 7.5) * 0.42;
+          a.legs.forEach((l, i) => { l.rotation.x = i === 0 || i === 3 ? sw : -sw; });
+          if (a.tl) a.tl.rotation.y = Math.sin(t * 4) * 0.28;
+        } else if (a.o.kind === 'hare') {
+          const hop = Math.max(0, Math.sin(t * 2.2)) ** 3;
+          a.g.position.y = a.home.y + hop * 0.22;
+          if (a.hd) a.hd.rotation.y = Math.sin(t * 1.5) * 0.35;
+        } else if (a.o.kind === 'owl') {
+          if (a.hd) a.hd.rotation.y = Math.sin(t * 0.7) * 0.65;
+          a.wings.forEach((w, i) => { w.rotation.z = (i ? 1 : -1) * (0.06 + Math.max(0, Math.sin(t * 0.45)) ** 6 * 0.35); });
+        } else if (a.o.kind === 'roe') {
+          const nod = sm(Math.sin(t * 0.55) * 2.2);
+          if (a.neck) a.neck.rotation.x = 0.55 * nod;
+          if (a.hd) a.hd.rotation.y = Math.sin(t * 0.8) * 0.25 * (1 - nod);
+        } else if (a.o.kind === 'wolf') {
+          const howl = Math.max(0, Math.sin(t * 0.35)) ** 4;
+          if (a.neck) a.neck.rotation.x = -0.62 * howl;
+          if (a.tl) a.tl.rotation.z = Math.sin(t * 1.8) * 0.16;
+        } else if (a.o.kind === 'crow') {
+          const hop = Math.max(0, Math.sin(t * 3.0)) ** 6;
+          a.g.position.y = a.home.y + hop * 0.14;
+          if (a.hd) a.hd.rotation.y = Math.sin(t * 1.9) * 0.45;
+        }
+      }
+      // Neum coastal & marine wildlife
+      for (const a of neuAnimals) {
+        if (!alive) continue;
+        const t = time + a.phase;
+        if (a.o.kind === 'gull') {
+          if (a.o.fly) {
+            const ang = t * (a.o.speed || 0.34), r = a.o.r || 12;
+            a.g.position.set(a.home.x + Math.cos(ang) * r, a.home.y + Math.sin(t * 1.1) * 1.4, a.home.z + Math.sin(ang) * r * 0.72);
+            a.g.rotation.y = Math.atan2(-Math.sin(ang) * r, Math.cos(ang) * r * 0.72);
+            const fl = Math.sin(t * 5.2) * 0.32;
+            a.wings.forEach((w, i) => { w.rotation.z = (i ? 1 : -1) * fl; });
+          } else {
+            if (a.hd) a.hd.rotation.y = Math.sin(t * 1.2) * 0.55;
+            a.g.position.y = a.home.y + Math.max(0, Math.sin(t * 2.1)) ** 8 * 0.08;
+          }
+        } else if (a.o.kind === 'dolphin') {
+          const cyc = (t * 0.32) % 1;
+          const ang = t * 0.22, r = a.o.r || 7.5;
+          const bx = a.home.x + Math.cos(ang) * r, bz = a.home.z + Math.sin(ang) * r * 0.65;
+          const leap = cyc < 0.42 ? Math.sin((cyc / 0.42) * Math.PI) : 0;
+          a.g.position.set(bx, a.home.y - 0.15 + leap * 2.1, bz);
+          a.g.rotation.y = Math.atan2(-Math.sin(ang) * r, Math.cos(ang) * r * 0.65);
+          a.body.rotation.x = cyc < 0.42 ? -Math.cos((cyc / 0.42) * Math.PI) * 0.62 : 0.08;
+          if (a.tl) a.tl.rotation.x = Math.sin(t * 7) * 0.25;
+        } else if (a.o.kind === 'crab') {
+          const sc = Math.sin(t * 1.4) * 0.45;
+          a.g.position.x = a.home.x + Math.cos(a.o.ry || 0) * sc;
+          a.g.position.z = a.home.z - Math.sin(a.o.ry || 0) * sc;
+          a.armsA.forEach((c, i) => { c.rotation.x = -0.25 - Math.sin(t * 4.5 + i) * 0.2; });
+        } else if (a.o.kind === 'octopus') {
+          a.g.position.y = a.home.y + Math.sin(t * 1.8) * 0.06;
+          a.armsA.forEach((tn, i) => { tn.rotation.z = Math.sin(t * 2.6 + i * 1.1) * 0.22; });
+        } else if (a.o.kind === 'jellyfish') {
+          const p2 = Math.sin(t * 2.4);
+          a.g.position.y = a.home.y + p2 * 0.18;
+          a.body.scale.set(1 + p2 * 0.08, 1 - p2 * 0.07, 1 + p2 * 0.08);
+        } else if (a.o.kind === 'lizard') {
+          const dart = Math.max(0, Math.sin(t * 0.7)) ** 6;
+          a.g.position.x = a.home.x + Math.sin(a.o.ry || 0) * dart * 0.35;
+          a.g.position.z = a.home.z + Math.cos(a.o.ry || 0) * dart * 0.35;
+          if (a.tl) a.tl.rotation.y = Math.sin(t * 6) * 0.28;
+        }
+      }
+      // Banja Luka river & park wildlife
+      for (const a of blAnimals) {
+        if (!alive) continue;
+        const t = time + a.phase;
+        if (a.o.kind === 'heron') {
+          const dip = Math.max(0, Math.sin(t * 0.65)) ** 5;
+          if (a.neck) a.neck.rotation.x = 0.75 * dip;
+        } else if (a.o.kind === 'otter') {
+          if (a.hd) a.hd.rotation.y = Math.sin(t * 1.4) * 0.45;
+          if (a.tl) a.tl.rotation.y = Math.sin(t * 3.0) * 0.22;
+        } else if (a.o.kind === 'hedgehog') {
+          const w = Math.sin(t * 1.1) * 0.42;
+          a.g.position.x = a.home.x + Math.sin(a.o.ry || 0) * w;
+          a.g.position.z = a.home.z + Math.cos(a.o.ry || 0) * w;
+        } else if (a.o.kind === 'sparrow') {
+          const hop = Math.max(0, Math.sin(t * 3.8)) ** 4;
+          a.g.position.y = a.home.y + hop * 0.12;
+          if (a.hd) a.hd.rotation.y = Math.sin(t * 2.2) * 0.5;
+        } else if (a.o.kind === 'ladybug') {
+          a.g.rotation.y = (a.o.ry || 0) + Math.sin(t * 0.8) * 0.35;
+        } else if (a.o.kind === 'goose') {
+          const w = Math.sin(t * 2.6) * 0.12;
+          a.body.rotation.z = w;
+          if (a.neck) a.neck.rotation.x = Math.max(0, Math.sin(t * 0.8)) ** 4 * 0.5;
+        }
+      }
+      // Tuzla park & lakeside wildlife
+      for (const a of tuzAnimals) {
+        if (!alive) continue;
+        const t = time + a.phase;
+        if (a.o.kind === 'woodpecker') {
+          const burst = Math.sin(t * 1.4) > 0.25 ? Math.sin(t * 28) * 0.34 : 0;
+          if (a.hd) a.hd.rotation.x = 0.20 + burst;
+        } else if (a.o.kind === 'mole') {
+          const peek = Math.max(0, Math.sin(t * 1.1));
+          a.body.position.y = -0.14 + peek * 0.16;
+          if (a.hd) a.hd.rotation.y = Math.sin(t * 2.4) * 0.42;
+        } else if (a.o.kind === 'snail') {
+          const sl = Math.sin(t * 0.35) * 0.26;
+          a.g.position.x = a.home.x + Math.sin(a.o.ry || 0) * sl;
+          a.g.position.z = a.home.z + Math.cos(a.o.ry || 0) * sl;
+        } else if (a.o.kind === 'firefly') {
+          a.glow.forEach((fg, i) => {
+            fg.position.y = 0.40 + (i % 3) * 0.24 + Math.sin(t * 2.2 + i * 1.3) * 0.24;
+            fg.position.x = (i - 2) * 0.38 + Math.cos(t * 1.3 + i) * 0.22;
+            fg.rotation.y = Math.sin(t * 1.5 + i) * 0.6;
+          });
+        } else if (a.o.kind === 'dragonfly') {
+          const ang = t * 1.1, r = a.o.r || 1.2;
+          a.g.position.set(a.home.x + Math.cos(ang) * r, a.home.y + Math.sin(t * 3.1) * 0.18, a.home.z + Math.sin(ang * 2) * r * 0.45);
+          a.g.rotation.y = Math.atan2(-Math.sin(ang) * r, Math.cos(ang * 2) * r * 0.9);
+          const fl = Math.sin(t * 36) * 0.42;
+          a.wings.forEach((w, i) => { w.rotation.z = (i % 2 ? 1 : -1) * fl; });
         }
       }
       // the fish jumps now and then
