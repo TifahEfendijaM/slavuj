@@ -154,7 +154,7 @@ export function createPeople(scene, world, R) {
     const skin = pick(SKINS), top0 = o.robe ? '#e9e2d0' : pick(TOPS), top = o.trunks ? skin : o.top || (o.kind === 'girl' ? '#e0567f' : top0), bottom0 = pick(BOTTOMS), bottom = o.trunks ? skin : (o.bottom || bottom0), gown = (o.robe || o.woman) && !o.sport;      // sport: dressed to run and kick (no skirt)
     const hips = grp(root, 0, 0.92, 0), legs = [];
     if (o.robe) P(G.robe, '#6a5a4a', hips, 0, 0, 0, '#4f4236');
-    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine', 'blDrum', 'blListen', 'blDraw', 'tuzPiano', 'tuzAccordion', 'bihPotter', 'bihTambura'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu') || o.kind?.startsWith('bl') || o.kind?.startsWith('tuz'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
+    const seated = ['sit', 'swing', 'drink', 'argue', 'read', 'sled', 'sarHammer', 'sarTalk', 'sarDriver', 'sarReadBench', 'sarRimSit', 'jahSledRide', 'jajFish', 'jajGuitar', 'jajSing', 'jajWarmSit', 'trvTailor', 'trvWriter', 'neuRead', 'neuLifeguard', 'neuSailor', 'neuDine', 'blDrum', 'blListen', 'blDraw', 'tuzPiano', 'tuzAccordion', 'bihPotter', 'bihTambura', 'visAuthor', 'visRower'].includes(o.kind), winterTrousers = o.kind?.startsWith('jah') || o.kind?.startsWith('neu') || o.kind?.startsWith('bl') || o.kind?.startsWith('tuz') || o.kind?.startsWith('vis'), skirtC = o.woman && !o.robe && !o.sport && !winterTrousers && o.kind !== 'girl' && !o.coatTag && !o.topTag ? pick(TOPS) : null;
     if (skirtC && !seated) { const sk = P(G.skirt, skirtC, hips, 0, 0, 0); if (sc < 1) sk.scale.y = 0.45; }       // a child's skirt is short, so her legs show
     const legC = skirtC && seated ? skirtC : bottom;                                                                  // a seated woman's skirt lies over her legs
     if ((!gown || seated || winterTrousers || (skirtC && sc < 1) || o.coatTag || o.topTag) && o.kind !== 'girl' && o.kind !== 'raft' && o.kind !== 'sarNana') for (const s of [-1, 1]) {
@@ -777,6 +777,49 @@ export function createPeople(scene, world, R) {
     if (o.kind === 'tuzRaincoat') {
       const HP = o.coatTag ? painter(o.coatTag, pos, undefined, false, o.coatAt) : P;
       const hood = HP(G.cap, o.coatCol || '#eab824', head, 0, 0.04, -0.03, o.coatBleed || '#be8e12'); hood.scale.set(1.22, 1.24, 1.26);
+    }
+    // ---- Višegrad figures ----
+    if (o.kind === 'visMason') {
+      const mh = grp(arms[1].el, 0, -0.30, 0);
+      rod(P, mh, [0, 0, 0], [0, 0, 0.34], 0.016, '#8f6438');
+      P(G.box, '#4a5059', mh, 0, 0, 0.34, '#2e3338').scale.set(0.14, 0.08, 0.09);
+    }
+    if (o.kind === 'visAuthor') {
+      rod(P, arms[1].el, [0, -0.28, 0], [0, -0.28, 0.24], 0.011, '#2a2a30');
+      P(G.cap, '#4a3d33', head, 0, 0.08, 0, '#2e251e').scale.set(1.06, 0.72, 1.06);
+    }
+    if (o.kind === 'visSmith') {
+      const sh = grp(arms[1].el, 0, -0.32, 0);
+      rod(P, sh, [0, 0, 0], [0, 0, 0.42], 0.018, '#6e4c2e');
+      P(G.box, '#383d45', sh, 0, 0, 0.42, '#1f2226').scale.set(0.18, 0.11, 0.12);
+      P(G.box, '#5c3c28', torso, 0, 0.18, 0.14, '#3d2618').scale.set(0.36, 0.56, 0.05);
+    }
+    if (o.kind === 'visLumber') {
+      P(G.cap, '#9e3828', head, 0, 0.07, 0, '#6e2216').scale.set(1.06, 0.9, 1.06);
+    }
+    if (o.kind === 'visConductor') {
+      P(G.cap, '#222b3d', head, 0, 0.08, 0, '#121824').scale.set(1.10, 0.85, 1.16);
+      const WP = painter(o.whistleTag || 'zvizdaljka', pos);
+      const wh = grp(torso, 0.02, 0.54, 0.22);
+      WP(G.rod, '#e8be3a', wh, 0, 0, 0, '#b58d18').scale.set(0.055, 0.18, 0.055);
+      WP(G.ball, '#e8be3a', wh, 0, -0.08, 0.04, '#b58d18').scale.setScalar(0.068);
+    }
+    if (o.kind === 'visRaftsman') {
+      const pl = grp(arms[1].el, 0, -0.32, 0);
+      pl.rotation.x = 1.25;
+      rod(P, pl, [0, -1.1, 0], [0, 1.45, 0], 0.024, '#8f6438');
+    }
+    if (o.kind === 'visRower') {
+      for (const s of [0, 1]) {
+        const oar = grp(arms[s].el, 0, -0.30, 0);
+        rod(P, oar, [0, 0, -0.25], [(s ? 1 : -1) * 1.15, -0.38, 0.45], 0.020, '#8f6438');
+      }
+    }
+    if (o.kind === 'visTraveller') {
+      const st = grp(arms[1].el, 0, -0.32, 0);
+      st.rotation.x = 1.32;
+      rod(P, st, [0, -0.82, 0], [0, 1.05, 0], 0.022, '#6d4c32');
+      P(G.box, '#785030', torso, 0, 0.28, -0.19, '#52341c').scale.set(0.32, 0.42, 0.15);
     }
     list.push(p); return p;
   }
@@ -1977,6 +2020,44 @@ export function createPeople(scene, world, R) {
         } else if (o.kind === 'tuzRaincoat') {
           a0.sh.rotation.set(-0.22, 0, -0.10); a1.sh.rotation.set(-0.22, 0, 0.10);
           p.head.rotation.y = alive ? Math.sin(t * 0.7) * 0.38 : 0;
+        } else if (o.kind === 'visMason') {
+          const tap = alive ? Math.sin(t * 4.5) * 0.22 : 0.12;
+          a0.sh.rotation.set(-0.85, 0, -0.18); a0.el.rotation.x = -0.75;
+          a1.sh.rotation.set(-0.95 - tap, 0, 0.18); a1.el.rotation.x = -0.68;
+          p.head.rotation.x = 0.25;
+        } else if (o.kind === 'visAuthor') {
+          const wr = alive ? Math.sin(t * 5.2) * 0.12 : 0.08;
+          a0.sh.rotation.set(-0.82, 0, -0.18); a0.el.rotation.x = -0.92;
+          a1.sh.rotation.set(-0.88 + wr, 0, 0.16 + wr); a1.el.rotation.x = -0.90;
+          p.head.rotation.x = 0.30;
+        } else if (o.kind === 'visSmith') {
+          const hm = alive ? Math.sin(t * 3.8) : 0.35;
+          a0.sh.rotation.set(-0.82, 0, -0.16); a0.el.rotation.x = -0.65;
+          a1.sh.rotation.set(-1.15 - hm * 0.45, 0, 0.18); a1.el.rotation.x = -0.58;
+          p.torso.rotation.x = alive ? 0.12 + hm * 0.06 : 0.10;
+        } else if (o.kind === 'visLumber') {
+          a0.sh.rotation.set(-0.35, 0, -0.18); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-0.35, 0, 0.18); a1.el.rotation.x = -0.45;
+          p.head.rotation.y = alive ? Math.sin(t * 0.8) * 0.35 : 0.08;
+        } else if (o.kind === 'visConductor') {
+          const wv = alive ? Math.sin(t * 2.2) * 0.22 : 0.12;
+          a0.sh.rotation.set(-0.35, 0, -0.14); a0.el.rotation.x = -0.45;
+          a1.sh.rotation.set(-1.35 + wv, 0, 0.24); a1.el.rotation.x = -0.85;
+          p.head.rotation.y = alive ? Math.sin(t * 0.9) * 0.3 : 0.06;
+        } else if (o.kind === 'visRaftsman') {
+          const sw = alive ? Math.sin(t * 1.6) * 0.18 : 0.08;
+          a0.sh.rotation.set(-0.72 + sw, 0, -0.14); a0.el.rotation.x = -0.52;
+          a1.sh.rotation.set(-0.76 - sw, 0, 0.14); a1.el.rotation.x = -0.56;
+          p.torso.rotation.z = alive ? Math.sin(t * 1.2) * 0.06 : 0;
+        } else if (o.kind === 'visRower') {
+          const rw = alive ? Math.sin(t * 2.4) : 0.2;
+          p.torso.rotation.x = rw * 0.16;
+          a0.sh.rotation.set(-0.85 - rw * 0.30, 0, -0.22); a0.el.rotation.x = -0.55;
+          a1.sh.rotation.set(-0.85 - rw * 0.30, 0, 0.22); a1.el.rotation.x = -0.55;
+        } else if (o.kind === 'visTraveller') {
+          a0.sh.rotation.set(-0.22, 0, -0.12); a0.el.rotation.x = -0.25;
+          a1.sh.rotation.set(-0.76, 0, 0.14); a1.el.rotation.x = -0.58;
+          p.head.rotation.y = alive ? Math.sin(t * 0.65) * 0.38 : 0.10;
         }
         if (o.lookUpOnClimax && alive && pigeonsForced > 0) p.head.rotation.x = -0.45;
       }
