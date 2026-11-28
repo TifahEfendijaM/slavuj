@@ -66,6 +66,7 @@ export function showBosnia() {
           <g transform="translate(-26,-28) scale(1.3)" class="ic">${ICON[q.m.id]}</g>
           ${q.state === 'locked' || q.state === 'soon' ? '<g class="lock" transform="translate(24,16) scale(1.3)"><rect x="-8" y="-2" width="16" height="12" rx="2"/><path d="M-5 -2 V-6 a5 5 0 0 1 10 0 V-2" fill="none"/></g>' : ''}
           ${q.state === 'done' ? '<g transform="translate(28,-30)"><circle r="13" fill="#fff8de" stroke="#3b352f" stroke-width="2"/><path d="M-5 0 L-1 4 L6 -4" fill="none" stroke="#c8891a" stroke-width="3" stroke-linecap="round"/></g>' : ''}
+          <g transform="translate(-28,-30)"><circle r="13" fill="#fffaf0" stroke="#3b352f" stroke-width="2"/><text y="5" text-anchor="middle" font-size="16" font-weight="700" fill="#3b352f">${i + 1}</text></g>
           <text y="68" class="pname">${q.m.name}</text>
           <text y="92" class="pseason">${q.m.season ? `${q.m.season} · ${q.m.en}` : ''}${q.state === 'soon' ? `${q.m.season ? ' · ' : ''}in development` : q.m.wip ? ' · beta' : ''}${q.state === 'soon' ? '' : q.n ? ` · ${q.words}/${q.n}` : ''}</text>
         </g>`).join('')}
