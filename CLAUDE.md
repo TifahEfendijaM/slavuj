@@ -5,13 +5,14 @@ A free mini game that promotes easybosnian.com (a site for learning Bosnian). Yo
 Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.github.io/slavuj/ (repo `TifahEfendijaM/slavuj`).
 
 ## Where it stands (2026-11-28)
-- **Eleven finished towns**, all open from the Bosnia map (no unlocking order for finished maps). Mostar and Blagaj were built here; the other nine were built by Fahrudin (GitHub `fahro`, owner of easybosnian, now a collaborator on this repo) and merged from his PR #1 on 2026-11-28. Built from zero, replacing the earlier rejected drafts.
+- **Twelve finished towns**, all open from the Bosnia map (no unlocking order for finished maps). Mostar, Blagaj and Konjic were built here; the other nine were built by Fahrudin (GitHub `fahro`, owner of easybosnian, now a collaborator on this repo) and merged from his PR #1 on 2026-11-28. Built from zero, replacing the earlier rejected drafts.
 
   | Town | Season | Words | What it is |
   |---|---|---|---|
   | Neum | summer | 76 | the Adriatic coast: beach, harbour, sailboats, lighthouse, sunset finale |
   | Mostar | summer | 81 | the Neretva gorge, Stari Most and its diver, the bazaar |
   | Blagaj | summer | 69 | the Buna spring pouring out of the cave under the cliff, the Tekija with its bay window, the stalls, the terrace, the mills, the Velagić house, the Karađoz-beg bridge, Stjepan grad above (added 2026-11-28) |
+  | Konjic | summer | 59 | the Neretva under the six-arched Old Bridge, rafting, the woodcarvers, the railway station, the river beach, Prenj, Tito's bunker (added 2026-11-28) |
   | Sarajevo | autumn | 79 | Baščaršija, the Sebilj, Vijećnica, trams, cable car, falling leaves |
   | Jahorina | winter | 76 | the Olympic ski mountain: slopes, chairlift, snow groomer, chalets, snowfall |
   | Višegrad | autumn | 68 | the Mehmed Paša Sokolović Bridge on the Drina, the old railway, autumn leaves |
@@ -53,6 +54,7 @@ Three.js + Vite, plain JavaScript (no framework). Live: https://tifahefendijam.g
 - `src/maps/index.js`: the list of maps (order, season, position on the Bosnia map), unlocking and save keys (`SAVE_VER`). `src/maps/counts.js` and `current.js` help the Bosnia map and the loader.
 - **Mostar:** `src/world.js` (the town) and `src/vocab.js` (its words, culture notes). Its people are in `src/people.js`, its photos in `assets/photos/*.jpg`.
 - **The other towns**, each in `src/maps/`: `<id>.js` (the module: finale, moving things, ambient sounds, hooks like `onWake`), `<id>-world.js` (the town), `<id>-words.js` (words, order, culture notes). Their particles are separate files in `src/` (`autumn-leaves.js`, `winter-snow.js`, `spring-petals.js`, `summer-sparkles.js`, `summer-motes.js`, `bl-blossoms.js`, `tuzla-sparkles.js`, `una-spray.js`, `drina-leaves.js`); photos in `assets/photos/<id>/`, journal art `assets/journal-<id>.webp`, sounds `assets/audio/sfx/<id>/`. `src/kit.js` is left over from the old drafts and no longer used.
+- **Newer towns (Konjic on) share building pieces:** `src/maps/townkit.js` (sky, houses, trees, roofs, arches, portals, orbs, the world object) and `src/maps/townmod.js` (the module from a short description: moving things, sounds, particles). `src/devcheck.js` (dev only, from the console) checks a town's cameras, landing spots, triggers and clipping, and renders its journal photos and painting.
 - `src/main.js`: the game flow (orbs, quiz, colouring scenes and their cameras, journal, finale, saving, pause menu, HUD) and the test hooks. Maps can override it through their module (ground height, camera sides, water drift, shots).
 - `src/flight.js`: flying, landing (perching), walking, hopping, swimming, and feeling for walls. `Builder.block()` adds invisible obstacles and perches; `twoSided` makes open rings solid from inside too.
 - `src/people.js`: the people and animals (one shared rig), the flag, and what each does after the finale.
