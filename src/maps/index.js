@@ -4,7 +4,7 @@
 export const MAPS = [
   { id: 'neum', name: 'Neum', season: 'Ljeto', en: 'summer', lat: 42.923, lon: 17.615 },
   { id: 'mostar', name: 'Mostar', season: 'Ljeto', en: 'summer', lat: 43.343, lon: 17.808 },
-  { id: 'blagaj', name: 'Blagaj', season: 'Jesen', en: 'autumn', lat: 43.257, lon: 17.886 },
+  { id: 'blagaj', name: 'Blagaj', season: 'Ljeto', en: 'summer', lat: 43.257, lon: 17.886 },
   { id: 'sarajevo', name: 'Sarajevo', season: 'Jesen', en: 'autumn', lat: 43.859, lon: 18.431 },
   { id: 'jahorina', name: 'Jahorina', season: 'Zima', en: 'winter', lat: 43.738, lon: 18.567 },
   { id: 'visegrad', name: 'Višegrad', season: 'Jesen', en: 'autumn', lat: 43.782, lon: 19.292 },

@@ -8,9 +8,10 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import S from './settings.js';
 
 // The look. The original is the watercolour; the others are trials (this file's shader differs between them, and
-// pixel art is also drawn small and scaled up, src/look.js): coloured pencil, crayon, gouache, spray paint and pixel art.
+// pixel art is also drawn small and scaled up, src/look.js): coloured pencil, crayon, gouache, spray paint, pixel art,
+// cel shading and comic book (these two also draw bolder, darker outlines: inkFor()).
 // ?style= in the address wins, then the choice made in the pause menu ("Style"), then settings.js
-export const STYLES = ['watercolor', 'pencil', 'crayon', 'gouache', 'spray', 'pixel'];
+export const STYLES = ['watercolor', 'pencil', 'crayon', 'gouache', 'spray', 'pixel', 'cel', 'comic'];
 export const onStyle = [];      // called after a switch
 const STYLE_KEY = 'slavuj-style';
 const storedStyle = () => { try { return localStorage.getItem(STYLE_KEY); } catch (e) { return null; } };
@@ -22,6 +23,7 @@ const washMats = [];
 export function setStyle(name) {
   look.style = pickStyle(name); try { localStorage.setItem(STYLE_KEY, look.style); } catch (e) { /* no storage */ }
   for (const m of washMats) { m.defines = styleDefines(); m.needsUpdate = true; }
+  applyInk();
   for (const f of onStyle) f(look.style);
 }
 
@@ -233,7 +235,7 @@ void main(){
   float rim = m * smoothstep(front - 0.11, front - 0.04, d);
   float damp = (1.0 - m) * (1.0 - smoothstep(front, front + 0.25, d)) * step(0.001, p);
 
-#if defined(STYLE_PENCIL) || defined(STYLE_CRAYON) || defined(STYLE_GOUACHE) || defined(STYLE_SPRAY) || defined(STYLE_PIXEL)
+#if defined(STYLE_PENCIL) || defined(STYLE_CRAYON) || defined(STYLE_GOUACHE) || defined(STYLE_SPRAY) || defined(STYLE_PIXEL) || defined(STYLE_CEL) || defined(STYLE_COMIC)
   float lit = 1.0 - shade;
   vec3 base = col; float lum = dot(base, vec3(0.3, 0.59, 0.11));
   vec3 painted;
@@ -306,6 +308,38 @@ void main(){
   m = step(0.5, m); rim = 0.0; damp = 0.0;      // a crisp edge as the colour arrives
   hatch = 0.0; pink = step(0.18, pink) * 0.6;
   #endif
+  #ifdef STYLE_CEL
+  // ---- cel shading: flat colour in two hard bands of light, a crisp highlight and a thin rim of light; bold outlines ----
+  paper = uPaper;
+  base = (pat > 0.5 && pat < 1.5) ? col : mix(vCol, vBleed, step(0.72, blotch) * 0.3);      // (no soft blotches: crisp patches)
+  base = clamp(mix(vec3(dot(base, vec3(0.3, 0.59, 0.11))), base, 1.3), 0.0, 1.0);
+  vec3 V = normalize(cameraPosition - vWorld), H = normalize(L + V);
+  float band = step(0.46, lit);
+  painted = sky ? col : mix(base * mix(vec3(0.6, 0.58, 0.8), vec3(0.64, 0.5, 0.68), sun), base * 1.03, band);
+  float spec = sky ? 0.0 : step(0.965, max(dot(N, H), 0.0)) * band;
+  painted = mix(painted, min(base * 1.25 + 0.16, vec3(1.0)), spec * 0.7);
+  painted = mix(painted, min(base * 1.18 + 0.06, vec3(1.0)), sky ? 0.0 : step(0.66, 1.0 - max(dot(N, V), 0.0)) * band * 0.35);
+  painted = mix(painted, vec3(0.97, 0.98, 1.0), step(0.35, streak));
+  m = step(0.5, m); rim = 0.0; damp = 0.0;      // a crisp edge as the colour arrives
+  hatch = 0.0; pink = step(0.18, pink) * 0.55;
+  #endif
+  #ifdef STYLE_COMIC
+  // ---- comic book: punchy flat colour, halftone dots in the shadows (and over the sky), ink cross-hatching in the
+  // deepest shadows, newsprint paper, thick black outlines. The dots are on the page (screen), as printed. ----
+  paper = uPaper * vec3(1.0, 0.985, 0.93) * (0.97 + 0.05 * grain);
+  base = (pat > 0.5 && pat < 1.5) ? col : vCol;      // (flat colour, no blotches)
+  base = clamp(mix(vec3(dot(base, vec3(0.3, 0.59, 0.11))), base, 1.6), 0.0, 1.0);
+  vec2 hp = mat2(0.7071, -0.7071, 0.7071, 0.7071) * (gl_FragCoord.xy / (uPx * 5.0));
+  float dd = length(fract(hp) - 0.5), aa = fwidth(dd) + 0.02;
+  float shAmt = smoothstep(0.4, 0.86, shade + (mid - 0.5) * 0.08);
+  float dotIn = 1.0 - smoothstep(shAmt * 0.56 - aa, shAmt * 0.56 + aa, dd);
+  vec3 dotC = base * mix(vec3(0.42, 0.4, 0.62), vec3(0.48, 0.36, 0.5), sun);
+  painted = sky ? mix(col * 1.02, col * 0.8, 1.0 - smoothstep(0.17 - aa, 0.17 + aa, dd)) : mix(base * 1.04, dotC, dotIn);
+  painted = mix(painted, vec3(1.0), sky ? 0.0 : step(0.93, lit) * 0.35);
+  painted = mix(painted, vec3(0.98, 0.98, 0.95), step(0.35, streak));
+  hatch = sky ? 0.0 : clamp(h2 * 1.3, 0.0, 1.0) * vPar.z * 1.6;      // only the darkest shadows get ink lines
+  m = step(0.5, m); rim = 0.0; damp = 0.0; pink = step(0.18, pink) * 0.7;
+  #endif
   painted += sun * 0.08 * max(dot(N, uSunDir), 0.0) * uSunGlow;
   painted *= 1.0 - 0.18 * rim;
   vec3 c = mix(paper * (1.0 - 0.05 * damp), painted, m);
@@ -360,6 +394,15 @@ export function washMat(tagName, o = {}) {
 // ---- ink ----
 export const inkMaterial = new LineMaterial({ color: new THREE.Color(S.ink.color), linewidth: S.ink.lineWidth });
 const fadeMats = [];   // outlines that disappear once their tag has been coloured (grass, hanging branches)
+// cel shading and comic book draw bolder, darker outlines; every other look keeps the usual ink
+const INK = { cel: { k: 1.6, color: '#1f1b18' }, comic: { k: 2.1, color: '#100e0d' } };
+const inkFor = () => INK[look.style] || { k: 1, color: S.ink.color };
+function applyInk() {
+  const { k, color } = inkFor();
+  shared.uInk.value.set(color); inkMaterial.color.set(color); inkMaterial.linewidth = S.ink.lineWidth * k;
+  for (const m of fadeMats) { m.color.set(color); m.linewidth = S.ink.lineWidth * k; }
+  for (const [w, m] of Object.entries(hullMats)) m.uniforms.uW.value = +w * k;
+}
 
 const HULL_VERT = /* glsl */`
 attribute vec3 aSeed; attribute vec4 aAni;
@@ -381,7 +424,7 @@ const hullMats = {};
 export function hullMat(width = S.ink.lineWidth) {
   return hullMats[width] ||= new THREE.ShaderMaterial({
     vertexShader: HULL_VERT, fragmentShader: HULL_FRAG, side: THREE.BackSide,
-    uniforms: { uW: { value: width }, uRes: shared.uRes, uInk: shared.uInk, uTime: shared.uTime, uLife: shared.uLife, uFlow: shared.uFlow },
+    uniforms: { uW: { value: width * inkFor().k }, uRes: shared.uRes, uInk: shared.uInk, uTime: shared.uTime, uLife: shared.uLife, uFlow: shared.uFlow },
   });
 }
 export function addHull(mesh, width) { const h = new THREE.Mesh(mesh.geometry, hullMat(width)); mesh.add(h); return h; }
@@ -513,7 +556,7 @@ export class Builder {
       }
       out[t.name] = mesh;
       if (t.fink?.length) {
-        const fm = new LineMaterial({ color: new THREE.Color(S.ink.color), linewidth: S.ink.lineWidth, transparent: true }); fadeMats.push(fm);
+        const fm = new LineMaterial({ color: new THREE.Color(inkFor().color), linewidth: S.ink.lineWidth * inkFor().k, transparent: true }); fadeMats.push(fm);
         t.fadeLine = new LineSegments2(new LineSegmentsGeometry().setPositions(t.fink), fm); t.fadeLine.frustumCulled = false; scene.add(t.fadeLine); t.fink = null;
       }
       for (const k of ['pos', 'nor', 'uv', 'col', 'bleed', 'par', 'sway', 'hpos', 'hnor', 'hsway']) t[k] = null;
@@ -527,3 +570,5 @@ export class Builder {
 export function setResolution(w, h, px) {
   shared.uRes.value.set(w, h); shared.uPx.value = px; inkMaterial.resolution.set(w, h); for (const m of fadeMats) m.resolution.set(w, h);
 }
+
+applyInk();      // (the look chosen at the start)

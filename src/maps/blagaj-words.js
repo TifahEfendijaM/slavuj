@@ -1,4 +1,4 @@
-// Blagaj (autumn): 69 learnable words + the finale word 'mir', plus the culture travelogue page.
+// Blagaj (summer): 69 learnable words + the finale word 'mir', plus the culture travelogue page.
 // Keep this module import-free so the Bosnia map (src/maps/counts.js) stays light.
 export const WORDS = {
   // Zone 1: Vrelo Bune, the spring of the Buna under the cliff (10)
@@ -30,7 +30,7 @@ export const WORDS = {
   // Zone 3: The stalls along the path to the Tekija (10)
   tezga:       { word: 'tezga',        en: 'market stall',                q: 'The wooden stand with a striped awning where things are sold by the path. Which word is it?', choices: ['tezga', 'krevet', 'ormar'] },
   prodavacica: { word: 'prodavačica',  en: 'saleswoman',                  q: 'Who stands behind the stall and sells juice and figs to visitors?', choices: ['prodavačica', 'učiteljica', 'doktorica'] },
-  nar:         { word: 'nar',          en: 'pomegranate',                 q: 'The round red autumn fruit full of juicy seeds, piled high on the stall. Which word is it?', choices: ['nar', 'krompir', 'luk'] },
+  nar:         { word: 'nar',          en: 'pomegranate',                 q: 'The round red fruit full of juicy seeds, piled high on the stall. Which word is it?', choices: ['nar', 'krompir', 'luk'] },
   sok:         { word: 'sok',          en: 'juice',                       q: 'The deep red drink pressed fresh from pomegranates, in glasses on the stall. Which word is it?', choices: ['sok', 'čaj', 'mlijeko'] },
   smokva:      { word: 'smokva',       en: 'fig (fruit and tree)',        q: 'The soft purple fruit of Herzegovina, in a basket under its broad-leaved tree. Which word is it?', choices: ['smokva', 'jabuka', 'kruška'] },
   med:         { word: 'med',          en: 'honey',                       q: 'The golden sweet stuff in glass jars, made by bees from the karst herbs. Which word is it?', choices: ['med', 'ulje', 'sirće'] },

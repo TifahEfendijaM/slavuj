@@ -1,4 +1,4 @@
-// Blagaj (autumn): the spring of the Buna (Vrelo Bune) pouring out of a great cave at the foot of a sheer
+// Blagaj (summer): the spring of the Buna (Vrelo Bune) pouring out of a great cave at the foot of a sheer
 // limestone cliff, the dervish Tekija built against the rock beside it with its bay window over the water,
 // the turbe and its nišani, the stalls on the path, a restaurant terrace under a vine pergola facing the Tekija,
 // the old mills and stamping mill on a mill race, the walled Velagić house, the five-arched Karađoz-beg bridge
@@ -11,7 +11,7 @@ import S from '../settings.js';
 export const TOWN_Y = 1.6;      // the banks, a little above the water (y = 0)
 export const CLIFF_Y = 62;      // the top of the cliff, where Stjepan grad stands
 export const BRIDGE_Y = 4.2;    // the deck of the Karađoz-beg bridge
-export const SUN_BLAGAJ = new THREE.Vector3(-0.42, 0.52, 0.74).normalize();     // low autumn sun in the south-west, lighting the cliff face
+export const SUN_BLAGAJ = new THREE.Vector3(-0.36, 0.68, 0.64).normalize();     // high summer sun in the south-west, lighting the cliff face
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
@@ -108,11 +108,11 @@ export function buildBlagajWorld(scene) {
   const A = (geo, x, y, z, o, ry = 0, rx = 0, rz = 0, s = 1) => b.add(geo, mat4(x, y, z, ry, rx, rz, s), o);
   const box = (w, h, d, x, y, z, o, ry = 0, rx = 0, rz = 0) => A(BOX, x, y, z, o, ry, rx, rz, [w, h, d]);
 
-  // Warm, low autumn light from the south-west on the pale cliff; the Buna flows south (+z)
+  // Bright, hot Herzegovinian summer light from the south-west on the pale cliff; the Buna flows south (+z)
   shared.uSunDir.value.copy(SUN_BLAGAJ);
   shared.uWaterDir.value.set(0, 1);
   shared.uSunShadow.value.set(0.55, 0.53, 0.62);
-  shared.uSunGlow.value.set(1.0, 0.86, 0.6);
+  shared.uSunGlow.value.set(1.0, 0.92, 0.7);
   shared.uSunTint.value.set(1.06, 0.99, 0.9);
   shared.uSkyGlow.value.set(0.95, 0.93, 0.88);
 
@@ -510,7 +510,7 @@ export function buildBlagajWorld(scene) {
   b.object(() => {
     for (let i = 0; i < 24; i++) {
       const lx = -24.4 + (i % 4) * 3.2 + rr(-0.7, 0.7), lz = -27.6 + Math.floor(i / 4) * 3.4 + rr(-0.7, 0.7);
-      A(ICO, lx, TER_Y + 3.7 + rr(0, 0.25), lz, { tag: 'loza', col: i % 3 ? '#8aa040' : '#c2a238', bleed: i % 3 ? '#5d7326' : '#8f6d1c', hull: true, sway: 0.08, orb: 'loza' }, R() * 3, 0, 0, [2.5, 0.42, 2.3]);
+      A(ICO, lx, TER_Y + 3.7 + rr(0, 0.25), lz, { tag: 'loza', col: i % 3 ? '#8aa040' : '#7d9a3c', bleed: i % 3 ? '#5d7326' : '#56702a', hull: true, sway: 0.08, orb: 'loza' }, R() * 3, 0, 0, [2.5, 0.42, 2.3]);
     }
   });
   b.object(() => {
@@ -678,7 +678,7 @@ export function buildBlagajWorld(scene) {
   // the mulberry ('dud') shading the courtyard; cypresses ('cempres') outside the wall
   b.object(() => {
     A(CYL, -25.5, TOWN_Y + 1.8, 51, { tag: 'dud', col: '#6b5340', bleed: '#4a3829', orb: 'dud' }, 0, 0, -0.1, [0.4, 3.6, 0.4]);
-    for (const [ox, oy, oz, r] of [[0, 4.6, 0, 2.6], [-1.6, 4.0, 0.9, 1.8], [1.5, 4.2, -0.8, 1.9]]) A(ICO, -25.5 + ox, TOWN_Y + oy, 51 + oz, { tag: 'dud', col: '#a3a43c', bleed: '#727323', hull: true, sway: 0.12, orb: 'dud' }, 0, 0, 0, [r, r * 0.72, r]);
+    for (const [ox, oy, oz, r] of [[0, 4.6, 0, 2.6], [-1.6, 4.0, 0.9, 1.8], [1.5, 4.2, -0.8, 1.9]]) A(ICO, -25.5 + ox, TOWN_Y + oy, 51 + oz, { tag: 'dud', col: '#5f8f3c', bleed: '#3f6526', hull: true, sway: 0.12, orb: 'dud' }, 0, 0, 0, [r, r * 0.72, r]);
   });
   b.object(() => {
     for (const [cx, cz, s] of [[-16.5, 30.5, 1.1], [-16.5, 55.5, 1.0], [-49, 59, 1.15]]) {
@@ -823,13 +823,13 @@ export function buildBlagajWorld(scene) {
   }
   const trees = [
     // willows and poplars along the Buna below the bridge, figs and pomegranates in the gardens, cypresses and pines
-    [-17, TOWN_Y, 10, 1.1, '#c9b03e', '#93801f', 'riverbank', 'round'], [17, TOWN_Y, 60, 1.1, '#d0a63a', '#9a771c', 'riverbank', 'round'],
-    [-17, TOWN_Y, 68, 1.15, '#b9b445', '#878222', 'riverbank', 'round'], [17, TOWN_Y, 100, 1.2, '#dc9a35', '#a56c18', 'riverbank', 'round'],
-    [-17, TOWN_Y, 104, 1.1, '#c8a23a', '#93741b', 'riverbank', 'round'], [48, TOWN_Y, 24, 1.0, '#7e9a42', '#56702a', 'riverbank', 'round'],
+    [-17, TOWN_Y, 10, 1.1, '#7aa045', '#52702a', 'riverbank', 'round'], [17, TOWN_Y, 60, 1.1, '#6f9a40', '#4a6b26', 'riverbank', 'round'],
+    [-17, TOWN_Y, 68, 1.15, '#86a84a', '#5c7830', 'riverbank', 'round'], [17, TOWN_Y, 100, 1.2, '#6a943e', '#476a26', 'riverbank', 'round'],
+    [-17, TOWN_Y, 104, 1.1, '#7ea446', '#56722c', 'riverbank', 'round'], [48, TOWN_Y, 24, 1.0, '#7e9a42', '#56702a', 'riverbank', 'round'],
     [-48, TOWN_Y, 0, 1.0, '#829c44', '#5a722b', 'riverbank', 'round'], [52, TOWN_Y, -20, 1.0, '#2f5a36', '#1c3b22', 'riverbank', 'cypress'],
     [-44, TOWN_Y, -30, 1.1, '#2f5a36', '#1c3b22', 'riverbank', 'cypress'], [70, TOWN_Y, 0, 1.15, '#2f5a36', '#1c3b22', 'riverbank', 'cypress'],
-    [-68, TOWN_Y, 40, 1.1, '#2f5a36', '#1c3b22', 'riverbank', 'cypress'], [36, TOWN_Y, 70, 1.2, '#cf8a33', '#985f17', 'riverbank', 'round'],
-    [-40, TOWN_Y, 88, 1.15, '#c79a37', '#92701a', 'riverbank', 'round'], [74, TOWN_Y, 50, 1.2, '#3f6438', '#273f22', 'riverbank', 'pine'],
+    [-68, TOWN_Y, 40, 1.1, '#2f5a36', '#1c3b22', 'riverbank', 'cypress'], [36, TOWN_Y, 70, 1.2, '#729c42', '#4d6e28', 'riverbank', 'round'],
+    [-40, TOWN_Y, 88, 1.15, '#80a245', '#57742b', 'riverbank', 'round'], [74, TOWN_Y, 50, 1.2, '#3f6438', '#273f22', 'riverbank', 'pine'],
     [-74, TOWN_Y, -12, 1.2, '#3f6438', '#273f22', 'riverbank', 'pine'],
     // up on the plateau, between the fortress and the cliff edge
     [-4, CLIFF_Y, -62, 1.0, '#3f6438', '#273f22', 'hills', 'pine'], [48, CLIFF_Y, -58, 1.05, '#7f8f46', '#58662c', 'hills', 'round'],
