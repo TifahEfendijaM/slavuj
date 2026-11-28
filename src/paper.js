@@ -7,6 +7,24 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import S from './settings.js';
 
+// The look. The original is the watercolour; the others are trials (this file's shader differs between them, and
+// pixel art is also drawn small and scaled up, src/look.js): coloured pencil, crayon, gouache, spray paint and pixel art.
+// ?style= in the address wins, then the choice made in the pause menu ("Style"), then settings.js
+export const STYLES = ['watercolor', 'pencil', 'crayon', 'gouache', 'spray', 'pixel'];
+export const onStyle = [];      // called after a switch
+const STYLE_KEY = 'slavuj-style';
+const storedStyle = () => { try { return localStorage.getItem(STYLE_KEY); } catch (e) { return null; } };
+const pickStyle = (...c) => c.find((x) => STYLES.includes(x)) || 'watercolor';
+export const look = { style: pickStyle(new URLSearchParams(location.search).get('style'), storedStyle(), S.style) };
+const styleDefines = () => (look.style === 'watercolor' ? {} : { ['STYLE_' + look.style.toUpperCase()]: '' });
+const washMats = [];
+// switch the look while playing: every painted material is rebuilt with that style's part of the shader
+export function setStyle(name) {
+  look.style = pickStyle(name); try { localStorage.setItem(STYLE_KEY, look.style); } catch (e) { /* no storage */ }
+  for (const m of washMats) { m.defines = styleDefines(); m.needsUpdate = true; }
+  for (const f of onStyle) f(look.style);
+}
+
 export function rng(seed) {
   return () => {
     seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
@@ -89,8 +107,9 @@ const SWAY = /* glsl */`
 const VERT = /* glsl */`
 attribute vec3 aCol, aBleed, aSeed; attribute vec4 aPar, aAni;
 uniform float uT, uTime, uLife, uFlow;
-varying vec3 vWorld, vN, vCol, vBleed, vSeed; varying vec4 vPar; varying vec2 vUv, vAni;
+varying vec3 vWorld, vN, vCol, vBleed, vSeed, vLocal, vLN; varying vec4 vPar; varying vec2 vUv, vAni;
 void main(){
+  vLocal = position * vec3(length(modelMatrix[0].xyz), length(modelMatrix[1].xyz), length(modelMatrix[2].xyz)); vLN = normal;      // (the object's own: a pattern drawn with these moves with it)
   vec4 w = modelMatrix * vec4(position, 1.0);
   ${SWAY}
   vWorld = w.xyz;
@@ -105,7 +124,7 @@ uniform sampler2D uNoise;
 uniform vec3 uPaper, uInk, uLight, uSunDir, uSunShadow, uSunGlow, uSunTint, uSkyGlow;
 uniform vec2 uWaterDir;
 uniform float uTime, uFlow, uPx, uVivid, uSun;
-varying vec3 vWorld, vN, vCol, vBleed, vSeed; varying vec4 vPar; varying vec2 vUv, vAni;
+varying vec3 vWorld, vN, vCol, vBleed, vSeed, vLocal, vLN; varying vec4 vPar; varying vec2 vUv, vAni;
 
 float strokes(float h, float lw){
   float w = fwidth(h) * 1.2;
@@ -122,11 +141,21 @@ float grid(vec2 p, float lw){
   return l * (1.0 - clamp(max(w.x, w.y) * 2.5 - 0.4, 0.0, 1.0));
 }
 
+// a line pattern that covers this share of the surface, fading to an even tone where its lines get too fine
+float lineCov(float h, float cov){
+  float w = fwidth(h) * 1.5, p = 1.0 - abs(fract(h) - 0.5) * 2.0;
+  float l = smoothstep(1.0 - cov - w, 1.0 - cov + w, p);
+  return clamp(mix(l, cov, clamp(w * 1.5 - 0.3, 0.0, 1.0)), 0.0, 1.0);
+}
 void main(){
   vec3 N = normalize(vN);
   if (!gl_FrontFacing) N = -N;
-  vec3 an = abs(N);
-  vec2 wuv = (an.y > an.x && an.y > an.z) ? vWorld.xz : (an.x > an.z ? vWorld.zy : vWorld.xy);
+#if defined(STYLE_PENCIL) || defined(STYLE_CRAYON) || defined(STYLE_GOUACHE) || defined(STYLE_SPRAY)
+  vec3 an = abs(normalize(vLN)), SP = vLocal;      // the strokes are drawn on the object itself, so they stay put as it moves (the bird, people)
+#else
+  vec3 an = abs(N), SP = vWorld;
+#endif
+  vec2 wuv = (an.y > an.x && an.y > an.z) ? SP.xz : (an.x > an.z ? SP.zy : SP.xy);
   float pat = vPar.y, ps = vPar.w;
   bool sky = pat > 8.5;
   if (sky) wuv *= 0.02;
@@ -204,6 +233,89 @@ void main(){
   float rim = m * smoothstep(front - 0.11, front - 0.04, d);
   float damp = (1.0 - m) * (1.0 - smoothstep(front, front + 0.25, d)) * step(0.001, p);
 
+#if defined(STYLE_PENCIL) || defined(STYLE_CRAYON) || defined(STYLE_GOUACHE) || defined(STYLE_SPRAY) || defined(STYLE_PIXEL)
+  float lit = 1.0 - shade;
+  vec3 base = col; float lum = dot(base, vec3(0.3, 0.59, 0.11));
+  vec3 painted;
+  #ifdef STYLE_PENCIL
+  // ---- coloured pencil: layers of fine diagonal strokes; the pigment only catches on the paper's tooth ----
+  base = clamp(mix(vec3(lum), base, 1.35), 0.0, 1.0);
+  float sc = sky ? 0.5 : 15.0;
+  float pr = texture2D(uNoise, wuv * (sky ? 0.03 : 0.9) + 0.2).b;                  // the pressure changes along the strokes
+  float cov1 = mix(clamp(0.62 + 0.35 * shade + (pr - 0.5) * 0.5, 0.0, 1.0), 1.4, uVivid);      // (the bird: fully coloured)
+  float cov2 = smoothstep(0.42, 0.85, shade) * 0.85;
+  float l1 = lineCov(dot(wuv, vec2(0.71, 0.71)) * sc + blotch * 1.5, cov1);
+  float l2 = lineCov(dot(wuv, vec2(-0.6, 0.8)) * sc * 1.15 + mid * 1.3, cov2);
+  float tooth = mix(mix(0.68, 1.0, smoothstep(0.25, 0.7, texture2D(uNoise, wuv * 9.0).r)), 1.0, uVivid * 0.7);      // the paper's tooth, on the object
+  painted = paper * mix(vec3(1.0), base, mix(0.45, 1.0, l1) * tooth);      // (a lighter layer fills between the strokes)
+  painted *= mix(vec3(1.0), mix(vec3(0.6, 0.58, 0.86), vec3(0.72, 0.5, 0.62), sun), l2 * tooth);   // a blue-violet pencil over the shadows
+  painted = mix(painted, paper, streak * 0.7);                                       // light on the water: the paper left bare
+  #endif
+  #ifdef STYLE_GOUACHE
+  // ---- gouache: opaque, matte, flat colour in a few clear steps of light; dry-brush edges ----
+  base = clamp(mix(vec3(lum), base, 1.25), 0.0, 1.0);
+  float steps = 0.5 * smoothstep(0.36, 0.42, lit + (mid - 0.5) * 0.06) + 0.5 * smoothstep(0.62, 0.68, lit + (mid - 0.5) * 0.06);
+  vec3 shadowC = base * mix(vec3(0.58, 0.56, 0.76), vec3(0.6, 0.48, 0.66), sun), lightC = base * mix(vec3(1.04, 1.02, 0.97), vec3(1.12, 1.0, 0.84), sun);
+  painted = sky ? col : mix(shadowC, lightC, steps);
+  float drag = texture2D(uNoise, wuv * vec2(0.25, 2.6) + 0.6).b;                      // faint brush drag
+  painted *= 0.95 + 0.1 * mix(0.5, drag, nearK) + 0.04 * (blotch - 0.5);
+  painted = mix(painted, vec3(0.97, 0.96, 0.9), streak * 0.65);
+  m *= smoothstep(0.0, 0.35, (front - d) * 3.0 + grain * 0.5);                      // the edge of the paint as it arrives: dry and broken
+  hatch *= 0.25;
+  #endif
+  #ifdef STYLE_CRAYON
+  // ---- crayon: broad waxy scribbles, bright colour, the paper showing through where the wax skips ----
+  base = clamp(mix(vec3(lum), base, 1.5), 0.0, 1.0);
+  float csc = sky ? 0.22 : 7.0;
+  float cpr = texture2D(uNoise, wuv * (sky ? 0.02 : 0.45) + 0.4).b;
+  float ccov = mix(clamp(0.8 + 0.2 * shade + (cpr - 0.5) * 0.45, 0.0, 1.0), 1.4, uVivid);
+  float sw = sin(dot(wuv, vec2(-0.6, 0.8)) * csc * 0.55 + blotch * 5.0) * 0.3;      // the scribble wanders
+  float c1 = lineCov(dot(wuv, vec2(0.8, 0.6)) * csc + sw + blotch * 2.0, ccov);
+  float c2 = lineCov(dot(wuv, vec2(-0.45, 0.9)) * csc * 1.2 + mid * 2.0, smoothstep(0.45, 0.85, shade) * 0.9);
+  float wax = mix(smoothstep(0.3, 0.62, texture2D(uNoise, wuv * vec2(2.6, 7.5)).r), 1.0, uVivid * 0.7);
+  painted = paper * mix(vec3(1.0), base, mix(0.3, 1.0, c1) * mix(0.45, 1.0, wax));
+  painted *= mix(vec3(1.0), mix(base * 0.62, vec3(0.42, 0.4, 0.66), 0.35), c2 * wax);      // a darker crayon over the shadows
+  painted = mix(painted, paper, streak * 0.7);
+  hatch *= 0.5;
+  #endif
+  #ifdef STYLE_SPRAY
+  // ---- spray paint: bold colour sprayed on in fine dots; the shadow side sprayed in speckles, drips running down walls ----
+  base = clamp(mix(vec3(lum), base, 1.55), 0.0, 1.0);
+  float sd1 = texture2D(uNoise, wuv * 1.3).r, sd2 = texture2D(uNoise, wuv * 1.05 + 0.5).r;      // the spray's dots, on the object
+  float shAmt = smoothstep(0.25, 0.9, shade + (mid - 0.5) * 0.15);
+  float spk = mix(shAmt, smoothstep(sd2 - 0.06, sd2 + 0.06, shAmt), nearK);
+  painted = sky ? col : mix(base * 1.05, mix(base * 0.5, vec3(0.24, 0.2, 0.44), 0.35), spk * 0.85);
+  painted = mix(painted, min(base * 1.3 + 0.08, vec3(1.0)), smoothstep(0.82, 0.92, sd1) * smoothstep(0.75, 0.95, lit) * 0.6);      // light catches in a few dots
+  if (!sky && an.y < 0.5) {      // drips down the walls
+    float dr = texture2D(uNoise, vec2(wuv.x * 0.9, wuv.y * 0.04)).g;
+    float drip = smoothstep(0.76, 0.8, dr) * smoothstep(0.25, 0.7, fract(-wuv.y * 0.15 + dr * 3.0));
+    painted *= 1.0 - drip * 0.3 * nearK;
+  }
+  painted = mix(painted, vec3(0.97, 0.96, 0.9), streak * 0.65);
+  // the edge of the colour as it arrives: a cloud of dots, sprayed past the line
+  m = smoothstep(sd1 * 0.85, sd1 * 0.85 + 0.12, clamp((front - d) * 3.0 + 0.3, 0.0, 1.0)) * step(0.0001, vAni.x);
+  rim = 0.0; hatch *= 0.3;
+  #endif
+  #ifdef STYLE_PIXEL
+  // ---- pixel art: drawn small and scaled up (src/look.js); flat colour in crisp steps of light, no paper texture ----
+  paper = uPaper;
+  base = clamp(mix(vec3(lum), base, 1.2), 0.0, 1.0);
+  float px3 = 0.5 * step(0.4, lit) + 0.5 * step(0.66, lit);
+  painted = sky ? col : mix(base * mix(vec3(0.6, 0.58, 0.8), vec3(0.62, 0.5, 0.7), sun), base * mix(vec3(1.04), vec3(1.12, 1.0, 0.85), sun), px3);
+  painted = mix(painted, vec3(0.95, 0.96, 0.92), step(0.35, streak));
+  m = step(0.5, m); rim = 0.0; damp = 0.0;      // a crisp edge as the colour arrives
+  hatch = 0.0; pink = step(0.18, pink) * 0.6;
+  #endif
+  painted += sun * 0.08 * max(dot(N, uSunDir), 0.0) * uSunGlow;
+  painted *= 1.0 - 0.18 * rim;
+  vec3 c = mix(paper * (1.0 - 0.05 * damp), painted, m);
+  c = mix(c, uInk, max(hatch * mix(0.5, 0.3, m), max(pink, streak * 0.75) * (1.0 - m * (streak > 0.0 ? 1.0 : 0.45))));
+  c *= mix(vec3(1.0), uSunTint, sun);
+  #ifdef STYLE_PIXEL
+  c = pow(floor(pow(clamp(c, 0.0, 1.0), vec3(1.0 / 2.2)) * 12.0 + 0.5) / 12.0, vec3(2.2));      // a limited palette
+  #endif
+  gl_FragColor = vec4(c, 1.0);
+#else
   float strength = mix((0.8 + 0.2 * mid) * (0.86 + 0.26 * grain), 1.0, max(uVivid, sky ? 0.7 : 0.0));
   vec2 e = min(vUv, 1.0 - vUv);
   float pool = vPar.x * (1.0 - smoothstep(0.0, 0.06 + 0.05 * mid, min(e.x, e.y)));
@@ -221,6 +333,7 @@ void main(){
   c = mix(c, uInk, max(hatch * mix(0.5, 0.3, m), max(pink, streak * 0.75) * (1.0 - m * (streak > 0.0 ? 1.0 : 0.45))));
   c *= mix(vec3(1.0), uSunTint, sun);
   gl_FragColor = vec4(c, 1.0);
+#endif
   #include <colorspace_fragment>
 }`;
 
@@ -231,8 +344,8 @@ export function tag(name) {
 }
 
 export function washMat(tagName, o = {}) {
-  return new THREE.ShaderMaterial({
-    vertexShader: VERT, fragmentShader: FRAG, side: o.side ?? THREE.FrontSide,
+  const m = new THREE.ShaderMaterial({
+    vertexShader: VERT, fragmentShader: FRAG, side: o.side ?? THREE.FrontSide, defines: styleDefines(),
     polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
     uniforms: {
       uNoise: shared.uNoise, uPaper: shared.uPaper, uInk: shared.uInk, uLight: shared.uLight, uSunDir: shared.uSunDir,
@@ -241,6 +354,7 @@ export function washMat(tagName, o = {}) {
       uT: tag(tagName).uT, uVivid: { value: o.vivid ?? 0 },
     },
   });
+  washMats.push(m); return m;
 }
 
 // ---- ink ----
